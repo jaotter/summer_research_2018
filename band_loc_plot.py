@@ -6,6 +6,7 @@ import numpy as np
 
 #data = fits.getdata('/lustre/aoc/students/jotter/dendro_catalogs/allbands_catalog.fits')
 data = Table(fits.getdata('/lustre/aoc/students/jotter/dendro_catalogs/IR_matched_catalog.fits'))
+IR_data = Table(fits.getdata('/lustre/aoc/students/jotter/dendro_catalogs/IR_only_catalog.fits'))
 fig = plt.figure()
 for row in range(len(data)):
 	x_470GHz = data['gauss_x_470GHz'][row]
@@ -31,8 +32,11 @@ plt.scatter(data['gauss_x_340GHz'], data['gauss_y_340GHz'], c='b', alpha=0.4, la
 plt.scatter(data['gauss_x_470GHz'], data['gauss_y_470GHz'], c='g', alpha=0.4, label='470GHz')
 plt.scatter(data['gauss_x_B3'], data['gauss_y_B3'], c='r', alpha=0.4, label='B3')
 plt.scatter(data['gauss_x_B6'], data['gauss_y_B6'], c='y', alpha=0.4, label='B6')
-plt.scatter(data['RA_HC'], data['DEC_HC'], c='violet', alpha=0.4, label='HC IR')
-plt.scatter(data['RA_RRS'], data['DEC_RRS'], c='k', alpha=0.4, label='RRS IR')
+#plt.scatter(data['RA_HC'], data['DEC_HC'], c='violet', alpha=0.4, label='HC IR')
+#plt.scatter(data['RA_RRS'], data['DEC_RRS'], c='k', alpha=0.4, label='RRS IR')
+
+plt.scatter(IR_data['RA_HC'], IR_data['DEC_HC'], c='violet', alpha=0.4, label='HC IR')
+plt.scatter(IR_data['RA_RRS'], IR_data['DEC_RRS'], c='k', alpha=0.4, label='RRS IR')
 
 plt.xlabel('RA (deg)')
 plt.ylabel('DEC (deg)')
