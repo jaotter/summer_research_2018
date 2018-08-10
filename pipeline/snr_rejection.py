@@ -1,13 +1,11 @@
 from astropy.io import fits
 import astropy.units as u
 from astropy.wcs import WCS
-from astropy.table import Table
 import numpy as np
 import regions
 from astropy.coordinates import Angle, SkyCoord
 from astropy.nddata import Cutout2D
 from astropy.table import Table
-import pickle
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gs
 
@@ -21,7 +19,7 @@ def mask(reg, cutout):#masks everything except the region
     mask = reg.to_mask(mode='center')
     return np.array(mask.to_image((n, n)), dtype='int') 
 
-def plot_grid(datacube, masks, reject, snr_list):
+def plot_grid(datacube, masks, reject, snr_list, idx):
     n_images = len(datacube)
     xplots = int(np.around(np.sqrt(n_images)))
     yplots = xplots + 1
@@ -38,22 +36,22 @@ def plot_grid(datacube, masks, reject, snr_list):
         plt.imshow(masks[i], origin='lower', cmap='gray', alpha=0.2)
         plt.xticks([])
         plt.yticks([])
-        plt.text(0.22,0.2,'id '+str(i)+' snr '+str(np.around(snr_list[i],2)),{'size':7,'color':'white'})
+        plt.text(0.22,0.2,'id '+str(idx[i])+' snr '+str(np.around(snr_list[i],2)),{'size':7,'color':'white'})
 
-def reject_sources(catname, datname, min_snr=5, max_size=None, max_size_ID=None, flux_type = 'peak'):
+def reject_sources(name, catname, datname, min_snr=5, max_size=None, max_size_ID=None, flux_type = 'peak'):
 
-	#catname: name of catalog of sources, with required columns 'x_cen', 'y_cen', 'major_sigma', 'minor_sigma', and 'position angle'
+	#catname: name of catalog of sources, with required columns 'gauss_x_'+name, 'gauss_y_'+name, 'FWHM_major_'+name, 'FWHM_minor_'+name, and 'position_angle_'+name
 	#datname: name of data fits image
 	#min_snr: minimum SNR value, all sources with SNR below this will be rejected
 	#max_size: maximum major axis radius for ellipse around source, in sigma
 	#max_size_ID: alternatively, give the index of a source to set that source's radius to the maximum
 	#flux_type: if 'peak', chooses the brightest pixel, if 'percentile', flux measured by average of top 10% of pixels
 
-	filename = catname.split('/')[-1]
-	name = filename.split('_')[0]
-
 	catalog = fits.getdata(catname)
 	catalog = Table(catalog)
+
+	bad_inds = np.where(np.isnan(catalog['ap_flux_'+name])==True)
+	catalog.remove_rows(bad_inds)
 
 	fl = fits.open(datname)
 	data = fl[0].data.squeeze()
@@ -67,6 +65,8 @@ def reject_sources(catname, datname, min_snr=5, max_size=None, max_size_ID=None,
 	snr_vals = []
 	cutout_images = []
 	masks = []
+	bg_arr = []
+	bg_arr2 = []
 	reject = np.full(len(catalog), False)
 
 	for i in range(len(catalog)):
@@ -103,6 +103,8 @@ def reject_sources(catname, datname, min_snr=5, max_size=None, max_size_ID=None,
 		pixels_in_annulus = cutout.data[annulus_mask.astype('bool')] #pixels within annulus
 		pixels_in_ellipse = cutout.data[ellipse_mask.astype('bool')] #pixels in ellipse
 		bg_rms = rms(pixels_in_annulus)
+		bg_mean = np.mean(pixels_in_annulus)
+		bg_median = np.median(pixels_in_annulus)
 
 		if flux_type == 'peak':
 			peak_flux = catalog['peak_flux_'+name][i]
@@ -110,11 +112,15 @@ def reject_sources(catname, datname, min_snr=5, max_size=None, max_size_ID=None,
 			top_percent = np.nanpercentile(pixels_in_ellipse, 90)
 			peak_flux = np.mean(pixels_in_ellipse[pixels_in_ellipse > top_percent])
 		snr = peak_flux / bg_rms
+		catalog['ap_flux_err_'+name][i] = bg_rms
+		bg_arr.append(bg_mean)
+		bg_arr2.append(bg_median)
+		
 
 		if snr < min_snr: #if low snr, reject
 			reject[i] = True
 		if max_size_ID is not None:
-			if catalog['major_sigma'][i] >  catalog['major_sigma'][max_size_ID]: #if too big a source, reject
+			if catalog['major_sigma'][i] >  catalog['major_sigma'][max_size_ID] + 0.01/3600: #if too big a source, reject
 				reject[i] = True
 		if max_size is not None:
 			if catalog['major_sigma'][i] >  max_size: #if too big a source, reject
@@ -123,21 +129,20 @@ def reject_sources(catname, datname, min_snr=5, max_size=None, max_size_ID=None,
 		cutout_images.append(cutout.data)
 		masks.append(ellipse_mask + annulus_mask)
 
-	plot_grid(cutout_images, masks, reject, snr_vals)
+	catalog['bg_mean_'+name] = bg_arr
+	catalog['bg_median_'+name] = bg_arr2
+	plot_grid(cutout_images, masks, reject, snr_vals, catalog['_idx_'+name])
 	plt.show(block=False)
 	line_remove = input('enter id values for missed sources to exclude from the catalog, seperated by whitespace: ')
 	man_input_rem = np.array(line_remove.split(), dtype='int')
-	reject[man_input_rem] = True
+	id_ind_true = np.where(np.in1d(catalog['_idx_'+name],man_input_rem) == True)
+	reject[id_ind_true] = True
 
 	line_keep = input('enter id values for removed sources to include from the catalog, seperated by whitespace: ')
 	man_input_keep = np.array(line_keep.split(), dtype='int')
-	reject[man_input_keep] = False
+	id_ind_false = np.where(np.in1d(catalog['_idx_'+name],man_input_keep) == True)
+	reject[id_ind_false] = False
 
 	rej_ind = np.where(reject == True)
 	catalog.remove_rows(rej_ind)
 	return catalog
-
-
-
-
-

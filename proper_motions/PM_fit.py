@@ -9,23 +9,29 @@ from calc_dates import *
 def f(B, x): #m is list of parameters (slope and intercept)
 	return B[0]*x + B[1]
 
-def calc_pm(RAs, DECs, RA_err, DEC_err, times, times_err):
+def calc_pm(RAs, DECs, RA_err, DEC_err, times, times_err, src_name, names, slope_guess=1, int_guess=-100, published_pm = None):
 	linear = Model(f)
-	ind = np.where(np.isnan(RAs) == False)[0]
+	ind = np.where(np.abs(RAs) < 100000)[0] #in the table, masked RA/DEC values are 9999999, so filter those out
 	RAs = np.array(RAs)[ind]
 	DECs = np.array(DECs)[ind]
 	RA_err = np.array(RA_err)[ind]
 	DEC_err = np.array(DEC_err)[ind]
 	times = np.array(times)[ind]
 	times_err = np.array(times_err)[ind]
+	names = np.array(names)[ind]
 	mydata = RealData(RAs, DECs, sx=RA_err, sy=DEC_err)
 	myodr = ODR(mydata, linear, beta0=[1,-100])
 	myoutput=myodr.run()
-	myoutput.pprint()
 
 	slope = myoutput.beta[0]
 	inter = myoutput.beta[1]
 	
+	time_zero_ind = np.where(times == np.min(times))
+	time_f_ind = np.where(times == np.max(times))
+	pa = np.pi/2 - np.arctan(slope)
+	if RAs[time_f_ind] < RAs[time_zero_ind]:
+		pa = -np.pi + pa
+
 	dists = [] #distance of point from fitted line
 	line_xy = [] #point along fitted line
 
@@ -57,23 +63,39 @@ def calc_pm(RAs, DECs, RA_err, DEC_err, times, times_err):
 
 	
 
-	plt.figure()	
+	plt.figure(figsize=(8,6))	
 	plt.errorbar(RAs, DECs, xerr=RA_err, yerr=DEC_err, linestyle='', marker='o')
 	plt.xlabel(r'$\Delta$ RA (degree)')
 	plt.ylabel(r'$\Delta$ DEC (degree)')
 	x_vals = np.linspace(np.nanmin(RAs), np.nanmax(RAs),10)
 	plt.plot(x_vals, f(myoutput.beta, x_vals))
+	for i in range(len(RAs)):
+		plt.text(RAs[i], DECs[i], names[i])
+	if published_pm is not None:
+		mag = published_pm[0]
+		p_pa = (published_pm[1]*u.degree).to(u.rad)
+		plt.plot(x_vals, (1/np.tan(p_pa))*x_vals + (myoutput.beta[0]*x_vals[5] + myoutput.beta[1] - (1/np.tan(p_pa))*x_vals[5]), label='published PM, pa = {:.1f}'.format(published_pm[1]))
+	plt.legend()
+	plt.savefig('/users/jotter/summer_research_2018/proper_motions/PM_plots/'+src_name+'_ra-dec.png',dpi=300)
 
-	plt.figure()
+	plt.figure(figsize=(8,6))
 	plt.plot(x_vals2, f(vel_out.beta, x_vals2), label=r'$\mu = {:.1f} \pm {:f}$'.format(pm, pm_err))
 	plt.errorbar(times, pm_dist.value, xerr=times_err, yerr=dists.value, linestyle='', marker='o')	
 	plt.xlabel('time (years)')
-	plt.ylabel('source movement (degree)')
+	plt.ylabel('source movement (mas)')
 	plt.xlim(-0.5, np.nanmax(times)+1)
 	plt.ylim(-0.1*np.nanmax(pm_dist.value), 1.1*np.nanmax(pm_dist.value))
+	for i in range(len(times)):
+		plt.text(times[i], pm_dist.value[i], names[i])
+	if published_pm is not None:
+		plt.plot(x_vals2, mag*x_vals2, label='published PM, '+r'$\mu = {:.1f}$'.format(mag))
 	plt.legend()
+
+	plt.savefig('/users/jotter/summer_research_2018/proper_motions/PM_plots/'+src_name+'_time_dist.png',dpi=300)
 	
-	return vel_out.beta[0]
+	
+
+	return vel_out.beta[0], pa
 
 
 

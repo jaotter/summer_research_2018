@@ -1,5 +1,5 @@
 #input file for dendrogram_catalog.py
-#name, file name, min_value, min_delta, n_pix, pbcorr
+name, file_name, min_value, min_delta, n_pix, pbcorr
 B3,/lustre/aoc/students/jotter/directory/Orion_SourceI_B3_continuum_r-2.clean0.1mJy.image.tt0.fits,0.00006,0.00009,5,/lustre/aoc/students/jotter/directory/Orion_SourceI_B3_continuum_r-2.clean0.1mJy.image.tt0.pbcor.fits
 B6,/lustre/aoc/students/jotter/directory/Orion_SourceI_B6_continuum_r-2.clean0.1mJy.selfcal.phase4.deepmask.allbaselines.image.tt0.fits,0.0002,0.00035,10,/lustre/aoc/students/jotter/directory/Orion_SourceI_B6_continuum_r-2.clean0.1mJy.selfcal.phase4.deepmask.allbaselines.image.tt0.pbcor.fits
 B7,/lustre/aoc/students/jotter/masked/orion_B7_cont_masked_1900.fits,0.0007,0.0012,10,True

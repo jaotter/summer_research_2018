@@ -1,0 +1,51 @@
+#get cutouts of sources from multiple sources and plot them
+from astropy.coordinates import Angle, SkyCoord
+from astropy.nddata import Cutout2D
+from astropy.table import Table
+from astropy.io import fits
+import astropy.units as u
+from astropy.wcs import WCS
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gs
+import glob
+
+#for OrionB6/, name_start = 27, name_end = -21
+#OrionB7/, name_start=27, name_end=-21
+
+def create_cutouts(imgs = None, img_names=None, length = 0.2, srcID=None, ra=None, dec=None, directory = None, name_start=27, name_end=-21):
+    data = Table.read('/lustre/aoc/students/jotter/dendro_catalogs/IR_matched_catalog_B7.fits')
+    if directory is not None:
+        imgs = sorted(glob.glob(directory+'*'))
+        img_names = [img[len(directory)+name_start:name_end] for img in imgs]
+    if ra is None:
+        src_ind = np.where(data['D_ID'] == srcID)
+        ra = data['gauss_x_B7_hr'][src_ind]
+        dec = data['gauss_y_B7_hr'][src_ind]
+    position = SkyCoord(ra, dec, frame='icrs', unit=(u.deg,u.deg))
+    length = (length * u.arcsecond).to(u.degree)
+
+    cutout_imgs = []
+    for img in imgs:
+        imgdata, header = fits.getdata(img, header=True)
+        imgdata = imgdata.squeeze()
+        mywcs = WCS(header).celestial
+		
+        cutout = Cutout2D(imgdata, position, length, mywcs)
+        cutout_imgs.append(cutout.data)
+	
+    n_cutouts = len(cutout_imgs)
+    xplots = int(np.around(np.sqrt(n_cutouts)))
+    yplots = xplots+1
+    gs1 = gs.GridSpec(yplots, xplots, wspace=0.0, hspace=0.0, top=1.-0.5/(xplots+1), bottom=0.5/(xplots+1), left=0.5/(yplots+1), right=1-0.5/(yplots+1))
+    plt.figure(figsize=(3*xplots, 3*yplots))
+    for i in range(n_cutouts):
+        plt.subplot(gs1[i])
+        plt.imshow(cutout_imgs[i], origin='lower', vmin = 1e-5, vmax = 0.03)
+        plt.xticks([])
+        plt.yticks([])
+        plt.text(0.22,0.2,img_names[i],{'size':7,'color':'white'})
+    plt.show()
+
+	

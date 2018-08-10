@@ -1,0 +1,51 @@
+from astropy.io import fits
+import matplotlib.pyplot as plt
+from astropy.table import Table
+import numpy as np
+import radio_beam
+import astropy.units as u
+from functools import reduce
+
+#names=['B3', 'B6']
+#imgs = ['/lustre/aoc/students/jotter/directory/Orion_SourceI_B3_continuum_r-2.clean0.1mJy.image.tt0.pbcor.fits', '/lustre/aoc/students/jotter/directory/Orion_SourceI_B6_continuum_r-2.clean0.1mJy.selfcal.phase4.deepmask.allbaselines.image.tt0.pbcor.fits']
+def non_deconvolved_sources(names, imgs):
+    all_data = fits.getdata('/lustre/aoc/students/jotter/dendro_catalogs/IR_matched_catalog_B7.fits')
+    
+    beams = []
+    good_inds = [] #indices for each dataset with good gaussian fits
+    major_obs = []
+    minor_obs = []
+    pa = []
+
+    for i,data in enumerate(imgs):
+        fl = fits.open(data)
+        header = fl[0].header
+        beams.append(radio_beam.Beam.from_fits_header(header))
+
+        good_inds.append(np.where(all_data['fit_goodness_'+names[i]] == 'y'))
+        major_obs.append(all_data['FWHM_major_'+names[i]]*u.arcsecond)
+        minor_obs.append(all_data['FWHM_minor_'+names[i]]*u.arcsecond)
+        pa.append(all_data['position_angle_'+names[i]]*u.degree)
+
+    ind = reduce(np.intersect1d, good_inds)
+
+    maj_deconv = []
+    min_deconv = []
+    deconv_inds = []
+    for n in range(len(names)):
+        maj_deconv.append([])
+        min_deconv.append([])
+        deconv_inds.append([])
+        for j in ind:
+            obs_beam = radio_beam.Beam(major=major_obs[n][j], minor=minor_obs[n][j], pa=pa[n][j]-90*u.degree)
+            try:
+                src = obs_beam.deconvolve(beams[n])
+                maj_deconv[n].append(src.major.value)
+                min_deconv[n].append(src.minor.value)
+                deconv_inds[n].append(j)
+            except ValueError:
+                maj_deconv[n].append(np.nan)
+                min_deconv[n].append(np.nan)
+    int_deconv_inds = reduce(np.intersect1d, deconv_inds)
+    return int_deconv_inds
+
