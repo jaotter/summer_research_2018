@@ -4,10 +4,13 @@ from astropy.table import Table
 import numpy as np
 import radio_beam
 import astropy.units as u
+from astropy.nddata import Cutout2D
+from astropy.wcs import WCS
 from deconv_sources import deconv_srcs
+import regions
 from functools import reduce
 import fnmatch
-
+from astropy.coordinates import Angle, SkyCoord
 
 #names = ['B3', 'B6', 'B7_hr', 'B7_lr']
 #imgs = ['/lustre/aoc/students/jotter/directory/Orion_SourceI_B3_continuum_r-2.clean0.1mJy.image.tt0.pbcor.fits', '/lustre/aoc/students/jotter/directory/Orion_SourceI_B6_continuum_r-2.clean0.1mJy.selfcal.phase4.deepmask.allbaselines.image.tt0.pbcor.fits', '/lustre/aoc/students/jotter/directory/Orion_SourceI_B7_continuum_r-2.mask5mJy.clean4mJy.image.tt0.pbcor.fits', '/lustre/aoc/students/jotter/directory/member.uid___A001_X88e_X1dd.Orion_BNKL_source_I_sci.spw25_27_29_31.cont.I.pbcor.fits']
@@ -165,30 +168,120 @@ def plot_SEDs(names):
         plt.legend()
         plt.savefig('/users/jotter/summer_research_2018/flux_plots/plots/SEDs/SED_'+str(i)+'_'+names[-1]+'_sub_medbg.png', dpi=300)
 
+def multi_img_SED(srcID, B3_img, B6_img, B7_img, name):
+    #srcID = 16
+    #B3_img = 'r-2.clean0.1mJy.500klplus.deepmask'
+    #B6_img = 'r-2.clean0.1mJy.500klplus.deepmask'
+    #B7_img = 'r-2.clean0.1mJy.500klplus.deepmask'
+    #name = 'r-2.0.1.500klplusdeepmask_r-2.0.1.500klplusdeepmask_r-20.1.500klplusdeepmask'
+    imgs = [B3_img, B6_img, B7_img]
+
+    freqs = {'B3':98, 'B6':223.5, 'B7':339.7672758867}
+    B3data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/B3_diff_imgs_catalog.txt')
+    B6data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/B6_diff_imgs_catalog.txt')
+    B7data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/B7_hr_diff_imgs_catalog.txt')
+    catalogs = [B3data, B6data, B7data]
+
+    B3ind = np.where(B3data['D_ID'] == srcID)
+    B6ind = np.where(B6data['D_ID'] == srcID)
+    B7ind = np.where(B7data['D_ID'] == srcID)
+    inds = [B3ind, B6ind, B7ind]
+
+    alpha = [1.5,2,2.5]
+    names = ['B3', 'B6', 'B7']
+
+    freq_x = []
+    fluxes = []
+    flux_err = []
+    bgs = []
+    
+    for i in range(len(names)):
+        freq_x.append(freqs[names[i]])
+        fluxes.append(catalogs[i]['ap_flux_'+imgs[i]][inds[i]])
+        flux_err.append(catalogs[i]['ap_flux_err_'+imgs[i]][inds[i]])
+        bgs.append(catalogs[i]['bg_pix_'+imgs[i]][inds[i]])
+
+    F2 = fluxes[1] - bgs[1]
+    nu2 = freq_x[1]
+        
+    plt.figure()
+    freq_x = np.array(freq_x)
+    fluxes = np.array(fluxes) 
+    bgs = np.array(bgs)
+
+    plt.errorbar(freq_x, fluxes-bgs, yerr=flux_err, linestyle='', marker='o')
+    for j in range(len(alpha)):
+        F1 = F2*((freq_x/nu2)**alpha[j])
+        plt.plot(freq_x, F1, linestyle='-', label=r'$\alpha = $'+str(alpha[j]))
+		
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.ylabel('aperture flux (Jy)')
+    plt.xlabel('frequency (GHz)')
+    plt.legend(loc='upper center')
+    plt.title(str(srcID)+'SED')
+
+    locs_x = [0.15, 0.5, 0.7]
+    locs_y = [0.62, 0.15, 0.15]
+	
+    for i in range(len(imgs)):
+        nm = names[i]
+        img_file = '/lustre/aoc/students/jotter/directory/Orion'+nm+'/Orion_SourceI_'+nm+'_continuum_'+imgs[i]+'.image.tt0.pbcor.fits'
+        img_fl = fits.open(img_file)
+        img_data = img_fl[0].data.squeeze()
+        img_header = img_fl[0].header
+        mywcs = WCS(img_header).celestial
+        pixel_scale = np.abs(mywcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg 
+        if nm == 'B7':
+            nm = 'B7_hr'
+        center_coord = SkyCoord(catalogs[i]['gauss_x_'+nm][inds[i]], catalogs[i]['gauss_y_'+nm][inds[i]], frame='icrs', unit=(u.deg, u.deg))
+        center_coord_pix = center_coord.to_pixel(mywcs)
+        if i == 0:
+            pix_major_fwhm = ((catalogs[i]['FWHM_major_'+nm][inds[i]]*u.arcsec).to(u.degree)/pixel_scale).decompose()
+            size = 2.3*pix_major_fwhm.value
+        cutout = Cutout2D(img_data, center_coord_pix, size[0], mywcs, mode='partial')
+        a = plt.axes([locs_x[i], locs_y[i], .2, .2])
+        plt.imshow(cutout.data, origin='lower')
+        plt.title(names[i])
+        a.tick_params(labelleft=False, labelbottom=False)
+
+    plt.savefig('/users/jotter/summer_research_2018/flux_plots/plots/SEDs/500klplus/SED_'+str(srcID)+'_'+name+'_SED.png', dpi=300)
+    
 
 def image_fluxes(srcID):
     ref_names = ['B3', 'B6', 'B7_hr']
-    
-    for ref_name in ref_names:
-        if ref_name == 'B7_hr':
-            data = Table.read('/lustre/aoc/students/jotter/dendro_catalogs/'+ref_name+'_diff_imgs_catalog.fits')
-        else:
-            data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/'+ref_name+'_diff_imgs_catalog.txt')
+    #ref_names = ['B7_hr']
+    flagged_B3 = ['r2', 'r2_dirty','r0.5_dirty', 'r2.clean2mJy.200mplus', 'r2.clean2mJy.150mplus', 'r2.clean2mJy.50mplus', 'r2.clean1mJy.200mplus.deepmask', 'r2.clean1mJy.150mplus.deepmask', 'r2.clean1mJy.50mplus.deepmask', 'r2.clean2mJy.allbaselines', 'r2.clean1mJy.allbaselines.deepmask']
+    flagged_B6 = ['r2.clean0.5mJy.selfcal.phase4.allbaselines.highressta', 'r2.clean1mJy.deepmask.allbaselines', 'r2.clean2mJy.allbaselines', 'r2.clean2mJy.selfcal.phase4.allbaselines', 'r2.clean1mJy.selfcal.phase4.deepmask.allbaselines', 'r2_dirty', 'r2.clean.1mJy.selfcal.phase4.deepmask.50mplus', 'r2.clean1mJy.1500kplus.deepmask', 'r-2.clean15.0mJy.pmcheck_100to3200m.2016.deepmask', 'r-2.clean35.0mJy.pmcheck_100to3200m.2016', 'r2', 'r0.5_dirty', 'r2.clean2mJy.selfcal.phase4.200mplus', 'r0.5', 'r2.clean2mJy.200mplus', 'r0.5.clean10mJy.pmcheck_100-3200m.2016.deepmask', 'r2.clean1mJy.selfcal.phase4.deepmask.200mplus', 'r2.clean1mJy.200mplus.deepmask', 'r2.clean2mJy.selfcal.phase4.50mplus', 'r0.5.clean1mJy.selfcal.phase4.200mplus', 'r0.5.clean1mJy.selfcal.phase4.150mplus', 'r2.clean2mJy.selfcal.phase4.50mplus', 'r0.5.clean0.5mJy.selfcal.phase4.deepmask.200mplus', 'r0.5.clean1mJy.200mplus', 'r0.5.clean0.5mJy.selfcal.phase4.deepmask.150mplus', 'r0.5.clean0.5mJy.150mplus.deepmask', 'r2.clean2mJy.selfcal.phase4.150mplus', 'r2.clean1mJy.selfcal.phase4.deepmask.150mplus', 'r2.clean2mJy.50mplus', 'r2.clean1mJy.50mplus.deepmask', 'r-2.clean0.4mJy.selfcal.ampphase6', 'r0.5.clean5.0mJy.pmcheck_100to3200m.2017.deepmask', 'r0.5.clean7.5mJy.pmcheck_100to3200m.2017', 'r0.5.clean25.0mJy.pmcheck_100to3200m.2016', 'r0.5.clean10.0mJy.pmcheck_100to3200m.2016.deepmask', 'r2.clean1mJy.selfcal.phase4.deepmask.50mplus']
+    flagged_B7 = ['r2', 'r0.5', 'r2_dirty', 'r0.5_dirty', 'r0.5.clean0.5mJy.50mplus.deepmask']
+    flagged_imgs = [flagged_B3, flagged_B6, flagged_B7]
+
+
+    for ind,ref_name in enumerate(ref_names):
+        data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/'+ref_name+'_diff_imgs_catalog.txt')
         srcind = np.where(data['D_ID'] == srcID)
         flux_names = fnmatch.filter(data.colnames, 'ap_flux_r*')
-        bg_names = fnmatch.filter(data.colnames, 'bg_median_r*')
+        bg_names = fnmatch.filter(data.colnames, 'bg_pix_r*')
+        size_names = fnmatch.filter(data.colnames, 'FWHM_major_r*')
+
         sub_fluxes = []
         for n in range(len(flux_names)):
-            sub_fluxes.append((data[flux_names[n]][srcind] - data[bg_names[n]][srcind], flux_names[n][8:]))
+            if flux_names[n][8:] not in flagged_imgs[ind]:
+                sub_fluxes.append([data[flux_names[n]][srcind] - data[bg_names[n]][srcind], flux_names[n][8:], data[bg_names[n]][srcind]])
         sub_fluxes.sort()
         
         x = np.arange(len(sub_fluxes))
-
+        fluxes = np.array([sf[0] for sf in sub_fluxes])
+        bgs = np.array([sf[2] for sf in sub_fluxes])
         plt.figure(figsize=(10,10))
-        plt.semilogy(x, [sf[0] for sf in sub_fluxes], marker='o')
+        plt.semilogy(x, fluxes, marker='o', label='bg subtracted')
+        plt.semilogy(x, fluxes + bgs, marker='o', label='fluxes')
         plt.xticks(x, [sf[1] for sf in sub_fluxes], rotation='vertical')
         plt.subplots_adjust(bottom=0.5) 
         plt.grid()
+        plt.legend()
+        plt.title(ref_name+' source '+str(srcID)+' fluxes')  
     plt.show()
+    
 
 
