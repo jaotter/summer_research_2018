@@ -168,18 +168,21 @@ def plot_SEDs(names):
         plt.legend()
         plt.savefig('/users/jotter/summer_research_2018/flux_plots/plots/SEDs/SED_'+str(i)+'_'+names[-1]+'_sub_medbg.png', dpi=300)
 
-def multi_img_SED(srcID, B3_img, B6_img, B7_img, name):
-    #srcID = 16
+def multi_img_SED(srcID, B3_img, B6_img, B7_img, name, flux_type = 'amp'):
+
+    #srcID = 8
     #B3_img = 'r-2.clean0.1mJy.500klplus.deepmask'
     #B6_img = 'r-2.clean0.1mJy.500klplus.deepmask'
     #B7_img = 'r-2.clean0.1mJy.500klplus.deepmask'
-    #name = 'r-2.0.1.500klplusdeepmask_r-2.0.1.500klplusdeepmask_r-20.1.500klplusdeepmask'
+    #name = 'r-2.0.1.500klplusdeepmask'
+    #flux_type='ap'
+
     imgs = [B3_img, B6_img, B7_img]
 
-    freqs = {'B3':98, 'B6':223.5, 'B7':339.7672758867}
-    B3data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/B3_diff_imgs_catalog.txt')
-    B6data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/B6_diff_imgs_catalog.txt')
-    B7data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/B7_hr_diff_imgs_catalog.txt')
+    freqs = {'B3':98, 'B6':223.5, 'B7':339.7672758867, 'Fb':6.099018346128}
+    B3data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/B3_500klplus_img_catalog_B6_ref.txt')
+    B6data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/B6_500klplus_img_catalog_B6_ref.txt')
+    B7data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/B7_500klplus_img_catalog_B6_ref.txt')
     catalogs = [B3data, B6data, B7data]
 
     B3ind = np.where(B3data['D_ID'] == srcID)
@@ -187,7 +190,7 @@ def multi_img_SED(srcID, B3_img, B6_img, B7_img, name):
     B7ind = np.where(B7data['D_ID'] == srcID)
     inds = [B3ind, B6ind, B7ind]
 
-    alpha = [1.5,2,2.5]
+    alpha = [1,1.5,2,2.5,3]
     names = ['B3', 'B6', 'B7']
 
     freq_x = []
@@ -197,32 +200,63 @@ def multi_img_SED(srcID, B3_img, B6_img, B7_img, name):
     
     for i in range(len(names)):
         freq_x.append(freqs[names[i]])
-        fluxes.append(catalogs[i]['ap_flux_'+imgs[i]][inds[i]])
-        flux_err.append(catalogs[i]['ap_flux_err_'+imgs[i]][inds[i]])
-        bgs.append(catalogs[i]['bg_pix_'+imgs[i]][inds[i]])
+        if flux_type == 'ap':
+            fluxes.append(catalogs[i]['ap_flux_'+imgs[i]][inds[i]][0]*1000)
+            flux_err.append(catalogs[i]['ap_flux_err_'+imgs[i]][inds[i]]*1000)
+            bgs.append(catalogs[i]['bg_ap_'+imgs[i]][inds[i]].data.data[0]*1000)
+        elif flux_type == 'amp':
+            fluxes.append(catalogs[i]['g_amplitude_'+imgs[i]][inds[i]][0]*1000)
+            flux_err.append(catalogs[i]['amp_err_'+imgs[i]][inds[i]]*1000)
+            bgs.append(catalogs[i]['bg_median_'+imgs[i]][inds[i]].data.data[0]*1000)
+        elif flux_type == 'circ':
+             fluxes.append(catalogs[i]['circ_flux_'+imgs[i]][inds[i]][0]*1000)
+             flux_err.append(catalogs[i]['circ_flux_err_'+imgs[i]][inds[i]]*1000)
+             bgs.append(catalogs[i]['bg_circ_'+imgs[i]][inds[i]].data.data[0]*1000)
+
+    plt.figure()
+
+    Fb_noise_lim = 0.01 #mJy
+    if flux_type == 'ap':
+        Fb_flux = catalogs[0]['Speak_Fb'][inds[0][0]]
+        if np.isnan(Fb_flux) == True:
+            upper_lim = Fb_noise_lim
+            plt.errorbar(freqs['Fb'], upper_lim, marker='v', uplims=True)
+        else:
+            fluxes.append(Fb_flux)
+            flux_err.append(catalogs[0]['e_Speak_Fb'][inds[0][0]])
+            bgs.append(0)
+            freq_x.append(freqs['Fb'])
+            Fb_alpha = catalogs[0]['alpha'][inds[0][0]]
+            b = np.log10(Fb_flux/(freqs['Fb']**Fb_alpha))
+            nuvals = np.array([5,8])
+            Fvals = 10**b * nuvals**Fb_alpha
+            plt.plot(nuvals, Fvals)
+            
 
     F2 = fluxes[1] - bgs[1]
     nu2 = freq_x[1]
         
-    plt.figure()
+    
     freq_x = np.array(freq_x)
     fluxes = np.array(fluxes) 
     bgs = np.array(bgs)
 
     plt.errorbar(freq_x, fluxes-bgs, yerr=flux_err, linestyle='', marker='o')
+
+    freq_x = np.array([freqs[fr] for fr in freqs])
     for j in range(len(alpha)):
         F1 = F2*((freq_x/nu2)**alpha[j])
         plt.plot(freq_x, F1, linestyle='-', label=r'$\alpha = $'+str(alpha[j]))
 		
     plt.xscale('log')
     plt.yscale('log')
-    plt.ylabel('aperture flux (Jy)')
+    plt.ylabel('aperture flux (mJy)')
     plt.xlabel('frequency (GHz)')
-    plt.legend(loc='upper center')
+    plt.legend(loc='best')
     plt.title(str(srcID)+'SED')
 
-    locs_x = [0.15, 0.5, 0.7]
-    locs_y = [0.62, 0.15, 0.15]
+    locs_x = [0.3, 0.5, 0.7]
+    locs_y = [0.15, 0.15, 0.15]
 	
     for i in range(len(imgs)):
         nm = names[i]
@@ -244,13 +278,14 @@ def multi_img_SED(srcID, B3_img, B6_img, B7_img, name):
         plt.imshow(cutout.data, origin='lower')
         plt.title(names[i])
         a.tick_params(labelleft=False, labelbottom=False)
-
-    plt.savefig('/users/jotter/summer_research_2018/flux_plots/plots/SEDs/500klplus/SED_'+str(srcID)+'_'+name+'_SED.png', dpi=300)
+    if flux_type == 'circ':
+        plt.savefig('/users/jotter/summer_research_2018/flux_plots/plots/SEDs/500klplus/SED_circ_'+str(srcID)+'_'+name+'_SED.png', dpi=300)
+    else:
+        plt.savefig('/users/jotter/summer_research_2018/flux_plots/plots/SEDs/500klplus/SED_'+str(srcID)+'_'+name+'_SED.png', dpi=300)
     
 
-def image_fluxes(srcID):
-    ref_names = ['B3', 'B6', 'B7_hr']
-    #ref_names = ['B7_hr']
+def image_fluxes(srcID, flux_type='ap'):
+    ref_names = ['B3', 'B6', 'B7']
     flagged_B3 = ['r2', 'r2_dirty','r0.5_dirty', 'r2.clean2mJy.200mplus', 'r2.clean2mJy.150mplus', 'r2.clean2mJy.50mplus', 'r2.clean1mJy.200mplus.deepmask', 'r2.clean1mJy.150mplus.deepmask', 'r2.clean1mJy.50mplus.deepmask', 'r2.clean2mJy.allbaselines', 'r2.clean1mJy.allbaselines.deepmask']
     flagged_B6 = ['r2.clean0.5mJy.selfcal.phase4.allbaselines.highressta', 'r2.clean1mJy.deepmask.allbaselines', 'r2.clean2mJy.allbaselines', 'r2.clean2mJy.selfcal.phase4.allbaselines', 'r2.clean1mJy.selfcal.phase4.deepmask.allbaselines', 'r2_dirty', 'r2.clean.1mJy.selfcal.phase4.deepmask.50mplus', 'r2.clean1mJy.1500kplus.deepmask', 'r-2.clean15.0mJy.pmcheck_100to3200m.2016.deepmask', 'r-2.clean35.0mJy.pmcheck_100to3200m.2016', 'r2', 'r0.5_dirty', 'r2.clean2mJy.selfcal.phase4.200mplus', 'r0.5', 'r2.clean2mJy.200mplus', 'r0.5.clean10mJy.pmcheck_100-3200m.2016.deepmask', 'r2.clean1mJy.selfcal.phase4.deepmask.200mplus', 'r2.clean1mJy.200mplus.deepmask', 'r2.clean2mJy.selfcal.phase4.50mplus', 'r0.5.clean1mJy.selfcal.phase4.200mplus', 'r0.5.clean1mJy.selfcal.phase4.150mplus', 'r2.clean2mJy.selfcal.phase4.50mplus', 'r0.5.clean0.5mJy.selfcal.phase4.deepmask.200mplus', 'r0.5.clean1mJy.200mplus', 'r0.5.clean0.5mJy.selfcal.phase4.deepmask.150mplus', 'r0.5.clean0.5mJy.150mplus.deepmask', 'r2.clean2mJy.selfcal.phase4.150mplus', 'r2.clean1mJy.selfcal.phase4.deepmask.150mplus', 'r2.clean2mJy.50mplus', 'r2.clean1mJy.50mplus.deepmask', 'r-2.clean0.4mJy.selfcal.ampphase6', 'r0.5.clean5.0mJy.pmcheck_100to3200m.2017.deepmask', 'r0.5.clean7.5mJy.pmcheck_100to3200m.2017', 'r0.5.clean25.0mJy.pmcheck_100to3200m.2016', 'r0.5.clean10.0mJy.pmcheck_100to3200m.2016.deepmask', 'r2.clean1mJy.selfcal.phase4.deepmask.50mplus']
     flagged_B7 = ['r2', 'r0.5', 'r2_dirty', 'r0.5_dirty', 'r0.5.clean0.5mJy.50mplus.deepmask']
@@ -258,16 +293,22 @@ def image_fluxes(srcID):
 
 
     for ind,ref_name in enumerate(ref_names):
-        data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/'+ref_name+'_diff_imgs_catalog.txt')
+        data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/'+ref_name+'_diff_imgs_catalog_B6_ref.txt')
         srcind = np.where(data['D_ID'] == srcID)
         flux_names = fnmatch.filter(data.colnames, 'ap_flux_r*')
-        bg_names = fnmatch.filter(data.colnames, 'bg_pix_r*')
-        size_names = fnmatch.filter(data.colnames, 'FWHM_major_r*')
+        charnum = 8
+        bg_names = fnmatch.filter(data.colnames, 'bg_ap_r*')
+
+        if flux_type == 'circ':
+            flux_names = fnmatch.filter(data.colnames, 'circ_flux_r*')
+            charnum = 10
+            bg_names = fnmatch.filter(data.colnames, 'bg_circ_r*')
+
 
         sub_fluxes = []
         for n in range(len(flux_names)):
             if flux_names[n][8:] not in flagged_imgs[ind]:
-                sub_fluxes.append([data[flux_names[n]][srcind] - data[bg_names[n]][srcind], flux_names[n][8:], data[bg_names[n]][srcind]])
+                sub_fluxes.append([data[flux_names[n]][srcind] - data[bg_names[n]][srcind], flux_names[n][charnum:], data[bg_names[n]][srcind]])
         sub_fluxes.sort()
         
         x = np.arange(len(sub_fluxes))
@@ -275,7 +316,7 @@ def image_fluxes(srcID):
         bgs = np.array([sf[2] for sf in sub_fluxes])
         plt.figure(figsize=(10,10))
         plt.semilogy(x, fluxes, marker='o', label='bg subtracted')
-        plt.semilogy(x, fluxes + bgs, marker='o', label='fluxes')
+        plt.semilogy(x, fluxes + bgs, marker='o', label=flux_type+' fluxes')
         plt.xticks(x, [sf[1] for sf in sub_fluxes], rotation='vertical')
         plt.subplots_adjust(bottom=0.5) 
         plt.grid()
