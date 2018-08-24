@@ -10,6 +10,21 @@ def f(B, x): #m is list of parameters (slope and intercept)
 	return B[0]*x + B[1]
 
 def calc_pm(RAs, DECs, RA_err, DEC_err, times, times_err, src_name, names, slope_guess=1, int_guess=-100, published_pm = None):
+	if len(RAs) == 2: #Currently having some problems with scipy.odr with only two elements
+		time = np.abs(times[1] - times[0])
+		ra_pm = (RAs[0] - RAs[1])/time
+		ra_pm = ra_pm*np.cos(0.5*DECs[0]+0.5*DECs[1])
+		dec_pm = (DECs[0] - DECs[1])/time
+
+		tot_pm = np.sqrt(ra_pm**2 + dec_pm**2)*u.deg.to(u.mas)
+
+		pa = (np.pi/2) - np.arctan(dec_pm/ra_pm)
+		if ra_pm < 0:
+			pa = -np.pi + pa
+		return tot_pm, pa
+
+
+	src_name = str(src_name)
 	linear = Model(f)
 	ind = np.where(np.abs(RAs) < 100000)[0] #in the table, masked RA/DEC values are 9999999, so filter those out
 	RAs = np.array(RAs)[ind]
@@ -52,12 +67,12 @@ def calc_pm(RAs, DECs, RA_err, DEC_err, times, times_err, src_name, names, slope
 		d = np.sqrt((line_xy[min_ind][0] - pt[0])**2 + (line_xy[min_ind][1] - pt[1])**2) #distance along vector i.e. proper motion distance
 		t = times[ind] - times[min_ind]
 		pm_dist.append(d)
-	pm_dist = (pm_dist*u.degree).to(u.mas)
+
 	vel_data = RealData(times, pm_dist.value, sx=times_err, sy=dists.value)	
 	vel_odr = ODR(vel_data, linear, beta0=[1,1])
 	vel_out = vel_odr.run()
 	
-	pm = vel_out.beta[0]
+	pm = vel_out.beta[0]*u.deg.to(u.mas)
 	pm_err = vel_out.sd_beta[0]
 	x_vals2 = np.linspace(np.min(times), np.max(times), 10)
 
@@ -92,8 +107,6 @@ def calc_pm(RAs, DECs, RA_err, DEC_err, times, times_err, src_name, names, slope
 	plt.legend()
 
 	plt.savefig('/users/jotter/summer_research_2018/proper_motions/PM_plots/'+src_name+'_time_dist.png',dpi=300)
-	
-	
 
 	return vel_out.beta[0], pa
 

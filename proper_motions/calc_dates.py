@@ -60,7 +60,7 @@ def get_errs(ind, ind_ref, data, obs_data, names, radio_only=True):
 		times_errs.append(float(obs_data['t_err'][obs_ind].data[0]))
 		ra_errs.append(np.sqrt(2)*float(obs_data['ra_err'][obs_ind].data[0])) #add factor of sqrt(2) bc adding in quadrature two sources with same error
 		dec_errs.append(np.sqrt(2)*float(obs_data['dec_err'][obs_ind].data[0]))
-	if radio_only==True: #other data sets don't have the same naming convention for x/y errors
+	if radio_only==True: #other data sets don't have the same naming convention for x/y errors or individual positional errors
 		err_ind = np.where(np.isnan(ra_errs) == True)[0]
 		for n_ind in err_ind:
 			n = names[n_ind]

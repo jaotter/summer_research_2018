@@ -10,10 +10,15 @@ from calc_dates import *
 from PM_fit import *
 from os import sys
 
+#NOTE: this currently does not work 
+
+
+#sample parameters:
 #data = '/lustre/aoc/students/jotter/dendro_catalogs/simbad_catalog.fits'
 #obs_data = '/lustre/aoc/students/jotter/dendro_catalogs/obs_dates_errs.txt'
-#names = np.array(['B3', 'B6', 'HC', 'Fb']) #'B3', 'B6', 'A340', 'A470', 'Fb'
+#names = np.array(['B3', 'HC', 'Fb']) #'B3', 'B6', 'A340', 'A470', 'Fb'
 #rem_list = [5,10,20]
+
 
 def calc_pms(data, obs_data, names, rem_list):
 	#parameters:
@@ -21,8 +26,6 @@ def calc_pms(data, obs_data, names, rem_list):
 	#obs_data - master catalog of time of each observation, error in time, and error in ra/dec
 	#names - names of catalogs to use
 	#rem_list - sources with known high PM to exclude from the reference position (orion: 5 - n, 10 - I, 20 - BN)
-
-
 
 	data = Table.read(data)
 	obs = Table(ascii.read(obs_data))
@@ -74,22 +77,23 @@ def calc_pms(data, obs_data, names, rem_list):
 	full_names = names #full_names will include the concatenated names for same-time observations
 	full_times = times
 	full_times_err = times_errs
-	for se in same_epoch[0]: #now go through same time measurements and average positions
-		nm = ''
-		ras = []
-		decs = []
-		ra_errs = []
-		dec_errs = []
-		for i in se:
-			nm = nm+str(names[i])
-			ras.append(coord_table['RA_'+names[i]])
-			decs.append(coord_table['DEC_'+names[i]])
-			ra_errs.append(coord_table['RA_err_'+names[i]])
-			dec_errs.append(coord_table['DEC_err_'+names[i]])
-			names_ind = np.where(full_names == names[i])[0]
-			full_names = np.delete(full_names, names_ind) #remove specific element not index
-			full_times = np.delete(full_times, names_ind)
-			full_times_err = np.delete(full_times_err, names_ind)
+	if same_epoch:
+		for se in same_epoch[0]: #now go through same time measurements and average positions
+			nm = ''
+			ras = []
+			decs = []
+			ra_errs = []
+			dec_errs = []
+			for i in se:
+				nm = nm+str(names[i])
+				ras.append(coord_table['RA_'+names[i]])
+				decs.append(coord_table['DEC_'+names[i]])
+				ra_errs.append(coord_table['RA_err_'+names[i]])
+				dec_errs.append(coord_table['DEC_err_'+names[i]])
+				names_ind = np.where(full_names == names[i])[0]
+				full_names = np.delete(full_names, names_ind) #remove specific element not index
+				full_times = np.delete(full_times, names_ind)
+				full_times_err = np.delete(full_times_err, names_ind)
 		coord_table['RA_'+nm] = [np.mean(np.array(ras)[:,row]) for row in range(len(ras[0]))] #average of positions
 		coord_table['DEC_'+nm] = [np.mean(np.array(decs)[:,row]) for row in range(len(decs[0]))]
 		coord_table['RA_err_'+nm] = [np.sqrt(np.sum(np.array(ra_errs)[:,row]**2)) for row in range(len(ra_errs[0]))] #add in quadrature
