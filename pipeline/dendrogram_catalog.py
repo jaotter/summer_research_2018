@@ -1,4 +1,3 @@
-#This file takes a dataset and dendrogram parameters and outputs a catalog of sources with gaussian fitted centroids
 from region_file import compute_regions
 from gaussfit_catalog import gaussfit_catalog
 import regions
@@ -17,6 +16,15 @@ import glob
 import os
 import fnmatch
 from functools import reduce
+
+#This file takes a dataset and dendrogram parameters and outputs a catalog of sources with gaussian fitted centroids
+#Dependencies: 'region_file.py' in the same directory. There are also paths to where region files and gaussian fit diagnostic plots should be saved, which may need to be changed.
+
+#create_catalog is the main function, and it requires a file of parameters as input. For an example, see 'param_file.csv'. 
+
+#The other two main functions, measure_ap_fluxes and measure_fluxes_gaussfit are meant for entire directories of image files
+#measure_ap_fluxes adds the aperture fluxes of all files in a directory to a single catalog
+#measure_fluxes_gaussfit does the same as above but also fits gaussians, which takes much longer
 
 def rms(array):
 	sq_arr = np.square(array)
@@ -268,9 +276,9 @@ def measure_ap_fluxes(data, directory, data_name, name_start = 27, name_end = -2
 
 
 
-def multi_cat_measure_fluxes(data, directory, data_name, name_start = 27, name_end = -21, ref_name = 'B6'): 
+def measure_fluxes_gaussfit(data, directory, data_name, name_start = 27, name_end = -21, ref_name = 'B6'): 
 
-    #This function takes a directory full of images and adds them all to a catalog with flux measurements. 'data' is the catalog to get positions from, 'ref_name' is the name of the reference data (for positions), 'directory' is the directory with all the new images.
+    #This function takes a directory full of images and adds them all to a catalog with flux measurements and fits gaussians. 'data' is the catalog to get positions from, 'ref_name' is the name of the reference data (for positions), 'directory' is the directory with all the new images.
 
     cat = Table.read(data)
     RA_names = ['gauss_x_B3', 'gauss_x_B6', 'gauss_x_B7_hr']
@@ -297,7 +305,7 @@ def multi_cat_measure_fluxes(data, directory, data_name, name_start = 27, name_e
             try:
                 img_data = fl[0].data.squeeze()
             except TypeError:
-                print("ERROR! img: "+img)
+                print("error! img: "+img)
                 continue
             mywcs = WCS(header).celestial
 
@@ -350,6 +358,7 @@ def multi_cat_measure_fluxes(data, directory, data_name, name_start = 27, name_e
                 center_coord_pix = center_coord.to_pixel(mywcs)
                 center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
                 position_angle = cat['position_angle_'+ref_name][row]*u.deg
+                print(center_coord_pix_reg, pix_major_fwhm, pix_minor_fwhm)
                 ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2., pix_minor_fwhm*2., angle=position_angle)
                 size = pix_major_fwhm*2.1
                 ap_mask = ellipse_reg.to_mask()
@@ -410,201 +419,217 @@ def multi_cat_measure_fluxes(data, directory, data_name, name_start = 27, name_e
             for j in range(len(cols)):
                 cat[cols[j]+name] = arrs[j]
         
-    cat.write('/lustre/aoc/students/jotter/dendro_catalogs/'+data_name+'_500klplus_img_catalog_'+ref_name+'_ref.txt', format='ascii', overwrite=True)
-###########################################'
-    '''   cat = Table.read(data)
-    RA_names = ['gauss_x_B3', 'gauss_x_B6', 'gauss_x_B7_hr']
-    inds = []
-    for fn in RA_names:
-        ind = np.where(np.isnan(cat[fn]) == False)
-        inds.append(ind)
-    detected = reduce(np.intersect1d, inds) #sources detected in B3, B6, B7 - only make measurements on these sources
-    cat = cat[detected]
-    imgs = glob.glob(directory+'*')
-    img_names = [img[len(directory)+name_start:name_end] for img in imgs]
+    cat.write('/lustre/aoc/students/jotter/dendro_catalogs/'+data_name+'_500klplus_allsrcs_catalog_'+ref_name+'_ref.txt', format='ascii', overwrite=True)
 
-    col_names = fnmatch.filter(cat.colnames, 'ap_flux_r*')
-    col_names = [cn[8:] for cn in col_names]
 
-    for j,img in enumerate(imgs):
+def gauss_sizes_imgs(srcID, band, images, directory, name_start = 27, name_end = -21): 
+
+    #This function takes a list of image names and adds them all to a catalog with gaussian sizes. 'data' is the catalog to get positions from, 'srcID' is the D_ID of the desired source, 'band' is the band of data, 'images' is the list of image names, 'directory' is the directory where these images are.
+
+    data = '/lustre/aoc/students/jotter/dendro_catalogs/master_500klplus_B3_ref.fits'
+    cat = Table.read(data)
+    ind = np.where(cat['D_ID'] == srcID)[0][0]
+    
+    img_names = [img[name_start:name_end] for img in images]
+    print(img_names)
+    
+    table_names = [] #because maybe not all images in img_namse get used
+    img_fwhm_maj = [] #at the end combine these lists into a table
+    img_fwhm_maj_err = []
+    img_fwhm_min = []
+    img_fwhm_min_err = []
+    img_pa = []
+    img_pa_err = []
+    
+    for j,img in enumerate(images): #loop through images and measure fwhms
         name = img_names[j]
         if len(name) > 54:
             name = name[0:53]
-        if name not in col_names:
-            fl = fits.open(img)
-            header = fl[0].header
+
+        fl = fits.open(directory+img)
+        header = fl[0].header
+        try:
             img_data = fl[0].data.squeeze()
+        except TypeError:
+            print("error! img: "+img)
+            continue
+        mywcs = WCS(header).celestial
 
-            mywcs = WCS(header).celestial
+        beam = radio_beam.Beam.from_fits_header(header)
+        pixel_scale = np.abs(mywcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg 
+        ppbeam = (beam.sr/(pixel_scale**2)).decompose().value
 
-            rad = Angle(1, 'arcsecond') #radius for region list
-            rad_deg = rad.to(u.degree)
-            #generate region list
-            regs = []
-            
-            save_dir = '/lustre/aoc/students/jotter/gauss_diags/diff_imgs/'+ref_name+'/'+name+'/'
-            if not os.path.exists(save_dir):
-                os.makedirs(save_dir)
+        save_dir = '/lustre/aoc/students/jotter/gauss_diags/diff_imgs/src_'+str(srcID)+'/'+band+'/'+name
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
 
-            for ind in range(len(cat)):
-                reg = regions.CircleSkyRegion(center=SkyCoord(cat['gauss_x_'+ref_name][ind]*u.degree, cat['gauss_y_'+ref_name][ind]*u.degree), radius=rad, meta={'text':str(cat['D_ID'][ind])})
-                reg_pix = reg.to_pixel(mywcs)
-                if reg_pix.center.x > 0 and reg_pix.center.x < len(img_data[0]):
-                    if reg_pix.center.y > 0 and reg_pix.center.y < len(img_data):
-                        regs.append(reg)
+        rad = Angle(1, 'arcsecond') #radius for region list
+        regs = []
 
-            cat_r = Angle(0.5, 'arcsecond') #radius in gaussian fitting
-            gauss_cat = gaussfit_catalog(img, regs, cat_r, savepath=save_dir) #output is nested dictionary structure
+        reg = regions.CircleSkyRegion(center=SkyCoord(cat['RA_B3'][ind]*u.degree, cat['DEC_B3'][ind]*u.degree), radius=rad, meta={'text':str(cat['D_ID'][ind])})
+        reg_pix = reg.to_pixel(mywcs)
+        if reg_pix.center.x > 0 and reg_pix.center.x < len(img_data[0]):
+            if reg_pix.center.y > 0 and reg_pix.center.y < len(img_data):
+                regs.append(reg)
 
-            gauss_fit_tab = Table(names=('D_ID','FWHM_major_'+name, 'major_err_'+name, 'FWHM_minor_'+name, 'minor_err_'+name, 'pa_'+name, 'pa_err_'+name, 'g_amplitude_'+name, 'amp_err_'+name, 'ap_flux_'+name, 'ap_flux_err_'+name, 'bg_median_'+name, 'bg_pix_'+name), dtype=('i4','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8', 'f8')) 
-            for key in gauss_cat:
-                gauss_fit_tab.add_row((key, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['amplitude'], gauss_cat[key]['e_amplitude'], np.nan, np.nan, np.nan, np.nan)) #fill table
+        cat_r = Angle(0.5, 'arcsecond') #radius in gaussian fitting
+        gauss_cat = gaussfit_catalog(directory+img, regs, cat_r, savepath=save_dir) #output is nested dictionary structure
 
-            beam = radio_beam.Beam.from_fits_header(header)
-            pixel_scale = np.abs(mywcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg 
-            ppbeam = (beam.sr/(pixel_scale**2)).decompose().value
+        table_names.append(name)
+        img_fwhm_maj.append(gauss_cat[str(srcID)]['fwhm_major'].value)
+        img_fwhm_maj_err.append(gauss_cat[str(srcID)]['e_fwhm_major'].value)
+        img_fwhm_min.append(gauss_cat[str(srcID)]['fwhm_minor'].value)
+        img_fwhm_min_err.append(gauss_cat[str(srcID)]['e_fwhm_minor'].value)
+        img_pa.append(gauss_cat[str(srcID)]['pa'].value)
+        img_pa_err.append(gauss_cat[str(srcID)]['e_pa'].value)
 
-            for row in range(len(gauss_fit_tab)):
-                pix_major_fwhm = ((gauss_fit_tab['FWHM_major_'+name][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
-                pix_minor_fwhm = ((gauss_fit_tab['FWHM_minor_'+name][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
+    table = Table((table_names, img_fwhm_maj, img_fwhm_maj_err, img_fwhm_min, img_fwhm_min_err, img_pa, img_pa_err), names=('img_name', 'fwhm_maj', 'fwhm_maj_err', 'fwhm_min', 'fwhm_min_err', 'pa', 'pa_err'))
+    table['fwhm_maj'].unit = 'arcsec'
+    table['fwhm_maj_err'].unit = 'arcsec'
+    table['fwhm_min'].unit = 'arcsec'
+    table['fwhm_min_err'].unit = 'arcsec'
 
-                cat_ind = np.where(cat['D_ID'] == gauss_fit_tab['D_ID'][row])
-                center_coord = SkyCoord(cat['gauss_x_'+ref_name][cat_ind], cat['gauss_y_'+ref_name][cat_ind], frame='icrs', unit=(u.deg, u.deg))
-                center_coord_pix = center_coord.to_pixel(mywcs)
-                center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
-                position_angle = gauss_fit_tab['pa_'+name][row]*u.deg
-                ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2., pix_minor_fwhm*2., angle=position_angle)
-                size = pix_major_fwhm*2.1
-                ap_mask = ellipse_reg.to_mask()
-                cutout_mask = ap_mask.cutout(img_data)
+    table.write('/lustre/aoc/students/jotter/dendro_catalogs/src'+str(srcID)+'_img_sizes'+band+'.fits', overwrite=True)
 
-                aperture_flux = np.sum(cutout_mask[ap_mask.data==1])/ppbeam
-                npix = len(cutout_mask[ap_mask.data==1])
-                gauss_fit_tab['ap_flux_'+name][row]=aperture_flux
+def measure_fluxes_gaussfit_allsrcs(data, img, data_name, name_start = 27, name_end = -21, ref_name = 'B3'): 
 
-                #now creating annulus around source to measure background and ap flux error
-                annulus_width = 15
-                center_pad = 10 #pad between ellipse and inner radius
+    cat = Table.read(data)
+    RA_name = 'gauss_x_'+ref_name
 
-                # Cutout section of the image we care about, to speed up computation time
-                size = ((center_pad+annulus_width)+pix_major_fwhm)*2.2*pixel_scale #2.2 is arbitrary to get entire annulus and a little extra
-                cutout = Cutout2D(img_data, center_coord_pix, size, mywcs, mode='partial') #cutout of outer circle
-                cutout_center = regions.PixCoord(cutout.center_cutout[0], cutout.center_cutout[1])
-
-
-                # Define the aperture regions needed for SNR
-                innerann_reg = regions.CirclePixelRegion(cutout_center, center_pad+pix_major_fwhm)
-                outerann_reg = regions.CirclePixelRegion(cutout_center, center_pad+pix_major_fwhm+annulus_width)
-
-                # Make masks from aperture regions
-                annulus_mask = mask(outerann_reg, cutout) - mask(innerann_reg, cutout)
-                
-                # Calculate the SNR and aperture flux sums
-                pixels_in_annulus = cutout.data[annulus_mask.astype('bool')] #pixels within annulus
-                bg_rms = rms(pixels_in_annulus)
-                bg_median = np.median(pixels_in_annulus)
-
-                pix_bg = bg_median*npix/ppbeam
-
-                gauss_fit_tab['ap_flux_err_'+name][row] = bg_rms
-                gauss_fit_tab['bg_median_'+name][row] = bg_median
-                gauss_fit_tab['bg_pix_'+name][row] = pix_bg
-            cat = join(cat, gauss_fit_tab, keys='D_ID', join_type='left')
-        
-    cat.write('/lustre/aoc/students/jotter/dendro_catalogs/'+ref_name+'_diff_imgs_catalog_gaussfit.txt', format='ascii', overwrite=True)
-'''
-'''
-def add_fluxes(catalog, ref_name, directory, name_start = 27, name_end = -21): #catalog to get positions from, name of reference data, directory of images to get fluxes from 
-    cat = ascii.read(catalog)
-    imgs = glob.glob(directory+'*') #all files in the directory
-    img_names = [img[len(directory)+name_start:name_end] for img in imgs]
+    ind = np.where(np.isnan(cat[RA_name]) == False)
+    cat = cat[ind]
 
     col_names = fnmatch.filter(cat.colnames, 'ap_flux_r*')
     col_names = [cn[8:] for cn in col_names]
+
+    fl = fits.open(img)
+    header = fl[0].header
+    img_data = fl[0].data.squeeze()
+    mywcs = WCS(header).celestial
+
+    beam = radio_beam.Beam.from_fits_header(header)
+    pixel_scale = np.abs(mywcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg 
+    ppbeam = (beam.sr/(pixel_scale**2)).decompose().value
+
+    save_dir = '/lustre/aoc/students/jotter/gauss_diags/diff_imgs/'+ref_name+'/'+data_name+'/'
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    reg_file = '/users/jotter/summer_research_2018/final_regs/misc_regs/'+data_name+'_reg_file_'+ref_name+'_apflux.reg'
+    with open(reg_file, 'w') as fh:
+        fh.write("fk5\n")
+        for ind in range(len(cat)):
+            fh.write('ellipse({x_cen}, {y_cen}, {maj}, {minr}, {ang}) #text={{{ID}}}\n'.format(x_cen=cat['gauss_x_'+ref_name][ind], y_cen=cat['gauss_y_'+ref_name][ind], maj = (cat['FWHM_major_'+ref_name][ind]*u.arcsec.to(u.degree)), minr = (cat['FWHM_minor_'+ref_name][ind]*u.arcsec.to(u.degree)), ang = cat['position_angle_'+ref_name][ind], ID=str(cat['D_ID'][ind])))
+
+    rad = Angle(1, 'arcsecond') #radius for region list
+    regs = []
+
+    for ind in range(len(cat)):
+        reg = regions.CircleSkyRegion(center=SkyCoord(cat['gauss_x_'+ref_name][ind]*u.degree, cat['gauss_y_'+ref_name][ind]*u.degree), radius=rad, meta={'text':str(cat['D_ID'][ind])})
+        reg_pix = reg.to_pixel(mywcs)
+        if reg_pix.center.x > 0 and reg_pix.center.x < len(img_data[0]):
+            if reg_pix.center.y > 0 and reg_pix.center.y < len(img_data):
+                if np.isnan(img_data[int(reg_pix.center.x), int(reg_pix.center.y)]) == False:
+                    regs.append(reg)
+
+    cat_r = Angle(0.5, 'arcsecond') #radius in gaussian fitting
+    gauss_cat = gaussfit_catalog(img, regs, cat_r, savepath=save_dir) #output is nested dictionary structure
+
+    gauss_fit_tab = Table(names=('D_ID','FWHM_major_'+data_name, 'major_err_'+data_name, 'FWHM_minor_'+data_name, 'minor_err_'+data_name, 'pa_'+data_name, 'pa_err_'+data_name, 'g_amplitude_'+data_name, 'amp_err_'+data_name), dtype=('i4','f8','f8','f8','f8','f8','f8','f8','f8')) 
+    for key in gauss_cat:
+        gauss_fit_tab.add_row((key, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['amplitude'], gauss_cat[key]['e_amplitude'])) #fill table 
     
-    for j,img in enumerate(imgs):
-        if len(img_names[j]):
-            name = img_names[j][0:53]
-        else:
-            name = img_names[j]
-        if name not in col_names:
-            fl = fits.open(img)
-            header = fl[0].header
-            img_data = fl[0].data.squeeze()
+    ap_flux_arr = []
+    circ_flux_arr = []
+    ap_flux_err_arr = []
+    circ_flux_err_arr = []
+    bg_median_arr = []
+    bg_ap_arr = []
+    bg_circ_arr = []
+    RA = []
+    DEC = []
+    RA_err = []
+    DEC_err = []
 
-            mywcs = WCS(header).celestial
+    for row in range(len(cat)):
+        gauss_ind = np.where(gauss_fit_tab['D_ID'] == cat['D_ID'][row])[0]
+        if len(gauss_ind) > 0:
+            pix_major_fwhm = ((cat['FWHM_major_'+ref_name][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
+            pix_minor_fwhm = ((cat['FWHM_minor_'+ref_name][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
 
-            rad = Angle(1, 'arcsecond') #radius for region list
-            rad_deg = rad.to(u.degree)
-            #generate region list
-            regs = []
+            center_coord = SkyCoord(cat['gauss_x_'+ref_name][row], cat['gauss_y_'+ref_name][row], frame='icrs', unit=(u.deg, u.deg))
+            center_coord_pix = center_coord.to_pixel(mywcs)
+            center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
+            position_angle = cat['position_angle_'+ref_name][row]*u.deg
+
+            ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2., pix_minor_fwhm*2., angle=position_angle)
+            size = pix_major_fwhm*2.1
+            ap_mask = ellipse_reg.to_mask()
+            cutout_mask = ap_mask.cutout(img_data)
+
+            aperture_flux = np.sum(cutout_mask[ap_mask.data==1])/ppbeam
+            npix = len(cutout_mask[ap_mask.data==1])
+            ap_flux_arr.append(aperture_flux)
+
+            #now creating annulus around source to measure background and ap flux error
+            annulus_width = 15
+            annulus_radius = 0.1*u.arcsecond
+            annulus_radius_pix = (annulus_radius.to(u.degree)/pixel_scale).decompose()
+
+            # Cutout section of the image we care about, to speed up computation time
+            size = 2.5*annulus_radius
+            cutout = Cutout2D(img_data, center_coord_pix, size, mywcs, mode='partial') #cutout of outer circle
+            cutout_center = regions.PixCoord(cutout.center_cutout[0], cutout.center_cutout[1])
+
+            # Define the aperture regions needed for SNR
+            innerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix)
+            outerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix+annulus_width)
+
+            # Make masks from aperture regions
+            annulus_mask = mask(outerann_reg, cutout) - mask(innerann_reg, cutout)
             
-            save_dir = '/lustre/aoc/students/jotter/gauss_diags/diff_imgs/'+ref_name+'/'+name+'/'
-            if not os.path.exists(save_dir):
-                os.makedirs(save_dir)
+            # Calculate the SNR and aperture flux sums
+            pixels_in_annulus = cutout.data[annulus_mask.astype('bool')] #pixels within annulus
+            bg_rms = rms(pixels_in_annulus)
+            ap_bg_rms = bg_rms/np.sqrt(npix/ppbeam) #rms/sqrt(npix/ppbeam) - rms error per beam
+            bg_median = np.median(pixels_in_annulus)
 
-            for ind in range(len(cat)):
-                reg = regions.CircleSkyRegion(center=SkyCoord(cat['gauss_x_'+ref_name][ind]*u.degree, cat['gauss_y_'+ref_name][ind]*u.degree), radius=rad, meta={'text':str(cat['D_ID'][ind])})
-                reg_pix = reg.to_pixel(mywcs)
-                if reg_pix.center.x > 0 and reg_pix.center.x < len(img_data[0]):
-                    if reg_pix.center.y > 0 and reg_pix.center.y < len(img_data):
-                        regs.append(reg)
+            pix_bg = bg_median*npix/ppbeam
 
-            cat_r = Angle(0.5, 'arcsecond') #radius in gaussian fitting
-            gauss_cat = gaussfit_catalog(img, regs, cat_r, savepath=save_dir) #output is nested dictionary structure
+            ap_flux_err_arr.append(ap_bg_rms)
+            bg_median_arr.append(bg_median)
+            bg_ap_arr.append(pix_bg)
 
-            gauss_fit_tab = Table(names=('D_ID','FWHM_major_'+name, 'major_err_'+name, 'FWHM_minor_'+name, 'minor_err_'+name, 'pa_'+name, 'pa_err_'+name, 'g_amplitude_'+name, 'amp_err_'+name, 'ap_flux_'+name, 'ap_flux_err_'+name, 'bg_median_'+name, 'bg_pix_'+name), dtype=('i4','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8', 'f8')) 
-            for key in gauss_cat:
-                gauss_fit_tab.add_row((key, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['amplitude'], gauss_cat[key]['e_amplitude'], np.nan, np.nan, np.nan, np.nan)) #fill table
+            #now measure circle flux:
+            radius = 0.1*u.arcsecond
+            radius_pix = annulus_radius_pix
+            circle_reg = regions.CirclePixelRegion(center_coord_pix_reg, radius_pix)
+            circ_ap_mask = circle_reg.to_mask()
+            circ_cutout_mask = circ_ap_mask.cutout(img_data)
+            cutout_mask = ap_mask.cutout(img_data)
+            circ_aperture_flux = np.sum(circ_cutout_mask[circ_ap_mask.data==1])/ppbeam
+            circ_npix = len(circ_cutout_mask[circ_ap_mask.data==1])
 
-            beam = radio_beam.Beam.from_fits_header(header)
-            pixel_scale = np.abs(mywcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg 
-            ppbeam = (beam.sr/(pixel_scale**2)).decompose().value
+            circ_bg_rms = bg_rms/np.sqrt(circ_npix/ppbeam)
 
-            for row in range(len(gauss_fit_tab)):
-                pix_major_fwhm = ((gauss_fit_tab['FWHM_major_'+name][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
-                pix_minor_fwhm = ((gauss_fit_tab['FWHM_minor_'+name][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
+            circ_flux_arr.append(circ_aperture_flux)
+            circ_flux_err_arr.append(circ_bg_rms)
+            bg_circ_arr.append(bg_median*circ_npix/ppbeam)
 
-                cat_ind = np.where(cat['D_ID'] == gauss_fit_tab['D_ID'][row])
-                center_coord = SkyCoord(cat['gauss_x_'+ref_name][cat_ind], cat['gauss_y_'+ref_name][cat_ind], frame='icrs', unit=(u.deg, u.deg))
-                center_coord_pix = center_coord.to_pixel(mywcs)
-                center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
-                position_angle = gauss_fit_tab['pa_'+name][row]*u.deg
-                ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2., pix_minor_fwhm*2., angle=position_angle)
-                size = pix_major_fwhm*2.1
-                ap_mask = ellipse_reg.to_mask()
-                cutout_mask = ap_mask.cutout(img_data)
-
-                aperture_flux = np.sum(cutout_mask[ap_mask.data==1])/ppbeam
-                npix = len(cutout_mask[ap_mask.data==1])
-                gauss_fit_tab['ap_flux_'+name][row]=aperture_flux
-
-                #now creating annulus around source to measure background and ap flux error
-                annulus_width = 15
-                center_pad = 10 #pad between ellipse and inner radius
-
-                # Cutout section of the image we care about, to speed up computation time
-                size = ((center_pad+annulus_width)+pix_major_fwhm)*2.2*pixel_scale #2.2 is arbitrary to get entire annulus and a little extra
-                cutout = Cutout2D(img_data, center_coord_pix, size, mywcs, mode='partial') #cutout of outer circle
-                cutout_center = regions.PixCoord(cutout.center_cutout[0], cutout.center_cutout[1])
-
-
-                # Define the aperture regions needed for SNR
-                innerann_reg = regions.CirclePixelRegion(cutout_center, center_pad+pix_major_fwhm)
-                outerann_reg = regions.CirclePixelRegion(cutout_center, center_pad+pix_major_fwhm+annulus_width)
-
-                # Make masks from aperture regions
-                annulus_mask = mask(outerann_reg, cutout) - mask(innerann_reg, cutout)
-                
-                # Calculate the SNR and aperture flux sums
-                pixels_in_annulus = cutout.data[annulus_mask.astype('bool')] #pixels within annulus
-                bg_rms = rms(pixels_in_annulus)
-                bg_median = np.median(pixels_in_annulus)
-                pix_bg = bg_median*npix/ppbeam
-
-                gauss_fit_tab['ap_flux_err_'+name][row] = bg_rms
-                gauss_fit_tab['bg_median_'+name][row] = bg_median
-                gauss_fit_tab['bg_pix_'+name][row] = pix_bg
-            cat = join(cat, gauss_fit_tab, keys='D_ID', join_type='left')
+            RA.append(cat['gauss_x_'+ref_name][row])
+            DEC.append(cat['gauss_y_'+ref_name][row])
+            RA_err.append(cat['x_err_'+ref_name][row])
+            DEC_err.append(cat['y_err_'+ref_name][row])
         
-    cat.write('/lustre/aoc/students/jotter/dendro_catalogs/'+ref_name+'_diff_imgs_catalog.txt', format='ascii', overwrite=True)'''
+
+    cols = ['ap_flux_', 'ap_flux_err_', 'bg_median_', 'bg_ap_', 'circ_flux_', 'circ_flux_err_', 'bg_circ_']
+    arrs = [ap_flux_arr, ap_flux_err_arr, bg_median_arr, bg_ap_arr, circ_flux_arr, circ_flux_err_arr, bg_circ_arr]
+    cols2 = ['RA_', 'DEC_', 'RA_err_', 'DEC_err_'] #seperate bc different naming
+    arrs2 = [RA, DEC, RA_err, DEC_err]
+    for j in range(len(cols)):
+        gauss_fit_tab[cols[j]+data_name] = arrs[j]
+    for c in range(len(cols2)):
+        gauss_fit_tab[cols2[c]+ref_name] = arrs2[c]
+        
+    gauss_fit_tab.write('/lustre/aoc/students/jotter/dendro_catalogs/'+data_name+'_500klplus_allsrcs_catalog_'+ref_name+'_ref.txt', format='ascii', overwrite=True)
+
