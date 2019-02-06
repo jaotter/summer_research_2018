@@ -82,9 +82,11 @@ def slice_bbox_from_bbox(bbox1, bbox2):
 
 
 
-def gaussfit_catalog(fitsfile, region_list, radius=1.0*u.arcsec,
+def gaussfit_catalog(fitsfile, region, radius=1.0*u.arcsec,
                      max_radius_in_beams=2,
                      max_offset_in_beams=1,
+                     bg_stddev_x=None,
+                     bg_stddev_y=None,
                      background_estimator=np.nanmedian,
                      noise_estimator=lambda x: mad_std(x, ignore_nan=True),
                      savepath=None,
@@ -100,8 +102,8 @@ def gaussfit_catalog(fitsfile, region_list, radius=1.0*u.arcsec,
     ----------
     fitsfile : str
         Name of the FITS file
-    region_list : list
-        List of regions (see https://github.com/astropy/regions/)
+    region : region object
+        single region from regions (see https://github.com/astropy/regions/)
     radius : angular size
         The radius of the region around the region center to extract and
         include in the fit
@@ -111,6 +113,10 @@ def gaussfit_catalog(fitsfile, region_list, radius=1.0*u.arcsec,
     max_offset_in_beams : float
         The maximum allowed offset of the source center from the guessed
         position
+    bg_stddev_x : float
+        Guess for standard deviation in x direction for background gaussian
+    bg_stddev_y : float
+        Same as above, in y direction
     background_estimator : function
         A function to apply to the background pixels (those not within 1 beam
         HWHM of the center) to estimate the background level.  The background
@@ -180,8 +186,8 @@ def gaussfit_catalog(fitsfile, region_list, radius=1.0*u.arcsec,
             inds.remove(ii)
             for ind in inds:
                 maskoutreg = regions.EllipseSkyRegion(center=region_list[ind].center,
-                                                      width=beam.major,
-                                                      height=beam.minor,
+                                                      width=1.5*beam.major,
+                                                      height=1.5*beam.minor,
                                                       angle=beam.pa+90*u.deg,
                                                      )
                 mpixreg = maskoutreg.to_pixel(datawcs)
@@ -217,7 +223,21 @@ def gaussfit_catalog(fitsfile, region_list, radius=1.0*u.arcsec,
                                            'amplitude':(ampguess*0.9, ampguess*1.1)
                                           }
                                   )
+        bg_init = models.Gaussian2D(amplitude=background,
+                                   x_mean=sz/2,
+                                   y_mean=sz/2,
+                                   x_stddev=bg_stddev_x,
+                                   y_stddev=bg_stddev_y,
+                                   theta=beam.pa,
+                                   bounds={'x_mean':(sz/2-max_offset_in_beams*bmmaj_px/STDDEV_TO_FWHM,
+                                                     sz/2+max_offset_in_beams*bmmaj_px/STDDEV_TO_FWHM),
+                                           'y_mean':(sz/2-max_offset_in_beams*bmmaj_px/STDDEV_TO_FWHM,
+                                                     sz/2+max_offset_in_beams*bmmaj_px/STDDEV_TO_FWHM),
+                                           'amplitude':(background*0.01, ampguess)
+                                          }
+                                  )
 
+        
         imtofit = np.nan_to_num((cutout-background)*mask.data)
         result, fit_info, chi2, fitter = gaussfit_image(image=imtofit,
                                                         gaussian=p_init,
