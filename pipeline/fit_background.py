@@ -57,20 +57,15 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y):
     reg_pix = reg.to_pixel(img_wcs)
 
     cat_r = Angle(0.5, 'arcsecond') #radius for gaussian fitting
-    gauss_cat = gaussfit_catalog(img, regs, cat_r, savepath=gauss_save_dir, max_offset_in_beams = 2, max_radius_in_beams = 5)
-    #table does not have all columns yet, add others later
-    img_table = Table(names=('D_ID', 'fwhm_maj_'+name, 'fwhm_maj_err_'+name, 'fwhm_min_'+name, 'fwhm_min_err_'+name, 'pa_'+name, 'pa_err_'+name, 'RA_'+name,'RA_err_'+name, 'DEC_'+name, 'DEC_err_'+name), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))
+    gauss_cat = bg_gaussfit(img, reg, cat_r, bg_stddev_x=bg_stddev_x, bg_stddev_y=bg_stddev_y, savepath=gauss_save_dir, max_offset_in_beams = 1, max_radius_in_beams = 5)
+
+    img_table = Table(names=('D_ID', 'fwhm_maj_'+name, 'fwhm_maj_err_'+name, 'fwhm_min_'+name, 'fwhm_min_err_'+name, 'pa_'+name, 'pa_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_min_deconv_'+name, 'deconv_pa_'+name, 'RA_'+name,'RA_err_'+name, 'DEC_'+name, 'DEC_err_'+name), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))
     for key in gauss_cat:
-        img_table.add_row((key, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y']))
-        #now measure deconvovled sizes and aperture flux measurements for each source 
+        img_table.add_row((key, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['deconv_fwhm_major'], gauss_cat[key]['deconv_fwhm_minor'], gauss_cat[key]['deconv_pa'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y']))
+
+    #now measure deconvovled sizes and aperture flux measurements for each source 
     ap_flux_arr = []
     ap_flux_err_arr = []
-    fwhm_maj_deconv_arr = []
-    fwhm_maj_deconv_err_arr = []
-    fwhm_min_deconv_arr = []
-    fwhm_min_deconv_err_arr = []
-    ar_deconv_arr = []
-    ar_deconv_err_arr = []
 
     for row in range(len(img_table)): #now loop through sources in reference data and make measurements
         ref_ind = np.where(ref_data['D_ID'] == img_table['D_ID'][row])[0]
@@ -118,35 +113,10 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y):
             ap_flux_err_arr.append(ap_bg_rms)
             ap_flux_arr.append(aperture_flux - pix_bg)
 
-            #now measuring deconvolved sizes
-            measured_source_size = radio_beam.Beam(major=img_table['fwhm_maj_'+name][row]*u.arcsec, minor=img_table['fwhm_min_'+name][row]*u.arcsec, pa=(img_table['pa_'+name][row]-90)*u.degree)
-            try:
-                deconv_size = measured_source_size.deconvolve(beam)
-                fwhm_maj_deconv_arr.append(deconv_size.major.value)
-                fwhm_min_deconv_arr.append(deconv_size.minor.value)
-                fwhm_maj_deconv_err_arr.append(img_table['fwhm_maj_err_'+name][row]) #same error as non deconvolved
-                fwhm_min_deconv_err_arr.append(img_table['fwhm_min_err_'+name][row])
-                #aspect_ratio = deconv_size.major.value/deconv_size.minor.value
-                #ar_deconv_arr.append(aspect_ratio)
-                #ar_err = np.sqrt((img_table['fwhm_maj_err_'+name]/deconv_size.major.value)**2 + (img_table['fwhm_min_err_'+name]/deconv_si
-            except ValueError:
-                fwhm_maj_deconv_arr.append(np.nan)
-                fwhm_min_deconv_arr.append(np.nan)
-                fwhm_maj_deconv_err_arr.append(np.nan)
-                fwhm_min_deconv_err_arr.append(np.nan)
-
-    cols = ['ap_flux_'+name, 'ap_flux_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_maj_deconv_err_'+name, 'fwhm_min_deconv_'+name, 'fwhm_min_deconv_err_'+name]#, 'ar_deconv_'+name, 'ar_deconv_err_'+name]
-    arrs = [ap_flux_arr, ap_flux_err_arr, fwhm_maj_deconv_arr, fwhm_maj_deconv_err_arr, fwhm_min_deconv_arr, fwhm_min_deconv_err_arr]#, ar_deconv_arr, ar_deconv_err_arr]
+    cols = ['ap_flux_'+band, 'ap_flux_err_'+band]
+    arrs = [ap_flux_arr, ap_flux_err_arr]
     for c in range(len(cols)):
         img_table.add_column(Column(np.array(arrs[c])), name=cols[c])
-    img_table.add_column(Column(np.array(fwhm_maj_deconv_arr)/np.array(fwhm_min_deconv_arr)), name='ar_deconv_'+name)
-    band_tables.append(img_table) #list of tables for each image
-
-
-    B3B6 = join(band_tables[0], band_tables[1], keys='D_ID', join_type='outer')
-    all_bands = join(B3B6, band_tables[2], keys='D_ID', join_type='outer')
-
-    all_bands.write('/users/jotter/summer_research_2018/tables/'+cat_name+'.fits',  overwrite=True)
-
-
-#def fit_source(srcID, img, img_name):
+    img_table.add_column(Column(img_table['fwhm_maj_deconv'+band]/img_table['fwhm_min_deconv'+band]), name='ar_deconv_'+band)
+    
+    return img_table
