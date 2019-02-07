@@ -82,7 +82,7 @@ def slice_bbox_from_bbox(bbox1, bbox2):
 
 
 
-def gaussfit_catalog(fitsfile, region, radius=1.0*u.arcsec,
+def bg_gaussfit(fitsfile, region, radius=1.0*u.arcsec,
                      max_radius_in_beams=2,
                      max_offset_in_beams=1,
                      bg_stddev_x=None,
@@ -95,8 +95,8 @@ def gaussfit_catalog(fitsfile, region, radius=1.0*u.arcsec,
                      raise_for_failure=False,
                     ):
     """
-    Given a FITS filename and a list of regions, fit a gaussian to each region
-    with an input guess based on the beam size.
+    Given a FITS filename and a region, fit a gaussian to the region
+    with an input guess based on the beam size, and fit a gaussian to the background.
 
     Parameters
     ----------
@@ -229,18 +229,14 @@ def gaussfit_catalog(fitsfile, region, radius=1.0*u.arcsec,
                                    x_stddev=bg_stddev_x,
                                    y_stddev=bg_stddev_y,
                                    theta=beam.pa,
-                                   bounds={'x_mean':(sz/2-max_offset_in_beams*bmmaj_px/STDDEV_TO_FWHM,
-                                                     sz/2+max_offset_in_beams*bmmaj_px/STDDEV_TO_FWHM),
-                                           'y_mean':(sz/2-max_offset_in_beams*bmmaj_px/STDDEV_TO_FWHM,
-                                                     sz/2+max_offset_in_beams*bmmaj_px/STDDEV_TO_FWHM),
-                                           'amplitude':(background*0.01, ampguess)
-                                          }
+                                   bounds={'amplitude':(background*0.01, ampguess)}
                                   )
 
         
         imtofit = np.nan_to_num((cutout-background)*mask.data)
         result, fit_info, chi2, fitter = gaussfit_image(image=imtofit,
                                                         gaussian=p_init,
+                                                        bg_gaussian=bg_init,
                                                         weights=1/noise**2,
                                                         plot=savepath is not None,
                                                        )
@@ -319,7 +315,7 @@ def gaussfit_catalog(fitsfile, region, radius=1.0*u.arcsec,
     return fit_data
 
 
-def gaussfit_image(image, gaussian, weights=None,
+def gaussfit_image(image, gaussian, bg_gaussian, weights=None,
                    fitter=fitting.LevMarLSQFitter(), plot=False):
     """
     Fit a gaussian to an image and optionally plot the data, the fitted
@@ -335,6 +331,8 @@ def gaussfit_image(image, gaussian, weights=None,
         An astropy model object with guesses included.  Given the name of this
         function, it should be a `~astropy.models.Gaussian2D` model, but
         technically it can be any model.
+    bg_gaussian : 
+        Same as above but for the background
     fitter : `astropy.modeling.fitting.Fitter`
         A fitter instance.  Can be any of the optimizers, in principle, but it
         needs to take keywords ``weight`` and ``maxiter``.
@@ -353,11 +351,11 @@ def gaussfit_image(image, gaussian, weights=None,
     """
 
     yy, xx = np.mgrid[:image.shape[0], :image.shape[1]]
-    
+    gauss_init = gaussian + bg_gaussian
     with warnings.catch_warnings():
         # Ignore model linearity warning from the fitter
         warnings.simplefilter('ignore')
-        fitted = fitter(gaussian, xx, yy, image, weights=weights,
+        fitted = fitter(gauss_init, xx, yy, image, weights=weights,
                         maxiter=1000)
 
     fitim = fitted(xx,yy)
