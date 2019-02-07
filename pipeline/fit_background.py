@@ -53,7 +53,7 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y):
     #now make region
     rad = Angle(1, 'arcsecond') #radius used in region list
     src_ind = np.where(ref_data['D_ID']==srcID)[0]
-    reg = regions.CircleSkyRegion(center=SkyCoord(ref_data['RA_'+band][src_ind]*u.degree, ref_data['DEC_'+band][src_ind]*u.degree), radius=rad, meta={'text':str(ref_data['D_ID'][ind])+'xstddev_'+str(bg_stddev_x)+'_ystddev_'+str(bg_stddev_y})
+    reg = regions.CircleSkyRegion(center=SkyCoord(ref_data['RA_'+band][src_ind]*u.degree, ref_data['DEC_'+band][src_ind]*u.degree), radius=rad, meta={'text':str(ref_data['D_ID'][ind])+'xstddev_'+str(bg_stddev_x)+'_ystddev_'+str(bg_stddev_y}))
     reg_pix = reg.to_pixel(img_wcs)
 
     cat_r = Angle(0.5, 'arcsecond') #radius for gaussian fitting
