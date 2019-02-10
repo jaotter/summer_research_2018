@@ -82,7 +82,8 @@ def slice_bbox_from_bbox(bbox1, bbox2):
 
 
 
-def bg_gaussfit(fitsfile, region, radius=1.0*u.arcsec,
+def bg_gaussfit(fitsfile, region, region_list,
+                     radius=1.0*u.arcsec,
                      max_radius_in_beams=2,
                      max_offset_in_beams=1,
                      bg_stddev_x=None,
@@ -104,6 +105,8 @@ def bg_gaussfit(fitsfile, region, radius=1.0*u.arcsec,
         Name of the FITS file
     region : region object
         single region from regions (see https://github.com/astropy/regions/)
+    region_list : list of regions
+        list of all regions - for masking out nearby sources
     radius : angular size
         The radius of the region around the region center to extract and
         include in the fit
@@ -158,44 +161,45 @@ def bg_gaussfit(fitsfile, region, radius=1.0*u.arcsec,
 
     fit_data = {}
 
-    pb = ProgressBar(len(region_list))
-
-    for ii,reg in enumerate(region_list):
-
-        phot_reg = regions.CircleSkyRegion(center=reg.center, radius=radius)
-        pixreg = phot_reg.to_pixel(datawcs)
-        mask = pixreg.to_mask()
-        mask_cutout = mask.cutout(data)
-        if mask_cutout is None:
-            log.warning("Skipping region {0} because it failed to produce a cutout."
+    phot_reg = regions.CircleSkyRegion(center=region.center, radius=radius)
+    pixreg = phot_reg.to_pixel(datawcs)
+    mask = pixreg.to_mask()
+    mask_cutout = mask.cutout(data)
+    if mask_cutout is None:
+        log.warning("The region failed to produce a cutout."
                         .format(reg))
-            continue
-        cutout = mask_cutout * mask.data
-        cutout_mask = mask.data.astype('bool')
+        return null
+    cutout = mask_cutout * mask.data
+    cutout_mask = mask.data.astype('bool')
 
-        smaller_phot_reg = regions.CircleSkyRegion(center=reg.center,
+    smaller_phot_reg = regions.CircleSkyRegion(center=region.center,
                                                    radius=beam.major/2.) #FWHM->HWHM
-        smaller_pixreg = smaller_phot_reg.to_pixel(datawcs)
-        smaller_mask = smaller_pixreg.to_mask()
-        smaller_cutout = smaller_mask.cutout(data) * smaller_mask.data
+    smaller_pixreg = smaller_phot_reg.to_pixel(datawcs)
+    smaller_mask = smaller_pixreg.to_mask()
+    smaller_cutout = smaller_mask.cutout(data) * smaller_mask.data
 
-        # mask out (as zeros) neighboring sources within the fitting area
-        nearby_matches = phot_reg.contains(coords, datawcs)
-        if any(nearby_matches):
-            inds = np.where(nearby_matches)[0].tolist()
-            inds.remove(ii)
-            for ind in inds:
-                maskoutreg = regions.EllipseSkyRegion(center=region_list[ind].center,
+    # mask out (as zeros) neighboring sources within the fitting area
+    srcind = None
+    for ii, reg in enumerate(region_list):
+        if reg.center.ra == region.center.ra and reg.center.dec == region.center.dec:
+            srcind = ii
+    print(srcind)
+    nearby_matches = phot_reg.contains(coords, datawcs)
+    if any(nearby_matches):
+        inds = np.where(nearby_matches)[0].tolist()
+        inds.remove(srcind)
+        for ind in inds:
+            maskoutreg = regions.EllipseSkyRegion(center=region_list[ind].center,
                                                       width=1.5*beam.major,
                                                       height=1.5*beam.minor,
                                                       angle=beam.pa+90*u.deg,
                                                      )
-                mpixreg = maskoutreg.to_pixel(datawcs)
-                mmask = mpixreg.to_mask()
+            mpixreg = maskoutreg.to_pixel(datawcs)
+            mmask = mpixreg.to_mask()
 
-                view, mview = slice_bbox_from_bbox(mask.bbox, mmask.bbox)
-                cutout_mask[view] &= ~mmask.data.astype('bool')[mview]
-                cutout = cutout * cutout_mask
+            view, mview = slice_bbox_from_bbox(mask.bbox, mmask.bbox)
+            cutout_mask[view] &= ~mmask.data.astype('bool')[mview]
+            cutout = cutout * cutout_mask
 
 
         background_mask = cutout_mask.copy().astype('bool')
@@ -240,7 +244,7 @@ def bg_gaussfit(fitsfile, region, radius=1.0*u.arcsec,
                                                         weights=1/noise**2,
                                                         plot=savepath is not None,
                                                        )
-        sourcename = reg.meta['text'].strip('{}')
+        sourcename = region.meta['text'].strip('{}')
 
         if savepath is not None:
             with warnings.catch_warnings():

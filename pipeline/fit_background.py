@@ -53,11 +53,20 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y):
     #now make region
     rad = Angle(1, 'arcsecond') #radius used in region list
     src_ind = np.where(ref_data['D_ID']==srcID)[0]
-    
-    reg = regions.CircleSkyRegion(center=SkyCoord(ref_data['RA_'+band][src_ind], ref_data['DEC_'+band][src_ind], unit='deg'), radius=rad, meta={'text':str(ref_data['D_ID'][src_ind])+'xstddev_'+str(bg_stddev_x)+'_ystddev_'+str(bg_stddev_y)})
+    #print(SkyCoord(ref_data['RA_'+band][src_ind], ref_data['DEC_'+band][src_ind], unit='deg'))
+    ra = ref_data['RA_'+band][src_ind].data[0]
+    dec = ref_data['DEC_'+band][src_ind].data[0]
+    reg = regions.CircleSkyRegion(center=SkyCoord(ra, dec, unit='deg'), radius=1*u.arcsecond, meta={'text':str(ref_data['D_ID'][src_ind])+'xstddev_'+str(bg_stddev_x)+'_ystddev_'+str(bg_stddev_y)})
 
+    region_list = []
+    for ind in range(len(ref_data)):
+        ra = ref_data['RA_'+band][src_ind].data[0]
+        dec = ref_data['DEC_'+band][src_ind].data[0]
+        region = regions.CircleSkyRegion(center=SkyCoord(ra, dec, unit='deg'), radius=1*u.arcsecond)
+        region_list.append(region)
+        
     cat_r = Angle(0.5, 'arcsecond') #radius for gaussian fitting
-    gauss_cat = bg_gaussfit(img, reg, cat_r, bg_stddev_x=bg_stddev_x, bg_stddev_y=bg_stddev_y, savepath=gauss_save_dir, max_offset_in_beams = 1, max_radius_in_beams = 5)
+    gauss_cat = bg_gaussfit(img, reg, region_list, cat_r, bg_stddev_x=bg_stddev_x, bg_stddev_y=bg_stddev_y, savepath=gauss_save_dir, max_offset_in_beams = 1, max_radius_in_beams = 5)
 
     img_table = Table(names=('D_ID', 'fwhm_maj_'+name, 'fwhm_maj_err_'+name, 'fwhm_min_'+name, 'fwhm_min_err_'+name, 'pa_'+name, 'pa_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_min_deconv_'+name, 'deconv_pa_'+name, 'RA_'+name,'RA_err_'+name, 'DEC_'+name, 'DEC_err_'+name), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))
     for key in gauss_cat:
