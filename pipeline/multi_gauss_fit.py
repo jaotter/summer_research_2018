@@ -313,7 +313,6 @@ def bg_gaussfit(fitsfile, region, region_list,
         if raise_for_failure and not success:
             raise ValueError("Fit failed.")
 
-        pb.update(ii)
         signal.signal(signal.SIGINT, signal_handler)
 
     return fit_data
@@ -355,10 +354,14 @@ def gaussfit_image(image, gaussian, bg_gaussian, weights=None,
     """
 
     yy, xx = np.mgrid[:image.shape[0], :image.shape[1]]
-    gauss_init = gaussian + bg_gaussian
+    gauss_init = gaussian #+ bg_gaussian
     with warnings.catch_warnings():
         # Ignore model linearity warning from the fitter
         warnings.simplefilter('ignore')
+        #print(xx)
+        #print(yy)
+        #print(gauss_init)
+        #print(image)
         fitted = fitter(gauss_init, xx, yy, image, weights=weights,
                         maxiter=1000)
 

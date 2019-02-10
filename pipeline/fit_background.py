@@ -56,21 +56,22 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y):
     #print(SkyCoord(ref_data['RA_'+band][src_ind], ref_data['DEC_'+band][src_ind], unit='deg'))
     ra = ref_data['RA_'+band][src_ind].data[0]
     dec = ref_data['DEC_'+band][src_ind].data[0]
-    reg = regions.CircleSkyRegion(center=SkyCoord(ra, dec, unit='deg'), radius=1*u.arcsecond, meta={'text':str(ref_data['D_ID'][src_ind])+'xstddev_'+str(bg_stddev_x)+'_ystddev_'+str(bg_stddev_y)})
+    reg = regions.CircleSkyRegion(center=SkyCoord(ra, dec, unit='deg'), radius=1*u.arcsecond, meta={'text':str(ref_data['D_ID'][src_ind].data[0])+'_xstddev_'+str(bg_stddev_x)+'_ystddev_'+str(bg_stddev_y)})
 
     region_list = []
-    for ind in range(len(ref_data)):
-        ra = ref_data['RA_'+band][src_ind].data[0]
-        dec = ref_data['DEC_'+band][src_ind].data[0]
-        region = regions.CircleSkyRegion(center=SkyCoord(ra, dec, unit='deg'), radius=1*u.arcsecond)
-        region_list.append(region)
+    valid_inds = np.where(np.isnan(ref_data['RA_'+band]) == False)[0]
+    for ind in valid_inds:
+        ra_i = ref_data['RA_'+band][ind]
+        dec_i = ref_data['DEC_'+band][ind]
+        region_i = regions.CircleSkyRegion(center=SkyCoord(ra_i, dec_i, unit='deg'), radius=1*u.arcsecond)
+        region_list.append(region_i)
         
     cat_r = Angle(0.5, 'arcsecond') #radius for gaussian fitting
     gauss_cat = bg_gaussfit(img, reg, region_list, cat_r, bg_stddev_x=bg_stddev_x, bg_stddev_y=bg_stddev_y, savepath=gauss_save_dir, max_offset_in_beams = 1, max_radius_in_beams = 5)
 
-    img_table = Table(names=('D_ID', 'fwhm_maj_'+name, 'fwhm_maj_err_'+name, 'fwhm_min_'+name, 'fwhm_min_err_'+name, 'pa_'+name, 'pa_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_min_deconv_'+name, 'deconv_pa_'+name, 'RA_'+name,'RA_err_'+name, 'DEC_'+name, 'DEC_err_'+name), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))
+    img_table = Table(names=('D_ID', 'fwhm_maj_'+band, 'fwhm_maj_err_'+band, 'fwhm_min_'+band, 'fwhm_min_err_'+band, 'pa_'+band, 'pa_err_'+band, 'fwhm_maj_deconv_'+band, 'fwhm_min_deconv_'+band, 'deconv_pa_'+band, 'RA_'+band,'RA_err_'+band, 'DEC_'+band, 'DEC_err_'+band), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))
     for key in gauss_cat:
-        img_table.add_row((key, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['deconv_fwhm_major'], gauss_cat[key]['deconv_fwhm_minor'], gauss_cat[key]['deconv_pa'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y']))
+        img_table.add_row((srcID, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['deconv_fwhm_major'], gauss_cat[key]['deconv_fwhm_minor'], gauss_cat[key]['deconv_pa'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y']))
 
     #now measure deconvovled sizes and aperture flux measurements for each source 
     ap_flux_arr = []
@@ -79,13 +80,13 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y):
     for row in range(len(img_table)): #now loop through sources in reference data and make measurements
         ref_ind = np.where(ref_data['D_ID'] == img_table['D_ID'][row])[0]
         if len(ref_ind > 0):
-            pix_major_fwhm = ((img_table['fwhm_maj_'+name][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
-            pix_minor_fwhm = ((img_table['fwhm_min_'+name][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
-            center_coord = SkyCoord(img_table['RA_'+name][row], img_table['DEC_'+name][row], frame='icrs', unit=(u.deg, u.deg))
+            pix_major_fwhm = ((img_table['fwhm_maj_'+band][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
+            pix_minor_fwhm = ((img_table['fwhm_min_'+band][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
+            center_coord = SkyCoord(img_table['RA_'+band][row], img_table['DEC_'+band][row], frame='icrs', unit=(u.deg, u.deg))
             center_coord_pix = center_coord.to_pixel(img_wcs)
             center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
 
-            pos_ang = img_table['pa_'+name][row]*u.deg
+            pos_ang = img_table['pa_'+band][row]*u.deg
 
             ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2, pix_minor_fwhm*2, angle=pos_ang)
             size = pix_major_fwhm*2.1
@@ -126,6 +127,6 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y):
     arrs = [ap_flux_arr, ap_flux_err_arr]
     for c in range(len(cols)):
         img_table.add_column(Column(np.array(arrs[c])), name=cols[c])
-    img_table.add_column(Column(img_table['fwhm_maj_deconv'+band]/img_table['fwhm_min_deconv'+band]), name='ar_deconv_'+band)
+    img_table.add_column(Column(img_table['fwhm_maj_deconv_'+band]/img_table['fwhm_min_deconv_'+band]), name='ar_deconv_'+band)
     
     return img_table
