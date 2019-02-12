@@ -209,32 +209,6 @@ def bg_gaussfit(fitsfile, region, region_list,
         sz = cutout.shape[0]
         mx = np.nanmax(smaller_cutout)
         ampguess = mx-background
-
-        p_init = models.Gaussian2D(amplitude=ampguess,
-                                   x_mean=sz/2,
-                                   y_mean=sz/2,
-                                   x_stddev=bmmaj_px/STDDEV_TO_FWHM,
-                                   y_stddev=bmmin_px/STDDEV_TO_FWHM,
-                                   theta=beam.pa,
-                                   bounds={'x_stddev':(bmmin_px/STDDEV_TO_FWHM*0.75,
-                                                       bmmaj_px*max_radius_in_beams/STDDEV_TO_FWHM),
-                                           'y_stddev':(bmmin_px/STDDEV_TO_FWHM*0.75,
-                                                       bmmaj_px*max_radius_in_beams/STDDEV_TO_FWHM),
-                                           'x_mean':(sz/2-max_offset_in_beams*bmmaj_px/STDDEV_TO_FWHM,
-                                                     sz/2+max_offset_in_beams*bmmaj_px/STDDEV_TO_FWHM),
-                                           'y_mean':(sz/2-max_offset_in_beams*bmmaj_px/STDDEV_TO_FWHM,
-                                                     sz/2+max_offset_in_beams*bmmaj_px/STDDEV_TO_FWHM),
-                                           'amplitude':(ampguess*0.9, ampguess*1.1)
-                                          }
-                                  )
-        bg_init = models.Gaussian2D(amplitude=background,
-                                   x_mean=sz/2,
-                                   y_mean=sz/2,
-                                   x_stddev=bg_stddev_x/STDDEV_TO_FWHM,
-                                   y_stddev=bg_stddev_y/STDDEV_TO_FWHM,
-                                   theta=beam.pa,
-                                   bounds={'amplitude':(background*0.01, ampguess)}
-                                  )
         imtofit = np.nan_to_num((cutout-background)*mask.data)
         src_gauss = [ampguess, sz, bmmaj_px.value, bmmin_px.value, beam.pa.value]
         bg_gauss = [background, sz, bg_stddev_x, bg_stddev_y, beam.pa.value]
@@ -360,7 +334,7 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
                                    y_mean=gauss_params[1]/2,
                                    x_stddev=gauss_params[2]/STDDEV_TO_FWHM,
                                    y_stddev=gauss_params[3]/STDDEV_TO_FWHM,
-                                   theta=gauss_params[4]*u.deg,
+                                   theta=gauss_params[4],
                                    bounds={'x_stddev':(gauss_params[3]/STDDEV_TO_FWHM*0.75,
                                                        gauss_params[2]*bound_params[0]/STDDEV_TO_FWHM),
                                            'y_stddev':(gauss_params[3]/STDDEV_TO_FWHM*0.75,
@@ -377,17 +351,14 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
                                    y_mean=bg_gauss_params[1]/2,
                                    x_stddev=bg_gauss_params[2]/STDDEV_TO_FWHM,
                                    y_stddev=bg_gauss_params[3]/STDDEV_TO_FWHM,
-                                   theta=bg_gauss_params[4]*u.deg,
+                                   theta=bg_gauss_params[4],
                                    bounds={'amplitude':(bg_gauss_params[0]*0.01, 0.5*gauss_params[0])})
     
     gauss_init = src_gaussian + bg_gaussian
-    #gauss_init = models.Gaussian2D(gauss_params[0], gauss_params[1]/2, gauss_params[1]/2, gauss_params[2], gauss_params[3], gauss_params[4]) + models.Gaussian2D(bg_gauss_params[0], bg_gauss_params[1]/2, bg_gauss_params[1]/2, bg_gauss_params[2], bg_gauss_params[3], bg_gauss_params[4])
+
     with warnings.catch_warnings():
         # Ignore model linearity warning from the fitter
         warnings.simplefilter('ignore')
-        #print(xx)
-        #print(yy)
-        #print(gauss_init)
         fitted = fitter(gauss_init, xx, yy, image, weights=weights,
                         maxiter=1000)
 
