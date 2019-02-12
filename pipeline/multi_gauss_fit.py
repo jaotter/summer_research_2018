@@ -236,12 +236,12 @@ def bg_gaussfit(fitsfile, region, region_list,
                                    bounds={'amplitude':(background*0.01, ampguess)}
                                   )
         imtofit = np.nan_to_num((cutout-background)*mask.data)
-        src_gauss = [ampguess, sz, bmmaj_px, bmmin_px, beam.pa]
-        bg_gauss = [background, sz, bg_stddev_x, bg_stddev_y]
+        src_gauss = [ampguess, sz, bmmaj_px.value, bmmin_px.value, beam.pa.value]
+        bg_gauss = [background, sz, bg_stddev_x, bg_stddev_y, beam.pa.value]
         bnds = [max_radius_in_beams, max_offset_in_beams]
         result, fit_info, chi2, fitter = gaussfit_image(image=imtofit,
-                                                        gaussian=src_gauss,
-                                                        bg_gaussian=bg_gauss,
+                                                        gauss_params=src_gauss,
+                                                        bg_gauss_params=bg_gauss,
                                                         bound_params=bnds,
                                                         weights=1/noise**2,
                                                         plot=savepath is not None,
@@ -353,13 +353,14 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
         The sum of the squares of the residual, e.g., chi^2.
     """
     yy, xx = np.mgrid[:image.shape[0], :image.shape[1]]
-    
+    print(gauss_params)
+    print(bg_gauss_params)
     src_gaussian = models.Gaussian2D(amplitude=gauss_params[0],
                                    x_mean=gauss_params[1]/2,
                                    y_mean=gauss_params[1]/2,
                                    x_stddev=gauss_params[2]/STDDEV_TO_FWHM,
                                    y_stddev=gauss_params[3]/STDDEV_TO_FWHM,
-                                   theta=gauss_params[4],
+                                   theta=gauss_params[4]*u.deg,
                                    bounds={'x_stddev':(gauss_params[3]/STDDEV_TO_FWHM*0.75,
                                                        gauss_params[2]*bound_params[0]/STDDEV_TO_FWHM),
                                            'y_stddev':(gauss_params[3]/STDDEV_TO_FWHM*0.75,
@@ -368,25 +369,25 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
                                                      gauss_params[1]/2+bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM),
                                            'y_mean':(gauss_params[1]/2-bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM,
                                                      gauss_params[1]/2+bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM),
-                                           'amplitude':(gauss_params[1]*0.9, gauss_params[1]*1.1)
+                                           'amplitude':(gauss_params[0]*0.9, gauss_params[0]*1.1)
                                           }
-                                  )
-    bg_gaussian = models.Gaussian2D(amplitude=bg_gauss_params[0],
+                                     )
+    bg_gaussian = models.Gaussian2D(amplitude=0.1*gauss_params[0],
                                    x_mean=bg_gauss_params[1]/2,
                                    y_mean=bg_gauss_params[1]/2,
                                    x_stddev=bg_gauss_params[2]/STDDEV_TO_FWHM,
                                    y_stddev=bg_gauss_params[3]/STDDEV_TO_FWHM,
-                                   theta=bg_gauss_params[4],
-                                   bounds={'amplitude':(bg_gauss_params[0]*0.01, 0.5*gauss_params[1])})
+                                   theta=bg_gauss_params[4]*u.deg,
+                                   bounds={'amplitude':(bg_gauss_params[0]*0.01, 0.5*gauss_params[0])})
     
-    gauss_init = src_gaussian + bg_gaussian #models.Gaussian2D(76, 103, 76, 50, 15) + models.Gaussian2D(73, 102, 97, 27, 24)
+    gauss_init = src_gaussian + bg_gaussian
+    #gauss_init = models.Gaussian2D(gauss_params[0], gauss_params[1]/2, gauss_params[1]/2, gauss_params[2], gauss_params[3], gauss_params[4]) + models.Gaussian2D(bg_gauss_params[0], bg_gauss_params[1]/2, bg_gauss_params[1]/2, bg_gauss_params[2], bg_gauss_params[3], bg_gauss_params[4])
     with warnings.catch_warnings():
         # Ignore model linearity warning from the fitter
         warnings.simplefilter('ignore')
         #print(xx)
         #print(yy)
         #print(gauss_init)
-        print(image)
         fitted = fitter(gauss_init, xx, yy, image, weights=weights,
                         maxiter=1000)
 

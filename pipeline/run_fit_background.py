@@ -7,4 +7,5 @@ B6_name = 'B6_conv_r0.5.clean.0.05mJy.150mplus'
 #B7_name = 'conv_maxroffset2_'+B7_img_names
 
 fit = fit_source(17, B6_img, B6_name, band, 50, 50)
-print(fit)
+for i in fit.colnames:
+    print(fit[i])
