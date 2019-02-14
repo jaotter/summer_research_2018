@@ -86,6 +86,7 @@ def bg_gaussfit(fitsfile, region, region_list,
                      radius=1.0*u.arcsec,
                      max_radius_in_beams=2,
                      max_offset_in_beams=1,
+                     max_offset_in_beams_bg=10,
                      bg_stddev_x=None,
                      bg_stddev_y=None,
                      background_estimator=np.nanmedian,
@@ -116,6 +117,8 @@ def bg_gaussfit(fitsfile, region, region_list,
     max_offset_in_beams : float
         The maximum allowed offset of the source center from the guessed
         position
+    max_offset_in_beams_bg : float
+        same as above but for background gaussian
     bg_stddev_x : float
         Guess for standard deviation in x direction for background gaussian
     bg_stddev_y : float
@@ -212,7 +215,7 @@ def bg_gaussfit(fitsfile, region, region_list,
         imtofit = np.nan_to_num((cutout-background)*mask.data)
         src_gauss = [ampguess, sz, bmmaj_px.value, bmmin_px.value, beam.pa.value]
         bg_gauss = [background, sz, bg_stddev_x, bg_stddev_y, beam.pa.value]
-        bnds = [max_radius_in_beams, max_offset_in_beams]
+        bnds = [max_radius_in_beams, max_offset_in_beams, max_offset_in_beams_bg]
         result, fit_info, chi2, fitter = gaussfit_image(image=imtofit,
                                                         gauss_params=src_gauss,
                                                         bg_gauss_params=bg_gauss,
@@ -352,7 +355,12 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
                                    x_stddev=bg_gauss_params[2]/STDDEV_TO_FWHM,
                                    y_stddev=bg_gauss_params[3]/STDDEV_TO_FWHM,
                                    theta=bg_gauss_params[4],
-                                   bounds={'amplitude':(bg_gauss_params[0]*0.01, 0.5*gauss_params[0])})
+                                   bounds={'amplitude':(bg_gauss_params[0]*0.01, 0.5*gauss_params[0]),
+                                           'x_mean':(gauss_params[2]/2-bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM,
+                                                     gauss_params[2]/2+bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM),
+                                           'y_mean':(gauss_params[2]/2-bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM,
+                                                     gauss_params[2]/2+bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM)}
+    )
     
     gauss_init = src_gaussian + bg_gaussian
 
