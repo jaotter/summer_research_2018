@@ -356,10 +356,10 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
                                    y_stddev=bg_gauss_params[3]/STDDEV_TO_FWHM,
                                    theta=bg_gauss_params[4],
                                    bounds={'amplitude':(bg_gauss_params[0]*0.01, 0.5*gauss_params[0]),
-                                           'x_mean':(gauss_params[2]/2-bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM,
-                                                     gauss_params[2]/2+bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM),
-                                           'y_mean':(gauss_params[2]/2-bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM,
-                                                     gauss_params[2]/2+bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM)}
+                                           'x_mean':(gauss_params[1]/2-bound_params[2]*gauss_params[2]/STDDEV_TO_FWHM,
+                                                     gauss_params[1]/2+bound_params[2]*gauss_params[2]/STDDEV_TO_FWHM),
+                                           'y_mean':(gauss_params[1]/2-bound_params[2]*gauss_params[2]/STDDEV_TO_FWHM,
+                                                     gauss_params[1]/2+bound_params[2]*gauss_params[2]/STDDEV_TO_FWHM)}
     )
     
     gauss_init = src_gaussian + bg_gaussian
