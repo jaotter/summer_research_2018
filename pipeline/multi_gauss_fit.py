@@ -87,8 +87,10 @@ def bg_gaussfit(fitsfile, region, region_list,
                      max_radius_in_beams=2,
                      max_offset_in_beams=1,
                      max_offset_in_beams_bg=10,
-                     bg_stddev_x=None,
-                     bg_stddev_y=None,
+                     bg_stddev_x=40,
+                     bg_stddev_y=40,
+                     bg_mean_x=0,
+                     bg_mean_y=0,
                      background_estimator=np.nanmedian,
                      noise_estimator=lambda x: mad_std(x, ignore_nan=True),
                      savepath=None,
@@ -123,6 +125,8 @@ def bg_gaussfit(fitsfile, region, region_list,
         Guess for standard deviation in x direction for background gaussian
     bg_stddev_y : float
         Same as above, in y direction
+    bg_mean_x/y : float
+        pixels away for background gaussian mean guess, with origin at center
     background_estimator : function
         A function to apply to the background pixels (those not within 1 beam
         HWHM of the center) to estimate the background level.  The background
@@ -213,8 +217,8 @@ def bg_gaussfit(fitsfile, region, region_list,
         mx = np.nanmax(smaller_cutout)
         ampguess = mx-background
         imtofit = np.nan_to_num((cutout-background)*mask.data)
-        src_gauss = [ampguess, sz, bmmaj_px.value, bmmin_px.value, beam.pa.value]
-        bg_gauss = [background, sz, bg_stddev_x, bg_stddev_y, beam.pa.value]
+        src_gauss = [ampguess, sz/2, bmmaj_px.value, bmmin_px.value, beam.pa.value]
+        bg_gauss = [background, bg_mean_x + sz/2, bg_mean_y + sz/2, bg_stddev_x, bg_stddev_y, beam.pa.value]
         bnds = [max_radius_in_beams, max_offset_in_beams, max_offset_in_beams_bg]
         result, fit_info, chi2, fitter = gaussfit_image(image=imtofit,
                                                         gauss_params=src_gauss,
@@ -333,8 +337,8 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
     print(gauss_params)
     print(bg_gauss_params)
     src_gaussian = models.Gaussian2D(amplitude=gauss_params[0],
-                                   x_mean=gauss_params[1]/2,
-                                   y_mean=gauss_params[1]/2,
+                                   x_mean=gauss_params[1],
+                                   y_mean=gauss_params[1],
                                    x_stddev=gauss_params[2]/STDDEV_TO_FWHM,
                                    y_stddev=gauss_params[3]/STDDEV_TO_FWHM,
                                    theta=gauss_params[4],
@@ -342,24 +346,24 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
                                                        gauss_params[2]*bound_params[0]/STDDEV_TO_FWHM),
                                            'y_stddev':(gauss_params[3]/STDDEV_TO_FWHM*0.75,
                                                        gauss_params[2]*bound_params[0]/STDDEV_TO_FWHM),
-                                           'x_mean':(gauss_params[1]/2-bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM,
-                                                     gauss_params[1]/2+bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM),
-                                           'y_mean':(gauss_params[1]/2-bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM,
-                                                     gauss_params[1]/2+bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM),
+                                           'x_mean':(gauss_params[1]-bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM,
+                                                     gauss_params[1]+bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM),
+                                           'y_mean':(gauss_params[1]-bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM,
+                                                     gauss_params[1]+bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM),
                                            'amplitude':(gauss_params[0]*0.9, gauss_params[0]*1.1)
                                           }
                                      )
     bg_gaussian = models.Gaussian2D(amplitude=0.1*gauss_params[0],
                                    x_mean=bg_gauss_params[1]/2,
-                                   y_mean=bg_gauss_params[1]/2,
-                                   x_stddev=bg_gauss_params[2]/STDDEV_TO_FWHM,
-                                   y_stddev=bg_gauss_params[3]/STDDEV_TO_FWHM,
-                                   theta=bg_gauss_params[4],
+                                   y_mean=bg_gauss_params[2]/2,
+                                   x_stddev=bg_gauss_params[3]/STDDEV_TO_FWHM,
+                                   y_stddev=bg_gauss_params[4]/STDDEV_TO_FWHM,
+                                   theta=bg_gauss_params[5],
                                    bounds={'amplitude':(bg_gauss_params[0]*0.01, 0.5*gauss_params[0]),
-                                           'x_mean':(gauss_params[1]/2-bound_params[2]*gauss_params[2]/STDDEV_TO_FWHM,
-                                                     gauss_params[1]/2+bound_params[2]*gauss_params[2]/STDDEV_TO_FWHM),
-                                           'y_mean':(gauss_params[1]/2-bound_params[2]*gauss_params[2]/STDDEV_TO_FWHM,
-                                                     gauss_params[1]/2+bound_params[2]*gauss_params[2]/STDDEV_TO_FWHM)}
+                                           'x_mean':(gauss_params[1]-bound_params[2]*gauss_params[3]/STDDEV_TO_FWHM,
+                                                     gauss_params[1]+bound_params[2]*gauss_params[3]/STDDEV_TO_FWHM),
+                                           'y_mean':(gauss_params[2]-bound_params[2]*gauss_params[3]/STDDEV_TO_FWHM,
+                                                     gauss_params[2]+bound_params[2]*gauss_params[3]/STDDEV_TO_FWHM)}
     )
     
     gauss_init = src_gaussian + bg_gaussian
@@ -372,32 +376,51 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
 
     print(fitted)
     fitim = fitted(xx,yy)
+    fitim_src = fitted[0](xx,yy)
     residual = image-fitim
     residualsquaredsum = np.nansum(residual**2*weights)
 
     if plot:
         pl.clf()
-        ax1 = pl.subplot(2,2,1)
+        ax1 = pl.subplot(2,3,1)
         im = ax1.imshow(image, cmap='viridis', origin='lower',
                         interpolation='nearest')
         vmin, vmax = im.get_clim()
-        ax2 = pl.subplot(2,2,2)
+        ax2 = pl.subplot(2,3,2)
         ax2.imshow(fitim, cmap='viridis', origin='lower',
                    interpolation='nearest', vmin=vmin, vmax=vmax)
-        ax3 = pl.subplot(2,2,3)
-        ax3.imshow(residual, cmap='viridis', origin='lower',
+        ax3 = pl.subplot(2,3,3)
+        ax3.imshow(fitim_src, cmap='viridis', origin='lower',
                    interpolation='nearest', vmin=vmin, vmax=vmax)
-        ax4 = pl.subplot(2,2,4)
+        ax4 = pl.subplot(2,3,4)
+        ax4.imshow(residual, cmap='viridis', origin='lower',
+                   interpolation='nearest', vmin=vmin, vmax=vmax)
+        ax5 = pl.subplot(2,3,5)
         im = ax4.imshow(image, cmap='viridis', origin='lower',
                         interpolation='nearest')
+        ax6 = pl.subplot(2,3,6)
+        
         vmin, vmax = im.get_clim()
         scalefactor = fitim.max()
         if scalefactor < 0:
             scalefactor = fitim.max() - fitim.min()
-        ax4.contour(fitim, levels=np.array([0.00269, 0.0455, 0.317])*scalefactor,
+        ax5.contour(fitim, levels=np.array([0.00269, 0.0455, 0.317])*scalefactor,
                     colors=['w']*4)
         axlims = ax4.axis()
-        ax4.plot(fitted.x_mean_0, fitted.y_mean_0, 'w+')
-        ax4.axis(axlims)
-    
+        ax5.plot(fitted.x_mean_0, fitted.y_mean_0, 'w+')
+        ax5.axis(axlims)
+
+        ax5 = pl.subplot(2,3,5)
+        im = ax5.imshow(image, cmap='viridis', origin='lower',
+                        interpolation='nearest')
+
+        ax6 = pl.subplot(2,3,6)
+        im = ax6.imshow(image, cmap='viridis', origin='lower',
+                        interpolation='nearest')
+        ax6.contour(fitim_src, levels=np.array([0.00269, 0.0455, 0.317])*scalefactor,
+                    colors=['w']*4)
+        axlims = ax6.axis()
+        ax6.plot(fitted.x_mean_0, fitted.y_mean_0, 'w+')
+        ax6.axis(axlims)
+        
     return fitted, fitter.fit_info, residualsquaredsum, fitter
