@@ -21,6 +21,7 @@ def imgs_catalog(B3_imgs, B3_names, B6_imgs, B6_names, B7_imgs, B7_names, short_
 
     #B3_names, B6_names, B7_names only used for gaussian diag directory names
     #short names actually used in table
+    #creates catalog from multiple images in each band
     
     ref_data_name = '/lustre/aoc/students/jotter/dendro_catalogs/IR_matched_catalog_B7.fits' #master_500klplus_B3_ref.fits'
     ref_data = Table.read(ref_data_name)
@@ -73,7 +74,7 @@ def imgs_catalog(B3_imgs, B3_names, B6_imgs, B6_names, B7_imgs, B7_names, short_
                             regs.append(reg)
 
             cat_r = Angle(0.5, 'arcsecond') #radius for gaussian fitting
-            gauss_cat = gaussfit_catalog(img, regs, cat_r, savepath=gauss_save_dir, max_radius_in_beams = 15)
+            gauss_cat = gaussfit_catalog(img, regs, cat_r, savepath=gauss_save_dir)#, max_radius_in_beams = 15)
             #table does not have all columns yet, add others later
             img_table = Table(names=('D_ID', 'fwhm_maj_'+name, 'fwhm_maj_err_'+name, 'fwhm_min_'+name, 'fwhm_min_err_'+name, 'pa_'+name, 'pa_err_'+name, 'RA_'+name,'RA_err_'+name, 'DEC_'+name, 'DEC_err_'+name), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))
             for key in gauss_cat:
@@ -150,7 +151,9 @@ def imgs_catalog(B3_imgs, B3_names, B6_imgs, B6_names, B7_imgs, B7_names, short_
                         fwhm_min_deconv_arr.append(np.nan)
                         fwhm_maj_deconv_err_arr.append(np.nan)
                         fwhm_min_deconv_err_arr.append(np.nan)
-                                    
+                        #pa_deconv_arr.append(np.nan)
+                        #pa_deconv_err_arr.append(np.nan)
+                        
             cols = ['ap_flux_'+name, 'ap_flux_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_maj_deconv_err_'+name, 'fwhm_min_deconv_'+name, 'fwhm_min_deconv_err_'+name]#, 'ar_deconv_'+name, 'ar_deconv_err_'+name]
             arrs = [ap_flux_arr, ap_flux_err_arr, fwhm_maj_deconv_arr, fwhm_maj_deconv_err_arr, fwhm_min_deconv_arr, fwhm_min_deconv_err_arr]#, ar_deconv_arr, ar_deconv_err_arr]
             for c in range(len(cols)):
@@ -169,7 +172,7 @@ def imgs_catalog(B3_imgs, B3_names, B6_imgs, B6_names, B7_imgs, B7_names, short_
 
 
 def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_name):
-
+    #creates catalog from one image in each band
     #B3_names, B6_names, B7_names only used for gaussian diag directory names
     
     ref_data_name = '/lustre/aoc/students/jotter/dendro_catalogs/IR_matched_catalog_B7.fits' #master_500klplus_B3_ref.fits'
@@ -219,7 +222,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                         regs.append(reg)
 
         cat_r = Angle(0.5, 'arcsecond') #radius for gaussian fitting
-        gauss_cat = gaussfit_catalog(img, regs, cat_r, savepath=gauss_save_dir, max_radius_in_beams = 15)
+        gauss_cat = gaussfit_catalog(img, regs, cat_r, savepath=gauss_save_dir, max_offset_in_beams = 1, max_radius_in_beams = 5)
         #table does not have all columns yet, add others later
         img_table = Table(names=('D_ID', 'fwhm_maj_'+name, 'fwhm_maj_err_'+name, 'fwhm_min_'+name, 'fwhm_min_err_'+name, 'pa_'+name, 'pa_err_'+name, 'RA_'+name,'RA_err_'+name, 'DEC_'+name, 'DEC_err_'+name), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))
         for key in gauss_cat:
@@ -231,8 +234,8 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
         fwhm_maj_deconv_err_arr = []
         fwhm_min_deconv_arr = []
         fwhm_min_deconv_err_arr = []
-        ar_deconv_arr = []
-        ar_deconv_err_arr = []
+        pa_deconv_arr = []
+        pa_deconv_err_arr = []
 
         for row in range(len(img_table)): #now loop through sources in reference data and make measurements
             ref_ind = np.where(ref_data['D_ID'] == img_table['D_ID'][row])[0]
@@ -288,6 +291,8 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                     fwhm_min_deconv_arr.append(deconv_size.minor.value)
                     fwhm_maj_deconv_err_arr.append(img_table['fwhm_maj_err_'+name][row]) #same error as non deconvolved
                     fwhm_min_deconv_err_arr.append(img_table['fwhm_min_err_'+name][row])
+                    pa_deconv_arr.append(deconv_size.pa.value)
+                    pa_deconv_err_arr.append(img_table['pa_err_'+name][row])
                     #aspect_ratio = deconv_size.major.value/deconv_size.minor.value
                     #ar_deconv_arr.append(aspect_ratio)
                     #ar_err = np.sqrt((img_table['fwhm_maj_err_'+name]/deconv_size.major.value)**2 + (img_table['fwhm_min_err_'+name]/deconv_si
@@ -296,9 +301,10 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                     fwhm_min_deconv_arr.append(np.nan)
                     fwhm_maj_deconv_err_arr.append(np.nan)
                     fwhm_min_deconv_err_arr.append(np.nan)
-                                    
-        cols = ['ap_flux_'+name, 'ap_flux_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_maj_deconv_err_'+name, 'fwhm_min_deconv_'+name, 'fwhm_min_deconv_err_'+name]#, 'ar_deconv_'+name, 'ar_deconv_err_'+name]
-        arrs = [ap_flux_arr, ap_flux_err_arr, fwhm_maj_deconv_arr, fwhm_maj_deconv_err_arr, fwhm_min_deconv_arr, fwhm_min_deconv_err_arr]#, ar_deconv_arr, ar_deconv_err_arr]
+                    pa_deconv_arr.append(np.nan)
+                    pa_deconv_err_arr.append(np.nan)
+        cols = ['ap_flux_'+name, 'ap_flux_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_maj_deconv_err_'+name, 'fwhm_min_deconv_'+name, 'fwhm_min_deconv_err_'+name, 'pa_deconv_'+name, 'pa_deconv_err_'+name]
+        arrs = [ap_flux_arr, ap_flux_err_arr, fwhm_maj_deconv_arr, fwhm_maj_deconv_err_arr, fwhm_min_deconv_arr, fwhm_min_deconv_err_arr, pa_deconv_arr, pa_deconv_err_arr]
         for c in range(len(cols)):
             img_table.add_column(Column(np.array(arrs[c])), name=cols[c])
         img_table.add_column(Column(np.array(fwhm_maj_deconv_arr)/np.array(fwhm_min_deconv_arr)), name='ar_deconv_'+name)
@@ -308,5 +314,4 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
     B3B6 = join(band_tables[0], band_tables[1], keys='D_ID', join_type='outer')
     all_bands = join(B3B6, band_tables[2], keys='D_ID', join_type='outer')
 
-    all_bands.write('/lustre/aoc/students/jotter/dendro_catalogs/'+cat_name+'.fits',  overwrite=True)
-    #lastly, match with other data
+    all_bands.write('/users/jotter/summer_research_2018/tables/'+cat_name+'.fits',  overwrite=True)

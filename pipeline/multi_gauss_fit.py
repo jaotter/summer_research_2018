@@ -266,10 +266,13 @@ def bg_gaussfit(fitsfile, region, region_list,
             deconv_major, deconv_minor, deconv_pa = (deconv_fit.major,
                                                      deconv_fit.minor,
                                                      deconv_fit.pa)
+            deconv_maj_err = fit_info[covariance][majind,majind]**0.5 * STDDEV_TO_FWHM * pixscale.to(u.arcsec)
+            deconv_min_err = fit_info[covariance][minind,minind]**0.5 * STDDEV_TO_FWHM * pixscale.to(u.arcsec)
+            deconv_pa_err = fit_info[covariance][5,5]**0.5 * u.deg
         except ValueError:
             print("Could not deconvolve {0} from {1}".format(beam.__repr__(), fitted_gaussian_as_beam.__repr__()))
             deconv_major, deconv_minor, deconv_pa = np.nan, np.nan, np.nan
-
+            deconv_maj_err, deconv_min_err, deconv_pa_err = np.nan, np.nan, np.nan
         fit_data[sourcename] = {'amplitude': result.amplitude_0,
                                 'center_x': float(clon)*u.deg,
                                 'center_y': float(clat)*u.deg,
@@ -277,8 +280,11 @@ def bg_gaussfit(fitsfile, region, region_list,
                                 'fwhm_minor': minor,
                                 'pa': pa,
                                 'deconv_fwhm_major': deconv_major,
+                                'e_deconv_fwhm_major' : deconv_maj_err,
                                 'deconv_fwhm_minor': deconv_minor,
+                                'e_deconv_fwhm_minor': deconv_min_err,
                                 'deconv_pa': deconv_pa,
+                                'e_deconv_pa': deconv_pa_err,
                                 'chi2': chi2,
                                 'chi2/n': chi2/mask.data.sum(),
                                 'e_amplitude': fit_info[covariance][0,0]**0.5,
@@ -311,12 +317,10 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
     ----------
     image : 2-dimensional array
         The image to be fit.  Cannot contain any NaNs.
-    gaussian : `astropy.modeling.Model`
-        An astropy model object with guesses included.  Given the name of this
-        function, it should be a `~astropy.models.Gaussian2D` model, but
-        technically it can be any model.
-    bg_gaussian : 
-        Same as above but for the background
+    gaussian : list of floats
+        [amplitude guess, x and y mean (center), beam major pix, beam minor pix, beam pa]
+    bg_gaussian : list of floats
+        [background guess, bg mean x , bg mean y, bg_stddev_x, bg_stddev_y, beam pa]
     fitter : `astropy.modeling.fitting.Fitter`
         A fitter instance.  Can be any of the optimizers, in principle, but it
         needs to take keywords ``weight`` and ``maxiter``.
@@ -354,16 +358,16 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
                                           }
                                      )
     bg_gaussian = models.Gaussian2D(amplitude=0.1*gauss_params[0],
-                                   x_mean=bg_gauss_params[1]/2,
-                                   y_mean=bg_gauss_params[2]/2,
+                                   x_mean=bg_gauss_params[1],
+                                   y_mean=bg_gauss_params[2],
                                    x_stddev=bg_gauss_params[3]/STDDEV_TO_FWHM,
                                    y_stddev=bg_gauss_params[4]/STDDEV_TO_FWHM,
                                    theta=bg_gauss_params[5],
                                    bounds={'amplitude':(bg_gauss_params[0]*0.01, 0.5*gauss_params[0]),
-                                           'x_mean':(gauss_params[1]-bound_params[2]*gauss_params[3]/STDDEV_TO_FWHM,
-                                                     gauss_params[1]+bound_params[2]*gauss_params[3]/STDDEV_TO_FWHM),
-                                           'y_mean':(gauss_params[2]-bound_params[2]*gauss_params[3]/STDDEV_TO_FWHM,
-                                                     gauss_params[2]+bound_params[2]*gauss_params[3]/STDDEV_TO_FWHM)}
+                                           'x_mean':(bg_gauss_params[1]-bound_params[2]*gauss_params[3]/STDDEV_TO_FWHM,
+                                                     bg_gauss_params[1]+bound_params[2]*gauss_params[3]/STDDEV_TO_FWHM),
+                                           'y_mean':(bg_gauss_params[2]-bound_params[2]*gauss_params[3]/STDDEV_TO_FWHM,
+                                                     bg_gauss_params[2]+bound_params[2]*gauss_params[3]/STDDEV_TO_FWHM)}
     )
     
     gauss_init = src_gaussian + bg_gaussian
@@ -396,7 +400,7 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
         ax4.imshow(residual, cmap='viridis', origin='lower',
                    interpolation='nearest', vmin=vmin, vmax=vmax)
         ax5 = pl.subplot(2,3,5)
-        im = ax4.imshow(image, cmap='viridis', origin='lower',
+        im = ax5.imshow(image, cmap='viridis', origin='lower',
                         interpolation='nearest')
         ax6 = pl.subplot(2,3,6)
         
@@ -409,10 +413,6 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
         axlims = ax4.axis()
         ax5.plot(fitted.x_mean_0, fitted.y_mean_0, 'w+')
         ax5.axis(axlims)
-
-        ax5 = pl.subplot(2,3,5)
-        im = ax5.imshow(image, cmap='viridis', origin='lower',
-                        interpolation='nearest')
 
         ax6 = pl.subplot(2,3,6)
         im = ax6.imshow(image, cmap='viridis', origin='lower',
