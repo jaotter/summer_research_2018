@@ -24,17 +24,21 @@ def disk_size_hist(arrs, labels, filename):
     plt.xlim(0,0.35)
     plt.savefig('plots/size_plots/'+filename, dpi=500)
         
-def size_comp(arr1, arr2, err1, err2, labels, filename):
+def size_comp(conv_arrs, deconv_arrs, conv_errs, deconv_errs, labels, filename):
     #plot sizes of disks in two bands, arr1 and arr2 should have same length and sources
     #labels - arr1 label, then arr2
 
     fig = plt.figure()
-    plt.errorbar(arr1, arr2, xerr=err1, yerr=err2, marker='o',linestyle='')
+
+    plt.errorbar(conv_arrs[0], conv_arrs[1], xerr=conv_errs[0], yerr=conv_errs[1], marker='o',linestyle='', label='convolved sizes')
+    plt.errorbar(deconv_arrs[0], deconv_arrs[1], xerr=deconv_errs[0], yerr=deconv_errs[1], marker='o',linestyle='', label='deconvolved sizes')
+    
     plt.xlabel(labels[0])
     plt.ylabel(labels[1])
     plt.xlim(0,0.3)
     plt.ylim(0,0.3)
-    plt.plot(np.arange(0,0.4,0.1), np.arange(0,0.4,0.1), color='k')
+    plt.plot(np.arange(0,1,0.1), np.arange(0,1,0.1), color='k')
+    plt.legend()
     plt.savefig('plots/size_plots/'+filename, dpi=400)
 
 
