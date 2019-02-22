@@ -15,14 +15,29 @@ def disk_size_hist(arrs, labels, filename):
         widths = []
         for b in range(len(bins[:-1])): #creating points to plot - midpoints of bins
             plotpts.append(bins[b] + (bins[b+1]-bins[b])/2)
-            widths.append((bins[b+1]-bins[b])/2)
+            widths.append((bins[b+1]-bins[b]))
     
-        plt.bar(plotpts, hist, widths, edgecolor = 'black', label=labels[a])
-        plt.legend()
-        plt.xlabel('fwhm major (as)')
-        plt.ylabel('number of disks')
-        plt.savefig('plots/size_plots'+filename, dpi=500)
+        plt.bar(plotpts, hist, widths, edgecolor = 'black', label=labels[a], alpha=0.5)
+    plt.legend()
+    plt.xlabel('deconvolved fwhm major (as)')
+    plt.ylabel('number of disks')
+    plt.xlim(0,0.35)
+    plt.savefig('plots/size_plots/'+filename, dpi=500)
         
+def size_comp(arr1, arr2, err1, err2, labels, filename):
+    #plot sizes of disks in two bands, arr1 and arr2 should have same length and sources
+    #labels - arr1 label, then arr2
+
+    fig = plt.figure()
+    plt.errorbar(arr1, arr2, xerr=err1, yerr=err2, marker='o',linestyle='')
+    plt.xlabel(labels[0])
+    plt.ylabel(labels[1])
+    plt.xlim(0,0.3)
+    plt.ylim(0,0.3)
+    plt.plot(np.arange(0,0.4,0.1), np.arange(0,0.4,0.1), color='k')
+    plt.savefig('plots/size_plots/'+filename, dpi=400)
+
+
 def img_size_comp(arrs, err_arrs,  labels):
     fig = plt.figure()
     inds1 = np.where(err_arrs[0] < 0.2)[0]
