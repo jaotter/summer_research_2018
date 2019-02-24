@@ -36,7 +36,17 @@ convolved_B6 = convolution.convolve_fft(B6img, B6_kernel, allow_huge = True)
 convolved_B7 = convolution.convolve_fft(B7img, B7_kernel, allow_huge = True)
 
 B6file[0].data = convolved_B6
-B6file.writeto('/lustre/aoc/students/jotter/directory/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits')
+
+B6file[0].header['BMAJ'] = B6_deconv.major.value
+B6file[0].header['BMIN'] = B6_deconv.minor.value
+B6file[0].header['BPA'] = B6_deconv.pa.value
+
+B6file.writeto('/lustre/aoc/students/jotter/directory/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits', overwrite=True)
 
 B7file[0].data = convolved_B7
-B7file.writeto('/lustre/aoc/students/jotter/directory/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits')
+
+B7file[0].header['BMAJ'] = B7_deconv.major.value
+B7file[0].header['BMIN'] = B7_deconv.minor.value
+B7file[0].header['BPA'] = B7_deconv.pa.value
+
+B7file.writeto('/lustre/aoc/students/jotter/directory/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits', overwrite=True)
