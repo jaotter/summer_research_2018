@@ -1,5 +1,6 @@
 from astropy.io import fits
 from astropy.table import Table
+import astropy.units as u
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,7 +24,45 @@ def disk_size_hist(arrs, labels, filename):
     plt.ylabel('number of disks')
     plt.xlim(0,0.35)
     plt.savefig('plots/size_plots/'+filename, dpi=500)
-        
+
+def disk_size_hist_3panel(arrs, xlabels, filename, nbins=7):
+    f, (ax1, ax2, ax3) = plt.subplots(3,1, figsize=(12,12), sharex='col')
+    f.subplots_adjust(hspace=0)
+    ax = [ax1, ax2, ax3]
+
+    d = 414*u.pc
+    d = d.to(u.AU)
+    
+    total = np.concatenate(arrs)
+    total = total[np.logical_not(np.isnan(total))]
+    total_hist, bins = np.histogram(total, bins=nbins)
+
+    plotpts = []
+    widths = []
+    for b in range(len(bins[:-1])): #creating points to plot - midpoints of bins
+        plotpts.append(bins[b] + (bins[b+1]-bins[b])/2)
+        widths.append((bins[b+1]-bins[b]))
+    
+    for a in range(len(arrs)):
+        size_arr = arrs[a]
+        size_arr = size_arr[np.isnan(size_arr)==False]
+        print(len(size_arr))
+        hist, b = np.histogram(size_arr, bins, density=False)
+
+        ax[a].bar(plotpts, hist, widths, edgecolor = 'black', alpha=0.5, label=xlabels[a])
+        ax[a].set_xlim(0,0.3)
+        ax[a].set_ylim(0,19)
+        ax[a].set_ylabel('number of disks')
+    altax = ax1.twiny()
+    xlim = 0.3*u.arcsec.to(u.rad)
+    xlim *= d
+    altax.set_xlim(0, xlim.value)
+    altax.set_xlabel('deconvolved fwhm major (AU)')
+    ax3.set_xlabel('deconvolved fwhm major (as)')
+
+    plt.savefig('plots/size_plots/'+filename, dpi=500)
+
+    
 def size_comp(conv_arrs, deconv_arrs, conv_errs, deconv_errs, labels, filename):
     #plot sizes of disks in two bands, arr1 and arr2 should have same length and sources
     #labels - arr1 label, then arr2
