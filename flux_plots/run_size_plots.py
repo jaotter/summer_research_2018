@@ -34,7 +34,7 @@ B3B6deconvind = np.intersect1d(np.where(np.isnan(data['fwhm_maj_deconv_B3']) == 
 
 B3B6ind = np.setdiff1d(B3B6ind, B3B6deconvind)
 
-size_comp([data['fwhm_maj_B3'][B3B6ind], data['fwhm_maj_B6'][B3B6ind]], [data['fwhm_maj_deconv_B3'][B3B6deconvind], data['fwhm_maj_deconv_B6'][B3B6deconvind]],[data['fwhm_maj_err_B3'][B3B6ind], data['fwhm_maj_err_B6'][B3B6ind]], [data['fwhm_maj_deconv_err_B6'][B3B6deconvind], data['fwhm_maj_deconv_err_B6'][B3B6deconvind]], ['B3 fwhm', 'B6 fwhm'], 'size_comp_B3B6_maj.png')
+#size_comp([data['fwhm_maj_B3'][B3B6ind], data['fwhm_maj_B6'][B3B6ind]], [data['fwhm_maj_deconv_B3'][B3B6deconvind], data['fwhm_maj_deconv_B6'][B3B6deconvind]],[data['fwhm_maj_err_B3'][B3B6ind], data['fwhm_maj_err_B6'][B3B6ind]], [data['fwhm_maj_deconv_err_B6'][B3B6deconvind], data['fwhm_maj_deconv_err_B6'][B3B6deconvind]], ['B3 fwhm', 'B6 fwhm'], 'size_comp_B3B6_maj.png')
 
 B3B7ind = np.intersect1d(np.where(np.isnan(data['fwhm_maj_B3']) == False)[0], np.where(np.isnan(data['fwhm_maj_B7'])==False)[0])
 
@@ -44,8 +44,18 @@ B3B7deconvind = np.intersect1d(np.where(np.isnan(data['fwhm_maj_deconv_B3']) == 
 
 B3B7ind = np.setdiff1d(B3B7ind, B3B7deconvind)
 
-size_comp([data['fwhm_maj_B3'][B3B7ind], data['fwhm_maj_B7'][B3B7ind]], [data['fwhm_maj_deconv_B3'][B3B7deconvind], data['fwhm_maj_deconv_B7'][B3B7deconvind]],[data['fwhm_maj_err_B3'][B3B7ind], data['fwhm_maj_err_B7'][B3B7ind]], [data['fwhm_maj_deconv_err_B7'][B3B7deconvind], data['fwhm_maj_deconv_err_B7'][B3B7deconvind]], ['B3 fwhm', 'B7 fwhm'], 'size_comp_B3B7_maj.png')
+#size_comp_simple([data['fwhm_maj_deconv_B3'][B3B6deconvind], data['fwhm_maj_deconv_B6'][B3B6deconvind]], [data['fwhm_maj_deconv_err_B3'][B3B6deconvind], data['fwhm_maj_deconv_err_B6'][B3B6deconvind]], ['B3 deconvolved fwhm (as)', 'B6 deconvolved fwhm (as)'], 'size_comp_simple_B3B6.png')
 
+size_comp_simple([data['fwhm_maj_deconv_B6'][B6B7deconvind], data['fwhm_maj_deconv_B7'][B6B7deconvind]], [data['fwhm_maj_deconv_err_B6'][B6B7deconvind], data['fwhm_maj_deconv_err_B7'][B6B7deconvind]], ['B6 deconvolved fwhm (as)', 'B7 deconvolved fwhm (as)'], 'size_comp_simple_B6B7.png')
+
+
+#size_comp([data['fwhm_maj_B3'][B3B7ind], data['fwhm_maj_B7'][B3B7ind]], [data['fwhm_maj_deconv_B3'][B3B7deconvind], data['fwhm_maj_deconv_B7'][B3B7deconvind]],[data['fwhm_maj_err_B3'][B3B7ind], data['fwhm_maj_err_B7'][B3B7ind]], [data['fwhm_maj_deconv_err_B7'][B3B7deconvind], data['fwhm_maj_deconv_err_B7'][B3B7deconvind]], ['B3 fwhm', 'B7 fwhm'], 'size_comp_B3B7_maj.png')
+
+#size_comp([data['fwhm_maj_B6'], data['fwhm_maj_B7']], [data['fwhm_maj_deconv_B6'], data['fwhm_maj_deconv_B7']],[data['fwhm_maj_err_B6'], data['fwhm_maj_err_B7']], [data['fwhm_maj_deconv_err_B6'], data['fwhm_maj_deconv_err_B7']], ['B6 fwhm', 'B7 fwhm'], 'size_comp_B6B7_maj_line.png')
+
+#size_comp([data['fwhm_maj_B3'], data['fwhm_maj_B7']], [data['fwhm_maj_deconv_B3'], data['fwhm_maj_deconv_B7']],[data['fwhm_maj_err_B3'], data['fwhm_maj_err_B7']], [data['fwhm_maj_deconv_err_B3'], data['fwhm_maj_deconv_err_B7']], ['B3 fwhm', 'B7 fwhm'], 'size_comp_B3B7_maj_line.png')
+
+#size_comp([data['fwhm_maj_B3'], data['fwhm_maj_B6']], [data['fwhm_maj_deconv_B3'], data['fwhm_maj_deconv_B6']],[data['fwhm_maj_err_B3'], data['fwhm_maj_err_B6']], [data['fwhm_maj_deconv_err_B3'], data['fwhm_maj_deconv_err_B6']], ['B3 fwhm', 'B6 fwhm'], 'size_comp_B3B6_maj_line.png')
 
 #disk_size_hist([B3_deconv_maj, B6_deconv_maj, B7_deconv_maj], ['B3 fwhm major', 'B6 fwhm major', 'B7 fwhm major'], 'size_hist_allbands_deconv.png')
 
