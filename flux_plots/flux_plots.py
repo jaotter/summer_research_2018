@@ -16,12 +16,13 @@ from astropy.coordinates import Angle, SkyCoord
 #imgs = ['/lustre/aoc/students/jotter/directory/Orion_SourceI_B3_continuum_r-2.clean0.1mJy.image.tt0.pbcor.fits', '/lustre/aoc/students/jotter/directory/Orion_SourceI_B6_continuum_r-2.clean0.1mJy.selfcal.phase4.deepmask.allbaselines.image.tt0.pbcor.fits', '/lustre/aoc/students/jotter/directory/Orion_SourceI_B7_continuum_r-2.mask5mJy.clean4mJy.image.tt0.pbcor.fits', '/lustre/aoc/students/jotter/directory/member.uid___A001_X88e_X1dd.Orion_BNKL_source_I_sci.spw25_27_29_31.cont.I.pbcor.fits']
 
 def get_ind(names): #returns indices where sources are detected in all bands with good gaussian fits
-    data = fits.getdata('/lustre/aoc/students/jotter/dendro_catalogs/IR_matched_catalog_B7.fits')
+    data = fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted.fits')
     flux_inds = [np.where(np.isnan(data['ap_flux_'+n]) == False)[0] for n in names]
-    fit_inds = [np.where(data['fit_goodness_'+n] == 'y')[0] for n in names]
+    #fit_inds = [np.where(data['fit_goodness_'+n] == 'y')[0] for n in names]
+    fit_ind =  np.where(data['good_fit_flag'] == True)[0]
     ind1 = reduce(np.intersect1d, flux_inds)
-    ind2 = reduce(np.intersect1d, fit_inds)
-    ind = np.intersect1d(ind1, ind2)
+    #ind2 = reduce(np.intersect1d, fit_inds)
+    ind = np.intersect1d(ind1, fit_ind)
     return ind
 
 def plot_alpha(names, imgs, only_deconv=False, flux_type='aperture'): 
@@ -99,11 +100,11 @@ def plot_alpha(names, imgs, only_deconv=False, flux_type='aperture'):
     plt.savefig('/users/jotter/summer_research_2018/flux_plots/plots/'+names[0]+names[1]+'_alpha_hist.png')
 
 def colorcolor_plot(x_name, y_name, num_name): 
-    freqs = {'B3':98*u.GHz, 'B6':223.5*u.GHz, 'B7_hr':339.7672758867*u.GHz, 'B7_lr':339.7672758867*u.GHz}  #first two from Adam, third from member.uid header
-    data = fits.getdata('/lustre/aoc/students/jotter/dendro_catalogs/IR_matched_catalog_B7.fits')
+    freqs = {'B3':98*u.GHz, 'B6':223.5*u.GHz, 'B7':339.7672758867*u.GHz}  #first two from Adam, third from member.uid header
+    data = fits.getdata('/lustre/aoc/students/jotter/dendro_catalogs/r0.5_catalog_best.fits')
 
     flux_ind = reduce(np.intersect1d, (np.where(np.isnan(data['ap_flux_'+x_name])== False)[0],np.where(np.isnan(data['ap_flux_'+y_name])==False)[0],np.where(np.isnan(data['ap_flux_'+num_name])==False)[0])) #sources with measured aperture fluxes
-    fit_ind = reduce(np.intersect1d, (np.where(data['fit_goodness_'+x_name]=='y')[0],np.where(data['fit_goodness_'+y_name]=='y')[0],np.where(data['fit_goodness_'+num_name]=='y')[0])) #sources w good gaussian fits in both bands
+    fit_ind = reduce(np.intersect1d, (np.where(data['fit_flag_'+x_name]=='y')[0],np.where(data['fit_flag_'+y_name]=='y')[0],np.where(data['fit_flag_'+num_name]=='y')[0])) #sources w good gaussian fits in both bands
     ind = np.intersect1d(flux_ind, fit_ind)
     
 
@@ -114,14 +115,14 @@ def colorcolor_plot(x_name, y_name, num_name):
     plot_num = data['ap_flux_'+num_name][ind]
     plot_num_err = data['ap_flux_err_'+num_name][ind]
 
-    plotx = plot_num/plot1
+    plotx = plot1/plot_num
     ploty = plot_num/plot2
-    plotx_err = plot1*np.sqrt((plot1_err/plot1)**2 + (plot_num_err/plot_num)**2) #error is fractional error added in quad
-    ploty_err = plot1*np.sqrt((plot2_err/plot2)**2 + (plot_num_err/plot_num)**2)
+    plotx_err = (plot1/plot_num)*np.sqrt((plot1_err/plot1)**2 + (plot_num_err/plot_num)**2) #error is fractional error added in quad
+    ploty_err = (plot_num/plot2)*np.sqrt((plot2_err/plot2)**2 + (plot_num_err/plot_num)**2)
 
     plt.errorbar(plotx, ploty, xerr=plotx_err, yerr=ploty_err, linestyle='', marker='*')
 
-    plt.xlabel('{num}/{x}'.format(num=num_name,x=x_name))
+    plt.xlabel('{x}/{num}'.format(num=num_name,x=x_name))
     plt.ylabel('{num}/{y}'.format(num=num_name,y=y_name))
 
     totmin = np.amin((plotx, ploty))
@@ -133,23 +134,24 @@ def colorcolor_plot(x_name, y_name, num_name):
     alpha = [1.5,2,2.5]
     cols = ['r', 'g', 'k']
     for i,a in enumerate(alpha):
-        plt.axvline((freqs[num_name]/freqs[x_name])**a, linestyle='--', label=r'$\alpha={a}$'.format(a=a), color=cols[i])
-        plt.axhline((freqs[num_name]/freqs[y_name])**a, linestyle='--', label=r'$\alpha={a}$'.format(a=a), color=cols[i])
-
+        plt.axvline((freqs[x_name]/freqs[num_name])**a, linestyle='--', label=r'$\alpha={a}$'.format(a=a), color=cols[i])
+        plt.axhline((freqs[num_name]/freqs[y_name])**a, linestyle='--', color=cols[i])
+    plt.xlim(1,4)
+    plt.ylim(1,9)
     plt.legend()
-    plt.savefig('/users/jotter/summer_research_2018/flux_plots/plots/'+num_name+'div'+x_name+y_name+'_colcol.png', dpi=300)
+    plt.savefig('/users/jotter/summer_research_2018/flux_plots/plots/colorcolor_plot.png', dpi=300)
 
 
 def plot_SEDs(names):
-    freqs = {'B3':98*u.GHz, 'B6':223.5*u.GHz, 'B7_hr':339.7672758867*u.GHz, 'B7_lr':339.7672758867*u.GHz}
-    data = fits.getdata('/lustre/aoc/students/jotter/dendro_catalogs/IR_matched_catalog_B7.fits')
+    freqs = {'B3':98*u.GHz, 'B6':223.5*u.GHz, 'B7':339.7672758867*u.GHz}
+    data = fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted.fits')
     ind = get_ind(names)
 
     alpha = [1.5,2,2.5]
     freq_x = np.array([freqs[n].value for n in names])
     for i in ind:
         fluxes = [data['ap_flux_'+n][i] for n in names]
-        fluxes = np.array(fluxes) - np.array([data['bg_median_'+n][i] for n in names])
+        #fluxes = np.array(fluxes) - np.array([data['bg_median_'+n][i] for n in names])
         flux_err = [data['ap_flux_err_'+n][i] for n in names]
 
         F2 = fluxes[1]
@@ -166,7 +168,7 @@ def plot_SEDs(names):
         plt.ylabel('aperture flux (mJy)')
         plt.xlabel('frequency (GHz)')
         plt.legend()
-        plt.savefig('/users/jotter/summer_research_2018/flux_plots/plots/SEDs/SED_'+str(i)+'_'+names[-1]+'_sub_medbg.png', dpi=300)
+        plt.savefig('/users/jotter/summer_research_2018/flux_plots/plots/SEDs/SED_'+str(i)+'_'+names[-1]+'_updt_SED.png', dpi=300)
 
 def multi_img_SED(srcID, B3_img, B6_img, B7_img, name, flux_type = 'amp'):
 
