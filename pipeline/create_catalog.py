@@ -224,18 +224,12 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
         cat_r = Angle(0.5, 'arcsecond') #radius for gaussian fitting
         gauss_cat = gaussfit_catalog(img, regs, cat_r, savepath=gauss_save_dir, max_offset_in_beams = 1, max_radius_in_beams = 5)
         #table does not have all columns yet, add others later
-        img_table = Table(names=('D_ID', 'fwhm_maj_'+name, 'fwhm_maj_err_'+name, 'fwhm_min_'+name, 'fwhm_min_err_'+name, 'pa_'+name, 'pa_err_'+name, 'RA_'+name,'RA_err_'+name, 'DEC_'+name, 'DEC_err_'+name, 'gauss_amp_'+name, 'gauss_amp_err_'+name), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))
+        img_table = Table(names=('D_ID', 'fwhm_maj_'+name, 'fwhm_maj_err_'+name, 'fwhm_min_'+name, 'fwhm_min_err_'+name, 'pa_'+name, 'pa_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_maj_deconv_err_'+name, 'fwhm_deconv_min_'+name, 'fwhm_deconv_min_err_'+name, 'pa_deconv_'+name, 'pa_deconv_err_'+name, 'RA_'+name,'RA_err_'+name, 'DEC_'+name, 'DEC_err_'+name, 'gauss_amp_'+name, 'gauss_amp_err_'+name), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))
         for key in gauss_cat:
-            img_table.add_row((key, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y'], gauss_cat[key]['amplitude'], gauss_cat[key]['e_amplitude']))
-        #now measure deconvovled sizes and aperture flux measurements for each source 
+            img_table.add_row((key, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['deconv_fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['deconv_fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['deconv_pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y'], gauss_cat[key]['amplitude'], gauss_cat[key]['e_amplitude']))
+        #now measure deconvolved sizes and aperture flux measurements for each source 
         ap_flux_arr = []
         ap_flux_err_arr = []
-        fwhm_maj_deconv_arr = []
-        fwhm_maj_deconv_err_arr = []
-        fwhm_min_deconv_arr = []
-        fwhm_min_deconv_err_arr = []
-        pa_deconv_arr = []
-        pa_deconv_err_arr = []
 
         for row in range(len(img_table)): #now loop through sources in reference data and make measurements
             ref_ind = np.where(ref_data['D_ID'] == img_table['D_ID'][row])[0]
@@ -244,21 +238,12 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                 center_coord_pix = center_coord.to_pixel(img_wcs)
                 center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
 
-                #now measuring deconvolved sizes
-                measured_source_size = radio_beam.Beam(major=img_table['fwhm_maj_'+name][row]*u.arcsec, minor=img_table['fwhm_min_'+name][row]*u.arcsec, pa=(img_table['pa_'+name][row]-90)*u.degree)
-                try:
-                    deconv_size = measured_source_size.deconvolve(beam)
-                    fwhm_maj_deconv_arr.append(deconv_size.major.value)
-                    fwhm_min_deconv_arr.append(deconv_size.minor.value)
-                    fwhm_maj_deconv_err_arr.append(img_table['fwhm_maj_err_'+name][row]) #same error as non deconvolved
-                    fwhm_min_deconv_err_arr.append(img_table['fwhm_min_err_'+name][row])
-                    pa_deconv_arr.append(deconv_size.pa.value)
-                    pa_deconv_err_arr.append(img_table['pa_err_'+name][row])
-
-                    pix_major_fwhm = ((deconv_size.major.value*u.arcsec).to(u.degree)/pixel_scale).decompose()
-                    pix_minor_fwhm = ((deconv_size.minor.value*u.arcsec).to(u.degree)/pixel_scale).decompose()
+                if np.isnan(img_table['deconv_fwhm_maj_'+name][row]) == False:
+                    pix_major_fwhm = ((img_table['deconv_fwhm_maj_'+name][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
+                    pix_minor_fwhm = ((img_table['deconv_fwhm_min_'+name][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
                     
-                    ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2, pix_minor_fwhm*2, angle=deconv_size.pa)
+                    ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2, pix_minor_fwhm*2, angle=img_table['pa_deconv_'+name][row]*u.deg)
+                    
                     size = pix_major_fwhm*2.1
                     ap_mask = ellipse_reg.to_mask()
                     cutout_mask = ap_mask.cutout(img_data)
@@ -293,22 +278,16 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                     ap_flux_err_arr.append(ap_bg_rms)
                     ap_flux_arr.append(aperture_flux - pix_bg)
 
-                except ValueError:
-                    fwhm_maj_deconv_arr.append(np.nan)
-                    fwhm_min_deconv_arr.append(np.nan)
-                    fwhm_maj_deconv_err_arr.append(np.nan)
-                    fwhm_min_deconv_err_arr.append(np.nan)
-                    pa_deconv_arr.append(np.nan)
-                    pa_deconv_err_arr.append(np.nan)
+                else:
                     ap_flux_arr.append(np.nan)
                     ap_flux_err_arr.append(np.nan)
                 
         
-        cols = ['ap_flux_'+name, 'ap_flux_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_maj_deconv_err_'+name, 'fwhm_min_deconv_'+name, 'fwhm_min_deconv_err_'+name, 'pa_deconv_'+name, 'pa_deconv_err_'+name]
-        arrs = [ap_flux_arr, ap_flux_err_arr, fwhm_maj_deconv_arr, fwhm_maj_deconv_err_arr, fwhm_min_deconv_arr, fwhm_min_deconv_err_arr, pa_deconv_arr, pa_deconv_err_arr]
+        cols = ['ap_flux_'+name, 'ap_flux_err_'+name]
+        arrs = [ap_flux_arr, ap_flux_err_arr]
         for c in range(len(cols)):
             img_table.add_column(Column(np.array(arrs[c])), name=cols[c])
-        img_table.add_column(Column(np.array(fwhm_maj_deconv_arr)/np.array(fwhm_min_deconv_arr)), name='ar_deconv_'+name)
+        img_table.add_column(img_table['fwhm_maj_deconv_'+name]/img_table['fwhm_min_deconv_'+name], name='ar_deconv_'+name)
         band_tables.append(img_table) #list of tables for each image
             
     
