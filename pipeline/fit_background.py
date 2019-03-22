@@ -83,49 +83,53 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
     for row in range(len(img_table)): #now loop through sources in reference data and make measurements
         ref_ind = np.where(ref_data['D_ID'] == img_table['D_ID'][row])[0]
         if len(ref_ind > 0):
-            pix_major_fwhm = ((img_table['fwhm_maj_'+band][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
-            pix_minor_fwhm = ((img_table['fwhm_min_'+band][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
-            center_coord = SkyCoord(img_table['RA_'+band][row], img_table['DEC_'+band][row], frame='icrs', unit=(u.deg, u.deg))
-            center_coord_pix = center_coord.to_pixel(img_wcs)
-            center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
+            if np.isnan(img_table['fwhm_maj_deconv_'+band][row] == False):
+                 pix_major_fwhm = ((img_table['fwhm_maj_deconv_'+band][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
+                 pix_minor_fwhm = ((img_table['fwhm_min_deconv_'+band][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
+                 center_coord = SkyCoord(img_table['RA_'+band][row], img_table['DEC_'+band][row], frame='icrs', unit=(u.deg, u.deg))
+                 center_coord_pix = center_coord.to_pixel(img_wcs)
+                 center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
 
-            pos_ang = img_table['pa_'+band][row]*u.deg
+                 pos_ang = img_table['pa_deconv_'+band][row]*u.deg
 
-            ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2, pix_minor_fwhm*2, angle=pos_ang)
-            size = pix_major_fwhm*2.1
-            ap_mask = ellipse_reg.to_mask()
-            cutout_mask = ap_mask.cutout(img_data)
+                 ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2, pix_minor_fwhm*2, angle=pos_ang)
+                 size = pix_major_fwhm*2.1
+                 ap_mask = ellipse_reg.to_mask()
+                 cutout_mask = ap_mask.cutout(img_data)
 
-            aperture_flux = np.sum(cutout_mask[ap_mask.data==1])/ppbeam
-            npix = len(cutout_mask[ap_mask.data==1])
+                 aperture_flux = np.sum(cutout_mask[ap_mask.data==1])/ppbeam
+                 npix = len(cutout_mask[ap_mask.data==1])
 
-            #now make annulus for measuring background and error
-            annulus_width = 15 #pixels
-            annulus_radius = 0.1*u.arcsecond
-            annulus_radius_pix = (annulus_radius.to(u.degree)/pixel_scale).decompose()
+                 #now make annulus for measuring background and error
+                 annulus_width = 15 #pixels
+                 annulus_radius = 0.1*u.arcsecond
+                 annulus_radius_pix = (annulus_radius.to(u.degree)/pixel_scale).decompose()
 
-            #cutout image
-            cutout = Cutout2D(img_data, center_coord_pix, annulus_radius*2.5, img_wcs, mode='partial')
-            cutout_center = regions.PixCoord(cutout.center_cutout[0], cutout.center_cutout[1])
+                 #cutout image
+                 cutout = Cutout2D(img_data, center_coord_pix, annulus_radius*2.5, img_wcs, mode='partial')
+                 cutout_center = regions.PixCoord(cutout.center_cutout[0], cutout.center_cutout[1])
 
-            #define aperture regions for SNR
-            innerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix)
-            outerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix+annulus_width)
+                 #define aperture regions for SNR
+                 innerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix)
+                 outerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix+annulus_width)
 
-            #Make masks from aperture regions
-            annulus_mask = mask(outerann_reg, cutout) - mask(innerann_reg, cutout)
+                 #Make masks from aperture regions
+                 annulus_mask = mask(outerann_reg, cutout) - mask(innerann_reg, cutout)
 
-            # Calculate the SNR and aperture flux sums
-            pixels_in_annulus = cutout.data[annulus_mask.astype('bool')] #pixels within annulus
-            bg_rms = rms(pixels_in_annulus)
-            ap_bg_rms = bg_rms/np.sqrt(npix/ppbeam) #rms/sqrt(npix/ppbeam) - rms error per beam
-            bg_median = np.median(pixels_in_annulus)
+                 # Calculate the SNR and aperture flux sums
+                 pixels_in_annulus = cutout.data[annulus_mask.astype('bool')] #pixels within annulus
+                 bg_rms = rms(pixels_in_annulus)
+                 ap_bg_rms = bg_rms/np.sqrt(npix/ppbeam) #rms/sqrt(npix/ppbeam) - rms error per beam
+                 bg_median = np.median(pixels_in_annulus)
 
-            pix_bg = bg_median*npix/ppbeam
+                 pix_bg = bg_median*npix/ppbeam
 
-            ap_flux_err_arr.append(ap_bg_rms)
-            ap_flux_arr.append(aperture_flux - pix_bg)
-
+                 ap_flux_err_arr.append(ap_bg_rms)
+                 ap_flux_arr.append(aperture_flux - pix_bg)
+            else:
+                 ap_flux_err_arr.append(np.nan)
+                 ap_flux_arr.append(np.nan)
+                
     cols = ['ap_flux_'+band, 'ap_flux_err_'+band]
     arrs = [ap_flux_arr, ap_flux_err_arr]
     for c in range(len(cols)):
