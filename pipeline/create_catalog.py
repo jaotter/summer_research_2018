@@ -252,13 +252,13 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                     pa_deconv_arr.append(deconv_size.pa.value)
                     pa_deconv_err_arr.append(img_table['pa_err_'+name][row])
 
-                    pix_major_fwhm = ((img_table['fwhm_maj_'+name][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
-                    pix_minor_fwhm = ((img_table['fwhm_min_'+name][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
+                    pix_major_fwhm = ((deconv_size.major.value*u.arcsec).to(u.degree)/pixel_scale).decompose()
+                    pix_minor_fwhm = ((deconv_size.minor.value*u.arcsec).to(u.degree)/pixel_scale).decompose()
                     center_coord = SkyCoord(img_table['RA_'+name][row], img_table['DEC_'+name][row], frame='icrs', unit=(u.deg, u.deg))
                     center_coord_pix = center_coord.to_pixel(img_wcs)
                     center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
 
-                    pos_ang = img_table['pa_'+name][row]*u.deg
+                    pos_ang = deconv_size.pa.value*u.deg
 
                     ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2, pix_minor_fwhm*2, angle=pos_ang)
                     size = pix_major_fwhm*2.1

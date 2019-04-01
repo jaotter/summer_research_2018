@@ -74,64 +74,86 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
 
     img_table = Table(names=('D_ID', 'fwhm_maj_'+band, 'fwhm_maj_err_'+band, 'fwhm_min_'+band, 'fwhm_min_err_'+band, 'pa_'+band, 'pa_err_'+band, 'fwhm_maj_deconv_'+band, 'fwhm_maj_deconv_err_'+band, 'fwhm_min_deconv_'+band, 'fwhm_min_deconv_err_'+band, 'pa_deconv_'+band, 'pa_deconv_err_'+band, 'RA_'+band,'RA_err_'+band, 'DEC_'+band, 'DEC_err_'+band), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))
     for key in gauss_cat:
-        img_table.add_row((srcID, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['deconv_fwhm_major'], gauss_cat[key]['e_deconv_fwhm_major'], gauss_cat[key]['deconv_fwhm_minor'], gauss_cat[key]['e_deconv_fwhm_minor'], gauss_cat[key]['deconv_pa'], gauss_cat[key]['e_deconv_pa'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y']))
+        img_table.add_row((srcID, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y']))
 
     #now measure deconvovled sizes and aperture flux measurements for each source 
     ap_flux_arr = []
     ap_flux_err_arr = []
+    fwhm_maj_deconv_arr = []
+    fwhm_maj_deconv_err_arr = []
+    fwhm_min_deconv_arr = []
+    fwhm_min_deconv_err_arr = []
+    pa_deconv_arr = []
+    pa_deconv_err_arr = []
 
     for row in range(len(img_table)): #now loop through sources in reference data and make measurements
         ref_ind = np.where(ref_data['D_ID'] == img_table['D_ID'][row])[0]
         if len(ref_ind > 0):
-            if np.isnan(img_table['fwhm_maj_deconv_'+band][row] == False):
-                 pix_major_fwhm = ((img_table['fwhm_maj_deconv_'+band][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
-                 pix_minor_fwhm = ((img_table['fwhm_min_deconv_'+band][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
-                 center_coord = SkyCoord(img_table['RA_'+band][row], img_table['DEC_'+band][row], frame='icrs', unit=(u.deg, u.deg))
-                 center_coord_pix = center_coord.to_pixel(img_wcs)
-                 center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
 
-                 pos_ang = img_table['pa_deconv_'+band][row]*u.deg
+            measured_source_size = radio_beam.Beam(major=img_table['fwhm_maj_'+name][row]*u.arcsec, minor=img_table['fwhm_min_'+name][row]*u.arcsec, pa=(img_table['pa_'+name][row]-90)*u.deg)
+            try:
+                deconv_size = measured_source_size.deconvolve(beam)
+                fwhm_maj_deconv_arr.append(deconv_size.major.value)
+                fwhm_min_deconv_arr.append(deconv_size.minor.value)
+                fwhm_maj_deconv_err_arr.append(img_table['fwhm_maj_err_'+name][row])
+                fwhm_min_deconv_err_arr.append(img_table['fwhm_min_err_'+name][row])
+                pa_deconv_arr.append(deconv_size.pa.value)
+                pa_deconv_err_arr.append(img_table['pa_err_'+name][row])
 
-                 ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2, pix_minor_fwhm*2, angle=pos_ang)
-                 size = pix_major_fwhm*2.1
-                 ap_mask = ellipse_reg.to_mask()
-                 cutout_mask = ap_mask.cutout(img_data)
+                pix_major_fwhm = ((deconv_size.major.value*u.arcsec).to(u.degree)/pixel_scale).decompose()
+                pix_minor_fwhm = ((deconv_size.minor.value*u.arcsec).to(u.degree)/pixel_scale).decompose()
+                center_coord = SkyCoord(img_table['RA_'+band][row], img_table['DEC_'+band][row], frame='icrs', unit=(u.deg, u.deg))
+                center_coord_pix = center_coord.to_pixel(img_wcs)
+                center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
 
-                 aperture_flux = np.sum(cutout_mask[ap_mask.data==1])/ppbeam
-                 npix = len(cutout_mask[ap_mask.data==1])
+                pos_ang = deconv_size.pa.value*u.deg
 
-                 #now make annulus for measuring background and error
-                 annulus_width = 15 #pixels
-                 annulus_radius = 0.1*u.arcsecond
-                 annulus_radius_pix = (annulus_radius.to(u.degree)/pixel_scale).decompose()
+                ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2, pix_minor_fwhm*2, angle=pos_ang)
+                size = pix_major_fwhm*2.1
+                ap_mask = ellipse_reg.to_mask()
+                cutout_mask = ap_mask.cutout(img_data)
 
-                 #cutout image
-                 cutout = Cutout2D(img_data, center_coord_pix, annulus_radius*2.5, img_wcs, mode='partial')
-                 cutout_center = regions.PixCoord(cutout.center_cutout[0], cutout.center_cutout[1])
+                aperture_flux = np.sum(cutout_mask[ap_mask.data==1])/ppbeam
+                npix = len(cutout_mask[ap_mask.data==1])
 
-                 #define aperture regions for SNR
-                 innerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix)
-                 outerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix+annulus_width)
+                #now make annulus for measuring background and error
+                annulus_width = 15 #pixels
+                annulus_radius = 0.1*u.arcsecond
+                annulus_radius_pix = (annulus_radius.to(u.degree)/pixel_scale).decompose()
 
-                 #Make masks from aperture regions
-                 annulus_mask = mask(outerann_reg, cutout) - mask(innerann_reg, cutout)
+                #cutout image
+                cutout = Cutout2D(img_data, center_coord_pix, annulus_radius*2.5, img_wcs, mode='partial')
+                cutout_center = regions.PixCoord(cutout.center_cutout[0], cutout.center_cutout[1])
 
-                 # Calculate the SNR and aperture flux sums
-                 pixels_in_annulus = cutout.data[annulus_mask.astype('bool')] #pixels within annulus
-                 bg_rms = rms(pixels_in_annulus)
-                 ap_bg_rms = bg_rms/np.sqrt(npix/ppbeam) #rms/sqrt(npix/ppbeam) - rms error per beam
-                 bg_median = np.median(pixels_in_annulus)
+                #define aperture regions for SNR
+                innerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix)
+                outerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix+annulus_width)
 
-                 pix_bg = bg_median*npix/ppbeam
+                #Make masks from aperture regions
+                annulus_mask = mask(outerann_reg, cutout) - mask(innerann_reg, cutout)
 
-                 ap_flux_err_arr.append(ap_bg_rms)
-                 ap_flux_arr.append(aperture_flux - pix_bg)
-            else:
-                 ap_flux_err_arr.append(np.nan)
-                 ap_flux_arr.append(np.nan)
+                # Calculate the SNR and aperture flux sums
+                pixels_in_annulus = cutout.data[annulus_mask.astype('bool')] #pixels within annulus
+                bg_rms = rms(pixels_in_annulus)
+                ap_bg_rms = bg_rms/np.sqrt(npix/ppbeam) #rms/sqrt(npix/ppbeam) - rms error per beam
+                bg_median = np.median(pixels_in_annulus)
+
+                pix_bg = bg_median*npix/ppbeam
+
+                ap_flux_err_arr.append(ap_bg_rms)
+                ap_flux_arr.append(aperture_flux - pix_bg)
+            except ValueError:
+                fwhm_maj_deconv_arr.append(np.nan)
+                fwhm_min_deconv_arr.append(np.nan)
+                fwhm_maj_deconv_err_arr.append(np.nan)
+                fwhm_min_deconv_err_arr.append(np.nan)
+                pa_deconv_arr.append(np.nan)
+                pa_deconv_err_arr.append(np.nan)
+                ap_flux_err_arr.append(np.nan)
+                ap_flux_arr.append(np.nan)
                 
-    cols = ['ap_flux_'+band, 'ap_flux_err_'+band]
-    arrs = [ap_flux_arr, ap_flux_err_arr]
+    cols = ['ap_flux_'+band, 'ap_flux_err_'+band, 'fwhm_maj_deconv_'+band, 'fwhm_maj_deconv_err_'+band, 'fwhm_min_deconv_'+band, 'fwhm_min_deconv_err_'+band, 'pa_deconv_'+band, 'pa_deconv_err_'+band]
+    arrs = [ap_flux_arr, ap_flux_err_arr, fwhm_maj_deconv_arr, fwhm_maj_deconv_err_arr, fwhm_min_deconv_arr, fwhm_min_deconv_err_arr, pa_deconv_arr, pa_deconv_err_arr]
     for c in range(len(cols)):
         img_table.add_column(Column(np.array(arrs[c])), name=cols[c])
     img_table.add_column(Column(img_table['fwhm_maj_deconv_'+band]/img_table['fwhm_min_deconv_'+band]), name='ar_deconv_'+band)
