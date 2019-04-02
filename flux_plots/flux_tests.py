@@ -15,8 +15,11 @@ band='B3'
 #band = 'B7'
 
 img_path = '/lustre/aoc/students/jotter/directory/OrionB3/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
+img_path2 = '/lustre/aoc/students/jotter/directory/OrionB3/Orion_SourceI_B3_continuum_r-2.clean0.25mJy.image.tt0.pbcor.fits'
+
 #img_path = '/lustre/aoc/students/jotter/directory/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
 #img_path = '/lustre/aoc/students/jotter/directory/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
+
 
 
 fl = fits.open(img_path)
@@ -25,7 +28,19 @@ mywcs = WCS(header).celestial
 beam = radio_beam.Beam.from_fits_header(header)
 pixel_scale = np.abs(mywcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg
 ppbeam = (beam.sr/((pixel_scale)**2)).decompose().value
-print(ppbeam)
+
+fl2 = fits.open(img_path2)
+header2 = fl2[0].header
+mywcs2 = WCS(header2).celestial
+beam2 = radio_beam.Beam.from_fits_header(header2)
+pixel_scale2 = np.abs(mywcs2.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg
+ppbeam2 = (beam2.sr/((pixel_scale2)**2)).decompose().value
+print(beam)
+print(beam2)
+
+print(pixel_scale, pixel_scale2)
+print(ppbeam, ppbeam2)
+print(beam.sr, beam2.sr)
 
 deconv_ind = np.where(np.isnan(data['fwhm_maj_deconv_'+band]) == False)[0]
 
