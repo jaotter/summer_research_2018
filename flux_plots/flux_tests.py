@@ -5,6 +5,7 @@ import astropy.units as u
 from astropy.io import fits
 from astropy.table import Table
 from astropy.wcs import WCS
+
 FWHM_TO_SIGMA = 1/np.sqrt(8*np.log(2))
 
 data = Table(fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted_apflux_fixed.fits'))
@@ -21,10 +22,12 @@ pixel_scale = np.abs(mywcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg
 
 deconv_ind = np.where(np.isnan(data['fwhm_maj_deconv_'+band]) == False)[0]
 
-sigma_maj_deconv_pix = ((data['fwhm_maj_deconv_'+band]*u.arcsec).to(u.deg)/pixel_scale).decompose()*FWHM_TO_SIGMA
-sigma_min_deconv_pix = ((data['fwhm_min_deconv_'+band]*u.arcsec).to(u.deg)/pixel_scale).decompose()*FWHM_TO_SIGMA
+#sigma_maj_deconv_pix = ((data['fwhm_maj_deconv_'+band]*u.arcsec).to(u.deg)/pixel_scale).decompose()*FWHM_TO_SIGMA
+#sigma_min_deconv_pix = ((data['fwhm_min_deconv_'+band]*u.arcsec).to(u.deg)/pixel_scale).decompose()*FWHM_TO_SIGMA
 
-int_flux = 2*np.pi*data['gauss_amp_'+band]*sigma_maj_deconv_pix*sigma_min_deconv_pix
+#int_flux = 2*np.pi*data['gauss_amp_'+band]*sigma_maj_deconv_pix*sigma_min_deconv_pix
+int_flux = 2*np.pi*data['gauss_amp_'+band]*(data['fwhm_maj_deconv_'+band]*u.arcsec).to(u.degree)*(data['fwhm_min_deconv_'+band]*u.arcsec).to(u.degree)*FWHM_TO_SIGMA**2
+print(int_flux)
 ap_flux = data['ap_flux_'+band]
 #gauss_flux = 2*np.pi*
 
