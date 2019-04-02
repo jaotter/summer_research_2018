@@ -8,19 +8,24 @@ from astropy.wcs import WCS
 
 FWHM_TO_SIGMA = 1/np.sqrt(8*np.log(2))
 
-data = Table(fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted_apflux_fixed.fits'))
+data = Table.read('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted_apflux_fixed.fits')
 
 band='B3'
 #band = 'B6'
+#band = 'B7'
 
 img_path = '/lustre/aoc/students/jotter/directory/OrionB3/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
 #img_path = '/lustre/aoc/students/jotter/directory/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
+#img_path = '/lustre/aoc/students/jotter/directory/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
+
 
 fl = fits.open(img_path)
 header = fl[0].header
 mywcs = WCS(header).celestial
 beam = radio_beam.Beam.from_fits_header(header)
 pixel_scale = np.abs(mywcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg
+ppbeam = (beam.sr/((pixel_scale)**2)).decompose().value
+print(ppbeam)
 
 deconv_ind = np.where(np.isnan(data['fwhm_maj_deconv_'+band]) == False)[0]
 
