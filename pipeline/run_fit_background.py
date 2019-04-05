@@ -4,7 +4,6 @@ from astropy.table import Table
 
 catalog = Table(fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_convB6B7_apflux_fixed.fits'))
 
-
 bands = ['B3','B6', 'B7']
 B6_img = '/lustre/aoc/students/jotter/directory/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
 B6_name = 'B6_conv_bg_cat'
@@ -54,7 +53,12 @@ for i in range(len(bands)): #loop thru bands
         for nm in fit.colnames:
             catalog[nm][cat_ind] = fit[nm][0]
 
-catalog.write('../tables/r0.5_catalog_conv_bgfitted_affixed.fits',overwrite=True)
+ind1 = np.where(catalog['D_ID'] == 22)[0][0]
+ind2 = np.where(catalog['D_ID'] == 31)[0][0]
+ind3 = np.where(catalog['D_ID'] == 37)[0][0]
+ind4 = np.where(catalog['D_ID'] == 48)[0][0]
+catalog.remove_rows([ind1,ind2,ind3,ind4])
+catalog.write('../tables/r0.5_catalog_conv_bgfitted_apflux_fixed.fits',overwrite=True)
 
 #fit params: - default xmean 0, ymean 0, zoom 1
 #B7:

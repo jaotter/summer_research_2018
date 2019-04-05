@@ -72,9 +72,9 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
     cat_r = Angle(0.5, 'arcsecond')/zoom #radius for gaussian fitting
     gauss_cat = bg_gaussfit(img, reg, region_list, cat_r, bg_stddev_x=bg_stddev_x, bg_stddev_y=bg_stddev_y, bg_mean_x=bg_mean_x, bg_mean_y=bg_mean_y, savepath=gauss_save_dir, max_offset_in_beams = max_offset_in_beams, max_offset_in_beams_bg = 10, max_radius_in_beams = max_radius_in_beams)
 
-    img_table = Table(names=('D_ID', 'fwhm_maj_'+band, 'fwhm_maj_err_'+band, 'fwhm_min_'+band, 'fwhm_min_err_'+band, 'pa_'+band, 'pa_err_'+band, 'fwhm_maj_deconv_'+band, 'fwhm_maj_deconv_err_'+band, 'fwhm_min_deconv_'+band, 'fwhm_min_deconv_err_'+band, 'pa_deconv_'+band, 'pa_deconv_err_'+band, 'RA_'+band,'RA_err_'+band, 'DEC_'+band, 'DEC_err_'+band), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))
+    img_table = Table(names=('D_ID', 'fwhm_maj_'+band, 'fwhm_maj_err_'+band, 'fwhm_min_'+band, 'fwhm_min_err_'+band, 'pa_'+band, 'pa_err_'+band, 'gauss_amp_'+band, 'gauss_amp_err_'+band, 'RA_'+band,'RA_err_'+band, 'DEC_'+band, 'DEC_err_'+band), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))
     for key in gauss_cat:
-        img_table.add_row((srcID, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y']))
+        img_table.add_row((srcID, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['amplitude'], gauss_cat[key]['e_amplitude'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y']))
 
     #now measure deconvovled sizes and aperture flux measurements for each source 
     ap_flux_arr = []
@@ -90,15 +90,15 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
         ref_ind = np.where(ref_data['D_ID'] == img_table['D_ID'][row])[0]
         if len(ref_ind > 0):
 
-            measured_source_size = radio_beam.Beam(major=img_table['fwhm_maj_'+name][row]*u.arcsec, minor=img_table['fwhm_min_'+name][row]*u.arcsec, pa=(img_table['pa_'+name][row]-90)*u.deg)
+            measured_source_size = radio_beam.Beam(major=img_table['fwhm_maj_'+band][row]*u.arcsec, minor=img_table['fwhm_min_'+band][row]*u.arcsec, pa=(img_table['pa_'+band][row]-90)*u.deg)
             try:
                 deconv_size = measured_source_size.deconvolve(beam)
                 fwhm_maj_deconv_arr.append(deconv_size.major.value)
                 fwhm_min_deconv_arr.append(deconv_size.minor.value)
-                fwhm_maj_deconv_err_arr.append(img_table['fwhm_maj_err_'+name][row])
-                fwhm_min_deconv_err_arr.append(img_table['fwhm_min_err_'+name][row])
+                fwhm_maj_deconv_err_arr.append(img_table['fwhm_maj_err_'+band][row])
+                fwhm_min_deconv_err_arr.append(img_table['fwhm_min_err_'+band][row])
                 pa_deconv_arr.append(deconv_size.pa.value)
-                pa_deconv_err_arr.append(img_table['pa_err_'+name][row])
+                pa_deconv_err_arr.append(img_table['pa_err_'+band][row])
 
                 pix_major_fwhm = ((deconv_size.major.value*u.arcsec).to(u.degree)/pixel_scale).decompose()
                 pix_minor_fwhm = ((deconv_size.minor.value*u.arcsec).to(u.degree)/pixel_scale).decompose()
@@ -106,7 +106,7 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
                 center_coord_pix = center_coord.to_pixel(img_wcs)
                 center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
 
-                pos_ang = deconv_size.pa.value*u.deg
+                pos_ang = deconv_size.pa
 
                 ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2, pix_minor_fwhm*2, angle=pos_ang)
                 size = pix_major_fwhm*2.1

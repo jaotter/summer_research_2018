@@ -106,7 +106,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                     center_coord_pix = center_coord.to_pixel(img_wcs)
                     center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
 
-                    pos_ang = deconv_size.pa.value*u.radian
+                    pos_ang = deconv_size.pa
                     ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2, pix_minor_fwhm*2, angle=pos_ang)
                     size = pix_major_fwhm*2.1
                     ap_mask = ellipse_reg.to_mask()
