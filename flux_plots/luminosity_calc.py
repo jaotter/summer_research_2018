@@ -27,6 +27,7 @@ for b in range(len(bands)):
         L_arr.append(L.value)
 
     data['lum_low_lim_'+bands[b]] = L_arr
-
+    print(L_arr)
+    
 data.write('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted_apflux_fixed_lumll.fits')
 
