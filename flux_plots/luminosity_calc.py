@@ -5,47 +5,28 @@ import numpy as np
 import radio_beam
 from astropy import constants
 
-B3data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/B3_500klplus_img_catalog_B6_ref.txt')
-B6data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/B6_500klplus_img_catalog_B6_ref.txt')
-B7data = ascii.read('/lustre/aoc/students/jotter/dendro_catalogs/B7_500klplus_img_catalog_B6_ref.txt')
 
-freqs = [98,223.5, 339.7672758867]*u.GHz
-catalogs = [B3data, B6data, B7data]
-names = ['B3', 'B6', 'B7']
+data = Table.read('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted_apflux_fixed.fits')
+bands = ['B3', 'B6', 'B7']
+freqs = [98, 223.5, 339.7672758867]*u.GHz
+dr = '/lustre/aoc/students/jotter/directory/'
+fls = [dr+'OrionB3/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits', dr+'B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits', dr+'B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits']
 
-cats = []
 
-for c in range(len(catalogs)):
-    fl = fits.open('/lustre/aoc/students/jotter/directory/Orion'+names[c]+'/Orion_SourceI_'+names[c]+'_continuum_r-2.clean0.1mJy.500klplus.deepmask.image.tt0.pbcor.fits')
+for b in range(len(bands)):
+    fl = fits.open(fls[b])
     imgdata = fl[0].data.squeeze()
     header = fl[0].header
     beam = radio_beam.Beam.from_fits_header(header)
-    T_B_arr = []
     L_arr = []
     R = (np.sin(beam.minor)*(415*u.pc)).to(u.au)/2
-    for row in range(len(catalogs[c])):
-        flux = (catalogs[c]['g_amplitude_r-2.clean0.1mJy.500klplus.deepmask'][row] - catalogs[c]['bg_median_r-2.clean0.1mJy.500klplus.deepmask'][row])*u.Jy
-        T_B = (flux).to(u.K, beam.jtok_equiv(freqs[c]))
-        L = (4 * np.pi * (R)**2 * constants.sigma_sb * (T_B)**4).to(u.L_sun)
-        T_B_arr.append(T_B.value)
+    for row in range(len(data)):
+        flux = data['ap_flux_'+bands[b]][row]*u.Jy
+        T_B = (flux).to(u.K, beam.jtok_equiv(freqs[b]))
+        L = (4 * np.pi * R**2 * constants.sigma_sb * (T_B)**4).to(u.L_sun)
         L_arr.append(L.value)
-    name = names[c]
-    if name == 'B7':
-        name = 'B7_hr'
-    cat = catalogs[c][['gauss_x_'+name, 'gauss_y_'+name, 'FWHM_major_r-2.clean0.1mJy.500klplus.deepmask', 'major_err_r-2.clean0.1mJy.500klplus.deepmask', 'FWHM_minor_r-2.clean0.1mJy.500klplus.deepmask', 'minor_err_r-2.clean0.1mJy.500klplus.deepmask', 'pa_r-2.clean0.1mJy.500klplus.deepmask', 'pa_err_r-2.clean0.1mJy.500klplus.deepmask', 'g_amplitude_r-2.clean0.1mJy.500klplus.deepmask', 'amp_err_r-2.clean0.1mJy.500klplus.deepmask', 'ap_flux_r-2.clean0.1mJy.500klplus.deepmask', 'ap_flux_err_r-2.clean0.1mJy.500klplus.deepmask', 'bg_median_r-2.clean0.1mJy.500klplus.deepmask', 'bg_ap_r-2.clean0.1mJy.500klplus.deepmask', 'circ_flux_r-2.clean0.1mJy.500klplus.deepmask', 'circ_flux_err_r-2.clean0.1mJy.500klplus.deepmask', 'bg_circ_r-2.clean0.1mJy.500klplus.deepmask']]
-    cols = cat.colnames
-    for colname in cols:
-        col = cat[colname]
-        if colname[-8:] == 'deepmask':
-            cat.rename_column(colname, colname[:-34]+names[c])
 
-    cat['T_B_'+names[c]] = T_B_arr
-    cat['L_'+names[c]] = L_arr
-    cats.append(cat)
+    data['lum_low_lim_'+bands[b]] = L_arr
 
-meta_table = catalogs[0][['D_ID', 'Fb_ID', 'Speak_Fb', 'e_Speak_Fb', 'alpha' , 'e_alpha', 'RA_Fb', 'DEC_Fb', 'e_RAs_Fb', 'e_DEs_Fb', 'HC_ID']]
-
-all_cats = hstack((meta_table, cats[0], cats[1], cats[2]), join_type = 'outer')
-
-all_cats.write('/lustre/aoc/students/jotter/dendro_catalogs/allbands_500klplus.txt', format='ascii')
+data.write('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted_apflux_fixed_lumll.fits')
 
