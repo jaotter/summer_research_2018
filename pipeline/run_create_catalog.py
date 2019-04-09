@@ -38,4 +38,4 @@ B7_img = '/lustre/aoc/students/jotter/directory/B7_convolved_r0.5.clean0.05mJy.2
 B7_name = 'conv_'+B7_img_names
 #B7_name = B7_img_names
 
-single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, 'r0.5_catalog_convB6B7_circ_apflux')
+single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, 'r0.5_catalog_convB6B7_ppbeamtest')

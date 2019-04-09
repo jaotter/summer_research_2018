@@ -42,7 +42,10 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
         beam = radio_beam.Beam.from_fits_header(header)
         pixel_scale = np.abs(img_wcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg
         ppbeam = (beam.sr/(pixel_scale**2)).decompose().value
-
+        if name == 'B6':
+            ppbeam = 127
+        if name == 'B7':
+            ppbeam = 51
         #now get ready to fit gaussians
         #start by setting up save directory for images
         gauss_save_dir = '/lustre/aoc/students/jotter/gauss_diags/create_cat/'+img_name+'/'
@@ -82,7 +85,6 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
         fwhm_min_deconv_err_arr = []
         pa_deconv_arr = []
         pa_deconv_err_arr = []
-        ap_flux_circ_arr = []
  
         for row in range(len(img_table)): #now loop through sources in reference data and make measurements
             ref_ind = np.where(ref_data['D_ID'] == img_table['D_ID'][row])[0]
@@ -119,15 +121,6 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                 aperture_flux = np.sum(cutout_mask[ap_mask.data==1])/ppbeam
                 npix = len(cutout_mask[ap_mask.data==1])
 
-
-                circ_reg = regions.CirclePixelRegion(center_coord_pix_reg, pix_major_fwhm)
-                ap_mask_circ = circ_reg.to_mask()
-                cutout_mask_circ = ap_mask_circ.cutout(img_data)
-                
-                aperture_flux_circ = np.sum(cutout_mask_circ[ap_mask_circ.data==1])/ppbeam
-                npix_circ = len(cutout_mask_circ[ap_mask_circ.data==1])
-
-                
                 #now make annulus for measuring background and error
                 annulus_width = 15 #pixels
                 annulus_radius = 0.1*u.arcsecond
@@ -151,17 +144,12 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                 bg_median = np.median(pixels_in_annulus)
 
                 pix_bg = bg_median*npix/ppbeam
-
-                ap_bg_rms_circ = bg_rms/np.sqrt(npix_circ/ppbeam)
-                pix_bg_circ = bg_median*npix_circ/ppbeam
                 
                 ap_flux_err_arr.append(ap_bg_rms)
                 ap_flux_arr.append(aperture_flux - pix_bg)
-                ap_flux_circ_arr.append(aperture_flux_circ - pix_bg_circ)
-
                 
-        cols = ['ap_flux_'+name, 'ap_flux_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_maj_deconv_err_'+name, 'fwhm_min_deconv_'+name, 'fwhm_min_deconv_err_'+name, 'pa_deconv_'+name, 'pa_deconv_err_'+name, 'ap_flux_circ_'+name]
-        arrs = [ap_flux_arr, ap_flux_err_arr, fwhm_maj_deconv_arr, fwhm_maj_deconv_err_arr, fwhm_min_deconv_arr, fwhm_min_deconv_err_arr, pa_deconv_arr, pa_deconv_err_arr, ap_flux_circ_arr]
+        cols = ['ap_flux_'+name, 'ap_flux_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_maj_deconv_err_'+name, 'fwhm_min_deconv_'+name, 'fwhm_min_deconv_err_'+name, 'pa_deconv_'+name, 'pa_deconv_err_'+name]
+        arrs = [ap_flux_arr, ap_flux_err_arr, fwhm_maj_deconv_arr, fwhm_maj_deconv_err_arr, fwhm_min_deconv_arr, fwhm_min_deconv_err_arr, pa_deconv_arr, pa_deconv_err_arr]
         for c in range(len(cols)):
             img_table.add_column(Column(np.array(arrs[c])), name=cols[c])
         img_table.add_column(Column(np.array(fwhm_maj_deconv_arr)/np.array(fwhm_min_deconv_arr)), name='ar_deconv_'+name)
