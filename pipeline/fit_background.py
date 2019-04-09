@@ -18,7 +18,7 @@ from dendrogram_catalog import mask, rms
 #srcID, fwhm_maj_n, fwhm_maj_err_n, fwhm_min_n, fwhm_min_err_n, fwhm_maj_deconv_n, fwhm_maj_deconv_err_n, fwhm_min_deconv_n, fwhm_min_deconv_err_n, aspect_ratio_deconv, aspect_ratio_deconv_err, pa_n, pa_err_n, ap_flux_n, ap_flux_err_n, RA_n, RA_err_n, DEC_n, DEC_err_n
 
 
-def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, bg_mean_y, zoom=1, max_offset_in_beams=1, max_radius_in_beams=5):
+def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, bg_mean_y, zoom=1, max_offset_in_beams=1, max_radius_in_beams=5, nonconv_img=None):
     #this function fits a given source, and the background
     #srcID : int
         #name of source to fit in catalogs
@@ -48,6 +48,12 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
     pixel_scale = np.abs(img_wcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg
     ppbeam = (beam.sr/(pixel_scale**2)).decompose().value
 
+    if nonconv_img is not None:
+        flnonconv = fits.open(nonconv_img)
+        nonconv_header = flnonconv[0].header
+        nonconv_beam = radio_beam.Beam.from_fits_header(nonconv_header)
+        ppbeam = (nonconv_beam.sr/(pixel_scale**2)).decompose().value
+        
     #now get ready to fit gaussians
     #start by setting up save directory for images
     gauss_save_dir = '/lustre/aoc/students/jotter/gauss_diags/create_cat/'+img_name+'/'
@@ -100,48 +106,7 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
                 pa_deconv_arr.append(deconv_size.pa.value)
                 pa_deconv_err_arr.append(img_table['pa_err_'+band][row])
 
-                pix_major_fwhm = ((deconv_size.major.value*u.arcsec).to(u.degree)/pixel_scale).decompose()
-                pix_minor_fwhm = ((deconv_size.minor.value*u.arcsec).to(u.degree)/pixel_scale).decompose()
-                center_coord = SkyCoord(img_table['RA_'+band][row], img_table['DEC_'+band][row], frame='icrs', unit=(u.deg, u.deg))
-                center_coord_pix = center_coord.to_pixel(img_wcs)
-                center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
-
-                pos_ang = deconv_size.pa
-
-                ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2, pix_minor_fwhm*2, angle=pos_ang)
-                size = pix_major_fwhm*2.1
-                ap_mask = ellipse_reg.to_mask()
-                cutout_mask = ap_mask.cutout(img_data)
-
-                aperture_flux = np.sum(cutout_mask[ap_mask.data==1])/ppbeam
-                npix = len(cutout_mask[ap_mask.data==1])
-
-                #now make annulus for measuring background and error
-                annulus_width = 15 #pixels
-                annulus_radius = 0.1*u.arcsecond
-                annulus_radius_pix = (annulus_radius.to(u.degree)/pixel_scale).decompose()
-
-                #cutout image
-                cutout = Cutout2D(img_data, center_coord_pix, annulus_radius*2.5, img_wcs, mode='partial')
-                cutout_center = regions.PixCoord(cutout.center_cutout[0], cutout.center_cutout[1])
-
-                #define aperture regions for SNR
-                innerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix)
-                outerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix+annulus_width)
-
-                #Make masks from aperture regions
-                annulus_mask = mask(outerann_reg, cutout) - mask(innerann_reg, cutout)
-
-                # Calculate the SNR and aperture flux sums
-                pixels_in_annulus = cutout.data[annulus_mask.astype('bool')] #pixels within annulus
-                bg_rms = rms(pixels_in_annulus)
-                ap_bg_rms = bg_rms/np.sqrt(npix/ppbeam) #rms/sqrt(npix/ppbeam) - rms error per beam
-                bg_median = np.median(pixels_in_annulus)
-
-                pix_bg = bg_median*npix/ppbeam
-
-                ap_flux_err_arr.append(ap_bg_rms)
-                ap_flux_arr.append(aperture_flux - pix_bg)
+                
             except ValueError:
                 fwhm_maj_deconv_arr.append(np.nan)
                 fwhm_min_deconv_arr.append(np.nan)
@@ -149,8 +114,53 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
                 fwhm_min_deconv_err_arr.append(np.nan)
                 pa_deconv_arr.append(np.nan)
                 pa_deconv_err_arr.append(np.nan)
-                ap_flux_err_arr.append(np.nan)
-                ap_flux_arr.append(np.nan)
+
+
+
+            pix_major_fwhm = ((img_table['fwhm_maj_'+band][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
+            pix_minor_fwhm = ((img_table['fwhm_min_'+band][row]*u.arcsec).to(u.degree)/pixel_scale).decompose()
+            center_coord = SkyCoord(img_table['RA_'+band][row], img_table['DEC_'+band][row], frame='icrs', unit=(u.deg, u.deg))
+            center_coord_pix = center_coord.to_pixel(img_wcs)
+            center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
+
+            pos_ang = (img_table['pa_'+band][row]-90)*u.deg
+            
+            ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2, pix_minor_fwhm*2, angle=pos_ang)
+            size = pix_major_fwhm*2.1
+            ap_mask = ellipse_reg.to_mask()
+            cutout_mask = ap_mask.cutout(img_data)
+
+            aperture_flux = np.sum(cutout_mask[ap_mask.data==1])/ppbeam
+            npix = len(cutout_mask[ap_mask.data==1])
+
+            #now make annulus for measuring background and error
+            annulus_width = 15 #pixels
+            annulus_radius = 0.1*u.arcsecond
+            annulus_radius_pix = (annulus_radius.to(u.degree)/pixel_scale).decompose()
+
+            #cutout image
+            cutout = Cutout2D(img_data, center_coord_pix, annulus_radius*2.5, img_wcs, mode='partial')
+            cutout_center = regions.PixCoord(cutout.center_cutout[0], cutout.center_cutout[1])
+
+            #define aperture regions for SNR
+            innerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix)
+            outerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix+annulus_width)
+
+            #Make masks from aperture regions
+            annulus_mask = mask(outerann_reg, cutout) - mask(innerann_reg, cutout)
+
+            # Calculate the SNR and aperture flux sums
+            pixels_in_annulus = cutout.data[annulus_mask.astype('bool')] #pixels within annulus
+            bg_rms = rms(pixels_in_annulus)
+            ap_bg_rms = bg_rms/np.sqrt(npix/ppbeam) #rms/sqrt(npix/ppbeam) - rms error per beam
+            bg_median = np.median(pixels_in_annulus)
+
+            pix_bg = bg_median*npix/ppbeam
+
+            ap_flux_err_arr.append(ap_bg_rms)
+            ap_flux_arr.append(aperture_flux - pix_bg)
+
+
                 
     cols = ['ap_flux_'+band, 'ap_flux_err_'+band, 'fwhm_maj_deconv_'+band, 'fwhm_maj_deconv_err_'+band, 'fwhm_min_deconv_'+band, 'fwhm_min_deconv_err_'+band, 'pa_deconv_'+band, 'pa_deconv_err_'+band]
     arrs = [ap_flux_arr, ap_flux_err_arr, fwhm_maj_deconv_arr, fwhm_maj_deconv_err_arr, fwhm_min_deconv_arr, fwhm_min_deconv_err_arr, pa_deconv_arr, pa_deconv_err_arr]

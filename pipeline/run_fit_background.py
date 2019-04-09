@@ -2,7 +2,7 @@ from fit_background import *
 from astropy.io import fits
 from astropy.table import Table
 
-catalog = Table(fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_convB6B7_apflux_fixed.fits'))
+catalog = Table(fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_apflux_final.fits'))
 
 bands = ['B3','B6', 'B7']
 B6_img = '/lustre/aoc/students/jotter/directory/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
@@ -12,6 +12,10 @@ B7_name = 'B7_conv_bg_cat'
 B3_img = '/lustre/aoc/students/jotter/directory/OrionB3/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
 B3_name = 'B3_bg_r0.5.clean0.05mJy.allbaselines_cat'
 
+B6_nonconv_img = '/lustre/aoc/students/jotter/directory/OrionB6/Orion_SourceI_B6_continuum_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
+B7_nonconv_img = '/lustre/aoc/students/jotter/directory/OrionB7/Orion_SourceI_B7_continuum_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
+
+nonconv_imgs = [None, B6_nonconv_img, B7_nonconv_img]
 
 imgs = [B3_img, B6_img, B7_img]
 names = [B3_name, B6_name, B7_name]
@@ -48,7 +52,7 @@ ymeans = [B3_ymeans, B6_ymeans, B7_ymeans]
 for i in range(len(bands)): #loop thru bands
     for j in range(len(srcs[i])):
         print(srcs[i][j])
-        fit = fit_source(srcs[i][j], imgs[i], names[i], bands[i], xstddevs[i][j], ystddevs[i][j], xmeans[i][j], ymeans[i][j], zoom=zooms[i][j])
+        fit = fit_source(srcs[i][j], imgs[i], names[i], bands[i], xstddevs[i][j], ystddevs[i][j], xmeans[i][j], ymeans[i][j], zoom=zooms[i][j], nonconv_img = nonconv_imgs[i])
         cat_ind = np.where(catalog['D_ID'] == fit['D_ID'][0])[0]
         for nm in fit.colnames:
             catalog[nm][cat_ind] = fit[nm][0]
@@ -58,7 +62,7 @@ ind2 = np.where(catalog['D_ID'] == 31)[0][0]
 ind3 = np.where(catalog['D_ID'] == 37)[0][0]
 ind4 = np.where(catalog['D_ID'] == 48)[0][0]
 catalog.remove_rows([ind1,ind2,ind3,ind4])
-catalog.write('../tables/r0.5_catalog_conv_bgfitted_apflux_fixed.fits',overwrite=True)
+catalog.write('../tables/r0.5_catalog_conv_bgfitted_apflux_final.fits',overwrite=True)
 
 #fit params: - default xmean 0, ymean 0, zoom 1
 #B7:

@@ -18,7 +18,7 @@ from dendrogram_catalog import mask, rms
 #srcID, fwhm_maj_n, fwhm_maj_err_n, fwhm_min_n, fwhm_min_err_n, fwhm_maj_deconv_n, fwhm_maj_deconv_err_n, fwhm_min_deconv_n, fwhm_min_deconv_err_n, aspect_ratio_deconv, aspect_ratio_deconv_err, pa_n, pa_err_n, ap_flux_n, ap_flux_err_n, RA_n, RA_err_n, DEC_n, DEC_err_n
 
 
-def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_name):
+def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_name, nonconv_B6_img=None, nonconv_B7_img=None):
     #creates catalog from one image in each band
     #B3_names, B6_names, B7_names only used for gaussian diag directory names
     
@@ -42,10 +42,18 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
         beam = radio_beam.Beam.from_fits_header(header)
         pixel_scale = np.abs(img_wcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg
         ppbeam = (beam.sr/(pixel_scale**2)).decompose().value
-        if name == 'B6':
-            ppbeam = 127
-        if name == 'B7':
-            ppbeam = 51
+
+        if name == 'B6' and nonconv_B6_img is not None:
+            fl = fits.open(nonconv_B6_img)
+            header = fl[0].header
+            nonconv_beam = radio_beam.Beam.from_fits_header(header)
+            ppbeam = (nonconv_beam.sr/(pixel_scale**2)).decompose().value
+        if name == 'B7' and nonconv_B7_img is not None:
+            fl = fits.open(nonconv_B7_img)
+            header = fl[0].header
+            nonconv_beam = radio_beam.Beam.from_fits_header(header)
+            ppbeam = (nonconv_beam.sr/(pixel_scale**2)).decompose().value
+            
         #now get ready to fit gaussians
         #start by setting up save directory for images
         gauss_save_dir = '/lustre/aoc/students/jotter/gauss_diags/create_cat/'+img_name+'/'
