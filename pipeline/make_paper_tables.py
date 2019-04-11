@@ -79,21 +79,20 @@ for b in range(len(bands)):
     mass_err_arrs.append(Dmass_err)
 
 
-print(type(inclination_arrs[0]), type(inclination_err_arrs[0]), type(lower_lum_arrs[0]), type(mass_arrs[0]), type(mass_err_arrs[0]), type(alpha_B3B6))
-calc_tab = Table((int_flux_arrs[0], int_flux_err_arrs[0], int_flux_arrs[1], int_flux_err_arrs[1],
-                  int_flux_arrs, int_flux_err_arrs, inclination_arrs[0], inclination_err_arrs[0],
+calc_tab = Table([int_flux_arrs[0], int_flux_err_arrs[0], int_flux_arrs[1], int_flux_err_arrs[1],
+                  int_flux_arrs[2], int_flux_err_arrs[2], inclination_arrs[0], inclination_err_arrs[0],
                   inclination_arrs[1], inclination_err_arrs[1], inclination_arrs[2], inclination_err_arrs[2],
                   lower_lum_arrs[0], lower_lum_arrs[1], lower_lum_arrs[2], mass_arrs[0], mass_err_arrs[0],
-                  mass_arrs[1], mass_err_arrs[1], mass_arrs[2], mass_err_arrs[2], alpha_B3B6,
-                  alpha_B3B6_err, alpha_B6B7, alpha_B6B7_err),
-                  names=('int_flux_B3', 'int_flux_err_B3', 'int_flux_B6', 'int_flux_err_B6',
+                  mass_arrs[1], mass_err_arrs[1], mass_arrs[2], mass_err_arrs[2], alpha_B3B6, alpha_B3B6_err,
+                  alpha_B6B7, alpha_B6B7_err],
+                  names=['int_flux_B3', 'int_flux_err_B3', 'int_flux_B6', 'int_flux_err_B6',
                          'int_flux_B7', 'int_flux_err_B7', 'inclination_B3', 'inclination_err_B3',
                          'inclination_B6', 'inclination_err_B6', 'inclination_B7', 'inclination_err_B7',
                          'lower_lum_B3', 'lower_lum_B6', 'lower_lum_B7', 'dust_mass_B3', 'dust_mass_err_B3',
-                         'dust_mass_B6', 'dust_mass_err_B6', 'dust_mass_B7', 'dust_mass_err_B7', 'alpha_B3B6'
-                         'alpha_B3B6_err', 'alpha_B6B7', 'alpha_B6B7_err'),
-                 dtype=('f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8',
-                        'f8','f8','f8','f8','f8','f8','f8','f8','f8'))    
+                         'dust_mass_B6', 'dust_mass_err_B6', 'dust_mass_B7', 'dust_mass_err_B7', 'alpha_B3B6',
+                         'alpha_B3B6_err', 'alpha_B6B7', 'alpha_B6B7_err'],
+                 dtype=['f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8',
+                        'f8','f8','f8','f8','f8','f8','f8','f8','f8'])    
 
 EisnerID = np.repeat(-1, len(data))
 
@@ -129,7 +128,7 @@ B6ind = np.where(np.isnan(data['RA_B6']) == False)[0]
 B7ind = np.where(np.isnan(data['RA_B7']) == False)[0]
 allband_ind = np.intersect1d(B6ind, B7ind)
 
-eisner_tab = Table.read('../tables/eisner_tab.txt', format='ascii')
+eisner_tab = Table.read('../tables/eisner_tbl.txt')
 
 print(eisner_tab['alpha'])
 #eisner_ra = RA_to_deg(eisner_tab['alpha']
