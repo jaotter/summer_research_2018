@@ -1,4 +1,4 @@
-from astropy.table import Table
+from astropy.table import Table, Column
 from astropy.io import fits, ascii
 from astropy.modeling import blackbody
 from astropy import constants
@@ -17,7 +17,9 @@ def DEC_to_deg(DD, MM, SS):
 
 FWHM_TO_SIGMA = 1/np.sqrt(8*np.log(2))
 
-data = Table.read('../tables/r0.5_catalog_conv_bgfitted_apflux_final.fits')
+data =  Table.read('../tables/r0.5_catalog_conv_bgfitted_apflux_final.fits')
+nonconv_data = Table.read('../tables/r0.5_catalog_nonconv_apflux_final.fits')
+
 
 #calculate quantities for each band
 bands = ['B3', 'B6', 'B7']
@@ -35,51 +37,55 @@ alpha_B6B7 = (np.log10(data['ap_flux_B7'])-np.log10(data['ap_flux_B6']))/B
 alpha_B6B7_err = np.sqrt((data['ap_flux_err_B6']/(B*np.log(10)*data['ap_flux_B6']))**2 + (data['ap_flux_err_B7']/(B*np.log(10)*data['ap_flux_B7']))**2)
 
 #calclated quantites for each band
-int_flux_arrs = []
-int_flux_err_arrs = []
-lower_lum_arrs = []
-mass_arrs = []
-mass_err_arrs = []
-inclination_arrs = []
-inclination_err_arrs = []
 
 #constants for mass calc
 Tdust = 20*u.K
 kappa0 = 2*u.cm**2/u.g
 dist = 414*u.pc
 
-for b in range(len(bands)):
-    band = bands[b]
-    inclination = np.arccos(data['fwhm_min_deconv_'+band]/data['fwhm_maj_deconv_'+band])
-    inclination_arrs.append((inclination*u.rad).to(u.deg).value)
-    inclination_err = np.sqrt(
-        (data['fwhm_min_deconv_err_'+band]**2/(data['fwhm_maj_deconv_'+band]**2 - data['fwhm_min_deconv_'+band]**2)) +
-        ((data['fwhm_maj_deconv_err_'+band]**2)*(data['fwhm_min_deconv_'+band]**2)/(data['fwhm_maj_deconv_'+band]**2*(data['fwhm_maj_deconv_'+band]**2 - data['fwhm_min_deconv_'+band]**2))))
-    inclination_err_arrs.append((inclination_err*u.radian).to(u.deg).value)
-    
-    fl = fits.open(imgs[b])
-    fl_nonconv = fits.open(nonconv_imgs[b])
-    nonconv_beam = radio_beam.Beam.from_fits_header(fl_nonconv[0].header)
-    beam = radio_beam.Beam.from_fits_header(fl[0].header)
-    
-    int_flux = ((2*np.pi*data['gauss_amp_'+band]*data['fwhm_maj_'+band]*u.arcsec*data['fwhm_min_'+band]*u.arcsec*(FWHM_TO_SIGMA**2))/nonconv_beam.sr).decompose()
-    int_flux_arrs.append(int_flux)
-    int_flux_err = int_flux*np.sqrt((data['gauss_amp_err_'+band]/data['gauss_amp_'+band])**2+(data['fwhm_maj_err_'+band]/data['fwhm_maj_'+band])**2+(data['fwhm_min_err_'+band]/data['fwhm_min_'+band])**2)
-    int_flux_err_arrs.append(int_flux_err)
+tables = []
+for i in range(2):
+    int_flux_arrs = []
+    int_flux_err_arrs = []
+    lower_lum_arrs = []
+    mass_arrs = []
+    mass_err_arrs = []
+    inclination_arrs = []
+    inclination_err_arrs = []
 
-    R = (np.sin(beam.minor)*dist).to(u.au)/2
-    T_B = (data['ap_flux_'+band]*u.Jy).to(u.K, beam.jtok_equiv(freqs[b]*u.GHz))
-    L = (4 * np.pi * R**2 * constants.sigma_sb * (T_B)**4).to(u.L_sun)
-    lower_lum_arrs.append(L)
+    if i == 1:
+        data = data_nonconv
+    for b in range(len(bands)):
+        band = bands[b]
+        inclination = np.arccos(data['fwhm_min_deconv_'+band]/data['fwhm_maj_deconv_'+band])
+        inclination_arrs.append((inclination*u.rad).to(u.deg).value)
+        inclination_err = np.sqrt(
+            (data['fwhm_min_deconv_err_'+band]**2/(data['fwhm_maj_deconv_'+band]**2 - data['fwhm_min_deconv_'+band]**2)) +
+            ((data['fwhm_maj_deconv_err_'+band]**2)*(data['fwhm_min_deconv_'+band]**2)/(data['fwhm_maj_deconv_'+band]**2*(data['fwhm_maj_deconv_'+band]**2 - data['fwhm_min_deconv_'+band]**2))))
+        inclination_err_arrs.append((inclination_err*u.radian).to(u.deg).value)
 
-    Bnu = blackbody.blackbody_nu(freqs[b]*u.GHz, 20*u.K)
-    Dmass = (data['ap_flux_'+band]*dist**2)/(kappa0*Bnu)
-    Dmass_err = (data['ap_flux_err_'+band]*dist**2)/(kappa0*Bnu)
-    mass_arrs.append(Dmass)
-    mass_err_arrs.append(Dmass_err)
+        fl = fits.open(imgs[b])
+        fl_nonconv = fits.open(nonconv_imgs[b])
+        nonconv_beam = radio_beam.Beam.from_fits_header(fl_nonconv[0].header)
+        beam = radio_beam.Beam.from_fits_header(fl[0].header)
 
+        int_flux = ((2*np.pi*data['gauss_amp_'+band]*data['fwhm_maj_'+band]*u.arcsec*data['fwhm_min_'+band]*u.arcsec*(FWHM_TO_SIGMA**2))/nonconv_beam.sr).decompose()
+        int_flux_arrs.append(int_flux)
+        int_flux_err = int_flux*np.sqrt((data['gauss_amp_err_'+band]/data['gauss_amp_'+band])**2+(data['fwhm_maj_err_'+band]/data['fwhm_maj_'+band])**2+(data['fwhm_min_err_'+band]/data['fwhm_min_'+band])**2)
+        int_flux_err_arrs.append(int_flux_err)
 
-calc_tab = Table([int_flux_arrs[0], int_flux_err_arrs[0], int_flux_arrs[1], int_flux_err_arrs[1],
+        R = (np.sin(beam.minor)*dist).to(u.au)/2
+        T_B = (data['ap_flux_'+band]*u.Jy).to(u.K, beam.jtok_equiv(freqs[b]*u.GHz))
+        L = (4 * np.pi * R**2 * constants.sigma_sb * (T_B)**4).to(u.L_sun)
+        lower_lum_arrs.append(L)
+
+        Bnu = blackbody.blackbody_nu(freqs[b]*u.GHz, 20*u.K)
+        Dmass = (data['ap_flux_'+band]*dist**2)/(kappa0*Bnu)
+        Dmass_err = (data['ap_flux_err_'+band]*dist**2)/(kappa0*Bnu)
+        mass_arrs.append(Dmass)
+        mass_err_arrs.append(Dmass_err)
+
+    calc_tab = Table([int_flux_arrs[0], int_flux_err_arrs[0], int_flux_arrs[1], int_flux_err_arrs[1],
                   int_flux_arrs[2], int_flux_err_arrs[2], inclination_arrs[0], inclination_err_arrs[0],
                   inclination_arrs[1], inclination_err_arrs[1], inclination_arrs[2], inclination_err_arrs[2],
                   lower_lum_arrs[0], lower_lum_arrs[1], lower_lum_arrs[2], mass_arrs[0], mass_err_arrs[0],
@@ -93,8 +99,20 @@ calc_tab = Table([int_flux_arrs[0], int_flux_err_arrs[0], int_flux_arrs[1], int_
                          'alpha_B3B6_err', 'alpha_B6B7', 'alpha_B6B7_err'],
                  dtype=['f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8',
                         'f8','f8','f8','f8','f8','f8','f8','f8','f8'])    
+    tables.append(calc_tab)
 
-EisnerID = np.repeat(-1, len(data))
+
+
+nonconv_srcs = [3,13]
+for src in nonconv_srcs[0]:
+    ind_tab1 = np.where(table1['D_ID'] == src)[0]
+    ind_nonconv = np.where(table1['D_ID'] == src)[0]
+    for col in table1.colnames:
+        if col in nonconv_data.colnames:
+            table1[col][ind_tab1] = nonconv_data[col][ind_nonconv]
+                
+    
+EisnerID = Column(np.array(np.repeat('none', len(data)), dtype='S10'), name='Eisner_ID')
 
 table1 = Table((data['D_ID'], EisnerID, data['RA_B3'], data['DEC_B3'], data['RA_err_B3'],
                 data['DEC_err_B3'], data['ap_flux_B3'], data['ap_flux_err_B3'], data['ap_flux_B6'],
@@ -128,23 +146,37 @@ B6ind = np.where(np.isnan(data['RA_B6']) == False)[0]
 B7ind = np.where(np.isnan(data['RA_B7']) == False)[0]
 allband_ind = np.intersect1d(B6ind, B7ind)
 
-eisner_tab = Table.read('../tables/eisner_tbl.txt')
+eisner_tab = ascii.read('../tables/eisner_tbl.txt', format='tab', delimiter='\t')
+eisner_tab.remove_column('remove')
 
-print(eisner_tab['alpha'])
-#eisner_ra = RA_to_deg(eisner_tab['alpha']
-eisner_dec = eisner_tab['delta']
+eisner_ra = []
+eisner_dec = []
+for row in eisner_tab:
+    eisner_ra.append(RA_to_deg(float(row['alpha'][0:2]), float(row['alpha'][2:4]), float(row['alpha'][4:])))
+    eisner_dec.append(DEC_to_deg(float(row['delta'][0:3]), float(row['delta'][3:5]), float(row['delta'][5:])))
 
+
+    
 coord_tab = SkyCoord(ra=table1['RA_B3']*u.degree, dec=table1['DEC_B3']*u.degree)
 
-#eisner_coord = SkyCoord(ra=)
+eisner_coord = SkyCoord(ra=eisner_ra*u.degree, dec=eisner_dec*u.degree)
+
+idx, d2d, d3d = eisner_coord.match_to_catalog_sky(coord_tab)
+#idx is list of indices of table1 with locations corresponding to eisner_tab
+matches = np.where(d2d.value < 0.5*(1/3600))[0] #matches within 0.1 arcsec
+for mat in matches:
+    table1[idx[mat]]['Eisner_ID'] = eisner_tab[mat]['ID']
+
+matched_inds = np.where(table1['Eisner_ID'] != 'none')[0]
 
 table1 = table1[allband_ind]
 table2 = table2[allband_ind]
 
+
 #to do:
 #change source 3 and 13 quantities with non convolved images
 #fill column for whether qualitatively optically thick/thin
-#add Eisner IDs after matching catalogs/sources
+#rerun astrodendro to pick up on missed sources
 
-ascii.write(table1, '/users/jotter/summer_research_2018/tables/measured_vals_table1.fits', format='latex')
-ascii.write(table2, '/users/jotter/summer_research_2018/tables/inferred_vals_table2.fits', format='latex')
+#ascii.write(table1, '/users/jotter/summer_research_2018/tables/measured_vals_table1.fits', format='latex')
+#ascii.write(table2, '/users/jotter/summer_research_2018/tables/inferred_vals_table2.fits', format='latex')
