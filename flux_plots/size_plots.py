@@ -23,7 +23,7 @@ def disk_size_hist(arrs, labels, filename):
     
         plt.bar(plotpts, hist, widths, edgecolor = 'black', label=labels[a], alpha=0.5)
     plt.legend()
-    plt.xlabel('deconvolved fwhm major (as)')
+    plt.xlabel('deconvolved FWHM major (as)')
     plt.ylabel('number of disks')
     plt.xlim(0,0.35)
     plt.style.use(mpl_style.style1)
@@ -70,8 +70,8 @@ def disk_size_hist_3panel(arrs, xlabels, filename, nbins=10):
     xlim = 0.27*u.arcsec.to(u.rad)
     xlim *= d
     altax.set_xlim(0, xlim.value)
-    altax.set_xlabel('deconvolved fwhm major (AU)')
-    ax3.set_xlabel('deconvolved fwhm major (as)')
+    altax.set_xlabel('deconvolved FWHM major (AU)')
+    ax3.set_xlabel('deconvolved FWHM major (as)')
 
     ax1.set_yticks(ax1.get_yticks()[1:])
     ax2.set_yticks(ax2.get_yticks()[1:])
@@ -103,7 +103,7 @@ def R_hist_eisner(size_arr, xlabel, label, filename, nbins=10):
     plt.bar(plotpts, hist, widths, edgecolor = 'black', label=label, alpha=0.4)
     plt.bar(plotpts, eis_hist, widths, edgecolor='black', label='Eisner sizes', alpha=0.4)
     plt.legend()
-    plt.xlabel('deconvolved fwhm major (as)')
+    plt.xlabel('deconvolved FWHM major (as)')
     plt.ylabel('number of disks')
     #plt.xlim(0,0.35)
     plt.style.use(mpl_style.style1)
@@ -154,10 +154,6 @@ def size_comp_simple(arrs, errs, labels, filename):
     plt.savefig('plots/size_plots/'+filename, dpi=400)
 
 def size_comp_eisner(filename):
-    
-    #plot sizes of disks in two bands, arr1 and arr2 should have same length and sources
-    #labels - arr1 label, then arr2
-
     fig = plt.figure()
 
     data = Table.read('../tables/measured_vals_all.fits')
@@ -175,11 +171,11 @@ def size_comp_eisner(filename):
     eis_ind = np.where(data['Eisner_ID'] != 'none')[0]
     data_R = data['fwhm_maj_deconv_B3'][eis_ind]*u.arcsec
     data_R = (data_R.to(u.rad)*(414*u.pc).to(u.au)).value
-    data_R_err = data['fwhm_maj_deconv_B3'][eis_ind]*u.arcsec
+    data_R_err = data['fwhm_maj_err_B3'][eis_ind]*u.arcsec
     data_R_err = (data_R_err.to(u.rad)*(414*u.pc).to(u.au)).value
 
-    data_R = data_R[np.where(np.isnan(data_R) == False)[0]]
-    data_R_err = data_R_err[np.where(np.isnan(data_R_err) == False)[0]]
+    data_R = data_R[np.where(np.isnan(data['fwhm_maj_deconv_B3'][eis_ind]) == False)[0]]
+    data_R_err = data_R_err[np.where(np.isnan(data['fwhm_maj_deconv_B3'][eis_ind]) == False)[0]]
     
     matched_eisID = data['Eisner_ID'][np.array(eis_ind)]
     match_eis_ind = []
@@ -189,9 +185,13 @@ def size_comp_eisner(filename):
 
     eisner_R = np.array(eisner_R)[match_eis_ind]
     eisner_R_err = np.array(eisner_R_err)[match_eis_ind]
+
+    ind1 = np.where(data_R+3*data_R_err < eisner_R - 3*eisner_R_err)[0]
+    ind2 = np.where(data_R-3*data_R_err > eisner_R + 3*eisner_R_err)[0]
+    ind = np.concatenate((ind1, ind2))
     
-    print(data_R, eisner_R, data_R_err, eisner_R_err)
-    plt.errorbar(data_R, eisner_R, xerr=3*data_R_err, yerr=3*eisner_R_err, linestyle='', marker='.')        
+    plt.errorbar(data_R, eisner_R, xerr=3*data_R_err, yerr=3*eisner_R_err, linestyle='', marker='.')
+    plt.errorbar(data_R[ind], eisner_R[ind], xerr=3*data_R_err[ind], yerr=3*eisner_R_err[ind], linestyle='', marker='.')
     plt.xlabel('B3 FWHM (au)')
     plt.ylabel('Eisner et al FWHM (au)')
     plt.xlim(0,100)
