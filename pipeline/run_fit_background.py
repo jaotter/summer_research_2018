@@ -20,12 +20,12 @@ nonconv_imgs = [None, B6_nonconv_img, B7_nonconv_img]
 imgs = [B3_img, B6_img, B7_img]
 names = [B3_name, B6_name, B7_name]
 
-B3_srcs = [2,17,21,29,40,46,49,57,6,7,13,19,26,8]
-B3_xstddevs = [20,30,30,30,30,30,30,30,30,40,20,40,40,50]
-B3_ystddevs = [20,30,30,30,30,30,30,30,30,40,20,40,40,50]
-B3_zooms = [2,2,2,2,2,2,2,2,2,1.5,2,2,2,2]
-B3_xmeans = [30,0,0,0,0,0,0,0,0,50,-50,-50,0,0]
-B3_ymeans = [-30,0,0,0,0,0,0,0,0,0,-20,0,0,0]
+B3_srcs = [2,17,21,29,46,49,57,6,7,13,19,26,8,69,70,71,72,73,74]
+B3_xstddevs = [20,30,30,30,30,30,30,30,40,20,40,40,50,30,30,30,30,30,30]
+B3_ystddevs = [20,30,30,30,30,30,30,30,40,20,40,40,50,30,30,30,30,30,30]
+B3_zooms = [2,2,2,2,2,2,2,2,1.5,2,2,2,2,2,2,2,2.5,2.5,2.5]
+B3_xmeans = [30,0,0,0,0,0,0,0,50,-50,-50,0,0,0,0,0,0,0,0]
+B3_ymeans = [-30,0,0,0,0,0,0,0,0,-20,0,0,0,0,0,0,0,0,0]
 
 B6_srcs = [2,3,7,8,16,17,19,24,34,40]
 B6_xstddevs = [50,50,30,50,50,40,50,40,30,40]
@@ -48,21 +48,30 @@ zooms = [B3_zooms, B6_zooms, B7_zooms]
 xmeans = [B3_xmeans, B6_xmeans, B7_xmeans]
 ymeans = [B3_ymeans, B6_ymeans, B7_ymeans]
 
+catalog['success'] = np.array(np.repeat('-', len(catalog)), dtype='S8')
 
+mask_size = 1.5
 for i in range(len(bands)): #loop thru bands
     for j in range(len(srcs[i])):
         print(srcs[i][j])
-        fit = fit_source(srcs[i][j], imgs[i], names[i], bands[i], xstddevs[i][j], ystddevs[i][j], xmeans[i][j], ymeans[i][j], zoom=zooms[i][j], nonconv_img = nonconv_imgs[i])
+
+        if srcs[i][j] == 3:
+            mask_size = 10
+        fit = fit_source(srcs[i][j], imgs[i], names[i], bands[i], xstddevs[i][j], ystddevs[i][j], xmeans[i][j], ymeans[i][j], zoom=zooms[i][j], nonconv_img = nonconv_imgs[i], mask_size = mask_size)
         cat_ind = np.where(catalog['D_ID'] == fit['D_ID'][0])[0]
         for nm in fit.colnames:
             catalog[nm][cat_ind] = fit[nm][0]
+        mask_size = 1.5
+catalog['pa_B3'] = catalog['pa_B3']%360-90
+catalog['pa_B6'] = catalog['pa_B6']%360-90
+catalog['pa_B7'] = catalog['pa_B7']%360-90
 
 ind1 = np.where(catalog['D_ID'] == 22)[0][0]
 ind2 = np.where(catalog['D_ID'] == 31)[0][0]
 ind3 = np.where(catalog['D_ID'] == 37)[0][0]
 ind4 = np.where(catalog['D_ID'] == 48)[0][0]
 catalog.remove_rows([ind1,ind2,ind3,ind4])
-catalog.write('../tables/r0.5_catalog_conv_bgfitted_apflux_final.fits',overwrite=True)
+catalog.write('../tables/r0.5_catalog_conv_bgfitted_add_final2.fits',overwrite=True)
 
 #fit params: - default xmean 0, ymean 0, zoom 1
 #B7:

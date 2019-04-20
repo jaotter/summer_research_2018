@@ -18,7 +18,7 @@ from dendrogram_catalog import mask, rms
 #srcID, fwhm_maj_n, fwhm_maj_err_n, fwhm_min_n, fwhm_min_err_n, fwhm_maj_deconv_n, fwhm_maj_deconv_err_n, fwhm_min_deconv_n, fwhm_min_deconv_err_n, aspect_ratio_deconv, aspect_ratio_deconv_err, pa_n, pa_err_n, ap_flux_n, ap_flux_err_n, RA_n, RA_err_n, DEC_n, DEC_err_n
 
 
-def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, bg_mean_y, zoom=1, max_offset_in_beams=1, max_radius_in_beams=5, nonconv_img=None):
+def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, bg_mean_y, zoom=1, max_offset_in_beams=1, max_radius_in_beams=5, nonconv_img=None, mask_size=1.5):
     #this function fits a given source, and the background
     #srcID : int
         #name of source to fit in catalogs
@@ -36,7 +36,7 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
         #pixels away from center (origin) in x/y direction for background gaussian mean guess
     #zoom : float
         #amount of zoom, values greater than 1 are zoom ins
-    ref_data_name = '/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_flags.fits'
+    ref_data_name = '/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_add_final2.fits'
     ref_data = Table.read(ref_data_name)
     
     fl = fits.open(img)
@@ -76,11 +76,11 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
         region_list.append(region_i)
         
     cat_r = Angle(0.5, 'arcsecond')/zoom #radius for gaussian fitting
-    gauss_cat = bg_gaussfit(img, reg, region_list, cat_r, bg_stddev_x=bg_stddev_x, bg_stddev_y=bg_stddev_y, bg_mean_x=bg_mean_x, bg_mean_y=bg_mean_y, savepath=gauss_save_dir, max_offset_in_beams = max_offset_in_beams, max_offset_in_beams_bg = 10, max_radius_in_beams = max_radius_in_beams)
+    gauss_cat = bg_gaussfit(img, reg, region_list, cat_r, bg_stddev_x=bg_stddev_x, bg_stddev_y=bg_stddev_y, bg_mean_x=bg_mean_x, bg_mean_y=bg_mean_y, savepath=gauss_save_dir, max_offset_in_beams = max_offset_in_beams, max_offset_in_beams_bg = 10, max_radius_in_beams = max_radius_in_beams, mask_size=mask_size)
 
-    img_table = Table(names=('D_ID', 'fwhm_maj_'+band, 'fwhm_maj_err_'+band, 'fwhm_min_'+band, 'fwhm_min_err_'+band, 'pa_'+band, 'pa_err_'+band, 'gauss_amp_'+band, 'gauss_amp_err_'+band, 'RA_'+band,'RA_err_'+band, 'DEC_'+band, 'DEC_err_'+band), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))
+    img_table = Table(names=('D_ID', 'fwhm_maj_'+band, 'fwhm_maj_err_'+band, 'fwhm_min_'+band, 'fwhm_min_err_'+band, 'pa_'+band, 'pa_err_'+band, 'gauss_amp_'+band, 'gauss_amp_err_'+band, 'RA_'+band,'RA_err_'+band, 'DEC_'+band, 'DEC_err_'+band, 'success'), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'S8'))
     for key in gauss_cat:
-        img_table.add_row((srcID, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['amplitude'], gauss_cat[key]['e_amplitude'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y']))
+        img_table.add_row((srcID, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['amplitude'], gauss_cat[key]['e_amplitude'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y'], gauss_cat[key]['success']))
 
     #now measure deconvovled sizes and aperture flux measurements for each source 
     ap_flux_arr = []
