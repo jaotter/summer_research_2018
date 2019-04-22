@@ -20,6 +20,6 @@ B6_name_conv = 'conv_B6_r0.5.clean0.05mJy.150mplus.deepmask'
 B7_img_conv = B7dr+'0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
 B7_name_conv = 'conv_B7_r0.5.clean0.05mJy.250klplus.deepmask'
 
-single_img_catalog(B3_img, B3_name, B6_img_conv, B6_name_conv, B7_img_conv, B7_name_conv, 'r0.5_catalog_conv_add_final2', nonconv_B6_img=B6_img, nonconv_B7_img=B7_img)
+single_img_catalog(B3_img, B3_name, B6_img_conv, B6_name_conv, B7_img_conv, B7_name_conv, 'r0.5_catalog_conv_add_final2_success', nonconv_B6_img=B6_img, nonconv_B7_img=B7_img)
 
 #single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, 'r0.5_catalog_nonconv_apflux_final')

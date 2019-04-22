@@ -78,7 +78,7 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
     cat_r = Angle(0.5, 'arcsecond')/zoom #radius for gaussian fitting
     gauss_cat = bg_gaussfit(img, reg, region_list, cat_r, bg_stddev_x=bg_stddev_x, bg_stddev_y=bg_stddev_y, bg_mean_x=bg_mean_x, bg_mean_y=bg_mean_y, savepath=gauss_save_dir, max_offset_in_beams = max_offset_in_beams, max_offset_in_beams_bg = 10, max_radius_in_beams = max_radius_in_beams, mask_size=mask_size)
 
-    img_table = Table(names=('D_ID', 'fwhm_maj_'+band, 'fwhm_maj_err_'+band, 'fwhm_min_'+band, 'fwhm_min_err_'+band, 'pa_'+band, 'pa_err_'+band, 'gauss_amp_'+band, 'gauss_amp_err_'+band, 'RA_'+band,'RA_err_'+band, 'DEC_'+band, 'DEC_err_'+band, 'success'), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'S8'))
+    img_table = Table(names=('D_ID', 'fwhm_maj_'+band, 'fwhm_maj_err_'+band, 'fwhm_min_'+band, 'fwhm_min_err_'+band, 'pa_'+band, 'pa_err_'+band, 'gauss_amp_'+band, 'gauss_amp_err_'+band, 'RA_'+band,'RA_err_'+band, 'DEC_'+band, 'DEC_err_'+band, 'success_'+band), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'S8'))
     for key in gauss_cat:
         img_table.add_row((srcID, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['amplitude'], gauss_cat[key]['e_amplitude'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y'], gauss_cat[key]['success']))
 

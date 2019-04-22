@@ -2,7 +2,7 @@ from fit_background import *
 from astropy.io import fits
 from astropy.table import Table
 
-catalog = Table(fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_apflux_final.fits'))
+catalog = Table(fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_add_final2_success.fits'))
 
 bands = ['B3','B6', 'B7']
 B6_img = '/lustre/aoc/students/jotter/directory/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
@@ -66,12 +66,13 @@ catalog['pa_B3'] = catalog['pa_B3']%360-90
 catalog['pa_B6'] = catalog['pa_B6']%360-90
 catalog['pa_B7'] = catalog['pa_B7']%360-90
 
-ind1 = np.where(catalog['D_ID'] == 22)[0][0]
-ind2 = np.where(catalog['D_ID'] == 31)[0][0]
-ind3 = np.where(catalog['D_ID'] == 37)[0][0]
-ind4 = np.where(catalog['D_ID'] == 48)[0][0]
-catalog.remove_rows([ind1,ind2,ind3,ind4])
-catalog.write('../tables/r0.5_catalog_conv_bgfitted_add_final2.fits',overwrite=True)
+#ind1 = np.where(catalog['D_ID'] == 22)[0][0]
+#ind2 = np.where(catalog['D_ID'] == 31)[0][0]
+#ind3 = np.where(catalog['D_ID'] == 37)[0][0]
+#ind4 = np.where(catalog['D_ID'] == 48)[0][0]
+#catalog.remove_rows([ind1,ind2,ind3,ind4])
+
+catalog.write('../tables/r0.5_catalog_conv_bgfitted_add_final2_success.fits',overwrite=True)
 
 #fit params: - default xmean 0, ymean 0, zoom 1
 #B7:

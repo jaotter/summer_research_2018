@@ -22,9 +22,9 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
     #creates catalog from one image in each band
     #B3_names, B6_names, B7_names only used for gaussian diag directory names
     
-    ref_data_name = '/lustre/aoc/students/jotter/dendro_catalogs/IR_matched_catalog_B7.fits' #master_500klplus_B3_ref.fits'
+    ref_data_name = '/users/jotter/summer_research_2018/tables/ref_catalog_added.fits' #master_500klplus_B3_ref.fits'
     ref_data = Table.read(ref_data_name)
-    ref_arrs = [ref_data['_idx_B3'], ref_data['_idx_B6'], ref_data['_idx_B7_hr']]
+    ref_arrs = [ref_data['B3_detect'], ref_data['B6_detect'], ref_data['B7_detect']]
   
     band_imgs = [B3_img, B6_img, B7_img]
     band_names = ['B3', 'B6', 'B7']
@@ -64,14 +64,11 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
         rad = Angle(1, 'arcsecond') #radius used in region list
         regs = []
 
-        src_inds = np.where(np.isnan(ref_arrs[b]) == False)[0]
+        src_inds = np.where(ref_arrs[b] == True)[0]
         print(len(src_inds))
 
-        band_ind_nm = name
-        if name == 'B7':
-            band_ind_nm = 'B7_hr'
         for ind in src_inds:
-            reg = regions.CircleSkyRegion(center=SkyCoord(ref_data['gauss_x_'+band_ind_nm][ind]*u.degree, ref_data['gauss_y_'+band_ind_nm][ind]*u.degree), radius=rad, meta={'text':str(ref_data['D_ID'][ind])})
+            reg = regions.CircleSkyRegion(center=SkyCoord(ref_data['RA_B3'][ind]*u.degree, ref_data['DEC_B3'][ind]*u.degree), radius=rad, meta={'text':str(ref_data['D_ID'][ind])})
             reg_pix = reg.to_pixel(img_wcs)
             if reg_pix.center.x > 0 and reg_pix.center.x < len(img_data[0]):
                 if reg_pix.center.y > 0 and reg_pix.center.y < len(img_data):
@@ -81,9 +78,9 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
         cat_r = Angle(0.5, 'arcsecond') #radius for gaussian fitting
         gauss_cat = gaussfit_catalog(img, regs, cat_r, savepath=gauss_save_dir, max_offset_in_beams = 1, max_radius_in_beams = 5)
         #table does not have all columns yet, add others later
-        img_table = Table(names=('D_ID', 'fwhm_maj_'+name, 'fwhm_maj_err_'+name, 'fwhm_min_'+name, 'fwhm_min_err_'+name, 'pa_'+name, 'pa_err_'+name, 'gauss_amp_'+name, 'gauss_amp_err_'+name,'RA_'+name,'RA_err_'+name, 'DEC_'+name, 'DEC_err_'+name), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))
+        img_table = Table(names=('D_ID', 'fwhm_maj_'+name, 'fwhm_maj_err_'+name, 'fwhm_min_'+name, 'fwhm_min_err_'+name, 'pa_'+name, 'pa_err_'+name, 'gauss_amp_'+name, 'gauss_amp_err_'+name,'RA_'+name,'RA_err_'+name, 'DEC_'+name, 'DEC_err_'+name, 'success_'+name), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'S8'))
         for key in gauss_cat:
-            img_table.add_row((key, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['amplitude'], gauss_cat[key]['e_amplitude'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y']))
+            img_table.add_row((key, gauss_cat[key]['fwhm_major'], gauss_cat[key]['e_fwhm_major'], gauss_cat[key]['fwhm_minor'], gauss_cat[key]['e_fwhm_minor'], gauss_cat[key]['pa'], gauss_cat[key]['e_pa'], gauss_cat[key]['amplitude'], gauss_cat[key]['e_amplitude'], gauss_cat[key]['center_x'], gauss_cat[key]['e_center_x'], gauss_cat[key]['center_y'], gauss_cat[key]['e_center_y'], gauss_cat[key]['success']))
         #now measure deconvovled sizes and aperture flux measurements for each source 
         ap_flux_arr = []
         ap_flux_err_arr = []
