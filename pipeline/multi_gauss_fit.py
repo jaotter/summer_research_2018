@@ -237,12 +237,12 @@ def bg_gaussfit(fitsfile, region, region_list,
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', UserWarning)
             bmarr = beam.as_kernel(pixscale=pixscale, x_size=sz, y_size=sz).array
-            assert bmarr.max() > 0
-            bm_ellipse = beam.ellipse_to_plot(sz/2, sz/2., pixscale)
-            bm_ellipse.set_facecolor('none')
-            bm_ellipse.set_edgecolor('r')
-            pl.gca().add_patch(bm_ellipse)
-            #pl.contour(bmarr, levels=[0.317*bmarr.max()], colors=['r'])
+        assert bmarr.max() > 0
+        bm_ellipse = beam.ellipse_to_plot(sz/2, sz/2., pixscale)
+        bm_ellipse.set_facecolor('none')
+        bm_ellipse.set_edgecolor('r')
+        pl.gca().add_patch(bm_ellipse)
+        #pl.contour(bmarr, levels=[0.317*bmarr.max()], colors=['r'])
         pl.savefig(os.path.join(savepath, '{0}{1}.png'.format(prefix, sourcename)),
                    bbox_inches='tight')
 
@@ -277,7 +277,7 @@ def bg_gaussfit(fitsfile, region, region_list,
         print("Could not deconvolve {0} from {1}".format(beam.__repr__(), fitted_gaussian_as_beam.__repr__()))
         deconv_major, deconv_minor, deconv_pa = np.nan, np.nan, np.nan
         deconv_maj_err, deconv_min_err, deconv_pa_err = np.nan, np.nan, np.nan
-        fit_data[sourcename] = {'amplitude': result.amplitude_0,
+    fit_data[sourcename] = {'amplitude': result.amplitude_0,
                                 'center_x': float(clon)*u.deg,
                                 'center_y': float(clat)*u.deg,
                                 'fwhm_major': major,
