@@ -224,12 +224,12 @@ def bg_gaussfit(fitsfile, region, region_list,
     bg_gauss = [background, bg_mean_x + sz/2, bg_mean_y + sz/2, bg_stddev_x, bg_stddev_y, beam.pa.value]
     bnds = [max_radius_in_beams, max_offset_in_beams, max_offset_in_beams_bg]
 
-    result, fit_info, chi2, fitter = gaussfit_image(image=imtofit,
-                                                    gauss_params=src_gauss,
-                                                    bg_gauss_params=bg_gauss,
-                                                    bound_params=bnds,
-                                                    weights=1/noise**2,
-                                                    plot=savepath is not None,
+    result, fit_info, chi2, fitter, img_bgsub = gaussfit_image(image=imtofit,
+                                                              gauss_params=src_gauss,
+                                                              bg_gauss_params=bg_gauss,
+                                                              bound_params=bnds,
+                                                              weights=1/noise**2,
+                                                              plot=savepath is not None,
     )
     sourcename = region.meta['text'].strip('{}')
 
@@ -308,7 +308,7 @@ def bg_gaussfit(fitsfile, region, region_list,
 
     signal.signal(signal.SIGINT, signal_handler)
 
-    return fit_data
+    return fit_data, img_bgsub
 
 
 def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=None,
@@ -386,6 +386,7 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
     print(fitted)
     fitim = fitted(xx,yy)
     fitim_src = fitted[0](xx,yy)
+    fitim_bg = fitted[1](xx,yy)
     residual = image-fitim
     residualsquaredsum = np.nansum(residual**2*weights)
 
@@ -427,21 +428,14 @@ def gaussfit_image(image, gauss_params, bg_gauss_params, bound_params, weights=N
         axlims = ax6.axis()
         ax6.plot(fitted.x_mean_0, fitted.y_mean_0, 'w+')
         ax6.axis(axlims)
-        
-    return fitted, fitter.fit_info, residualsquaredsum, fitter
 
+    img_bgsub = image - fitim_bg
+    return fitted, fitter.fit_info, residualsquaredsum, fitter, img_bgsub
 
-def gaussfit_sub_bg(fitsfile, region, region_list,
-                     bg_stddev_x,
-                     bg_stddev_y,
-                     bg_mean_x,
-                     bg_mean_y,
-                     bg_theta,
-                     bg_amp,
+def gaussfit_cutoutim(fitsfile, cutoutimg, region, region_list,
                      radius=1.0*u.arcsec,
                      max_radius_in_beams=2,
                      max_offset_in_beams=1,
-                     mask_size=1.5,
                      background_estimator=np.nanmedian,
                      noise_estimator=lambda x: mad_std(x, ignore_nan=True),
                      savepath=None,
@@ -470,20 +464,6 @@ def gaussfit_sub_bg(fitsfile, region, region_list,
     max_offset_in_beams : float
         The maximum allowed offset of the source center from the guessed
         position
-    max_offset_in_beams_bg : float
-        same as above but for background gaussian
-    bg_stddev_x : float
-        Standard deviation in x direction for background gaussian
-    bg_stddev_y : float
-        Same as above, in y direction
-    bg_mean_x/y : float
-        pixels away for background gaussian mean, with origin at center
-    bg_theta : float
-        position angle of background gaussian
-    bg_amp : float
-        background amplitude
-    mask_size : float
-        size in beams of mask to be applied to nearby sources
     background_estimator : function
         A function to apply to the background pixels (those not within 1 beam
         HWHM of the center) to estimate the background level.  The background
@@ -536,6 +516,7 @@ def gaussfit_sub_bg(fitsfile, region, region_list,
     cutout = mask_cutout * mask.data
     cutout_mask = mask.data.astype('bool')
 
+    
     smaller_phot_reg = regions.CircleSkyRegion(center=region.center,
                                                    radius=beam.major/2.) #FWHM->HWHM
     smaller_pixreg = smaller_phot_reg.to_pixel(datawcs)
@@ -543,122 +524,189 @@ def gaussfit_sub_bg(fitsfile, region, region_list,
     smaller_cutout = smaller_mask.cutout(data) * smaller_mask.data
 
     # mask out (as zeros) neighboring sources within the fitting area
-    srcind = None
-    for ii, reg in enumerate(region_list):
-        if reg.center.ra == region.center.ra and reg.center.dec == region.center.dec:
-            srcind = ii
-    print(srcind)
-    nearby_matches = phot_reg.contains(coords, datawcs)
-    if any(nearby_matches):
-        inds = np.where(nearby_matches)[0].tolist()
-        inds.remove(srcind)
-        for ind in inds:
-            maskoutreg = regions.EllipseSkyRegion(center=region_list[ind].center,
-                                                      width=mask_size*beam.major,
-                                                      height=mask_size*beam.minor,
-                                                      angle=beam.pa+90*u.deg,
-                                                     )
-            mpixreg = maskoutreg.to_pixel(datawcs)
-            mmask = mpixreg.to_mask()
 
-            view, mview = slice_bbox_from_bbox(mask.bbox, mmask.bbox)
-            cutout_mask[view] &= ~mmask.data.astype('bool')[mview]
-            cutout = cutout * cutout_mask
+    background_mask = cutout_mask.copy().astype('bool')
+    background_mask[sub_bbox_slice(mask.bbox, smaller_mask.bbox)] &= ~smaller_mask.data.astype('bool')
+    background = background_estimator(cutout[background_mask])
 
+    sz = cutout.shape[0]
+    mx = np.nanmax(smaller_cutout)
+    ampguess = mx-background
+    imtofit = np.nan_to_num((cutout-background)*mask.data)
+    src_gauss = [ampguess, sz/2, bmmaj_px.value, bmmin_px.value, beam.pa.value]
+    bnds = [max_radius_in_beams, max_offset_in_beams]
+    result, fit_info, chi2, fitter = gaussfit_image_single(image=cutoutimg,
+                                                    gauss_params=src_gauss,
+                                                    bound_params=bnds,
+                                                    weights=1/noise**2,
+                                                    plot=savepath is not None,
+                                                   )
+    sourcename = region.meta['text'].strip('{}')
 
-        background_mask = cutout_mask.copy().astype('bool')
-        background_mask[sub_bbox_slice(mask.bbox, smaller_mask.bbox)] &= ~smaller_mask.data.astype('bool')
-        background = background_estimator(cutout[background_mask])
+    if savepath is not None:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            bmarr = beam.as_kernel(pixscale=pixscale, x_size=sz, y_size=sz).array
+        assert bmarr.max() > 0
+        bm_ellipse = beam.ellipse_to_plot(sz/2, sz/2., pixscale)
+        bm_ellipse.set_facecolor('none')
+        bm_ellipse.set_edgecolor('r')
+        pl.gca().add_patch(bm_ellipse)
+        #pl.contour(bmarr, levels=[0.317*bmarr.max()], colors=['r'])
+        pl.savefig(os.path.join(savepath, '{0}{1}.png'.format(prefix, sourcename)),
+                   bbox_inches='tight')
 
-        sz = cutout.shape[0]
-        mx = np.nanmax(smaller_cutout)
-        ampguess = mx-background
-        imtofit = np.nan_to_num((cutout-background)*mask.data)
-        src_gauss = [ampguess, sz/2, bmmaj_px.value, bmmin_px.value, beam.pa.value]
-        bg_gauss = [background, bg_mean_x + sz/2, bg_mean_y + sz/2, bg_stddev_x, bg_stddev_y, beam.pa.value]
-        bnds = [max_radius_in_beams, max_offset_in_beams, max_offset_in_beams_bg]
-        result, fit_info, chi2, fitter = gaussfit_image(image=imtofit,
-                                                        gauss_params=src_gauss,
-                                                        bg_gauss_params=bg_gauss,
-                                                        bound_params=bnds,
-                                                        weights=1/noise**2,
-                                                        plot=savepath is not None,
-                                                       )
-        sourcename = region.meta['text'].strip('{}')
+    if covariance not in fit_info or fit_info[covariance] is None:
+        fit_info[covariance] = np.zeros([6,6])
+        success = False
+    else:
+        success = True
 
-        if savepath is not None:
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', UserWarning)
-                bmarr = beam.as_kernel(pixscale=pixscale, x_size=sz, y_size=sz).array
-            assert bmarr.max() > 0
-            bm_ellipse = beam.ellipse_to_plot(sz/2, sz/2., pixscale)
-            bm_ellipse.set_facecolor('none')
-            bm_ellipse.set_edgecolor('r')
-            pl.gca().add_patch(bm_ellipse)
-            #pl.contour(bmarr, levels=[0.317*bmarr.max()], colors=['r'])
-            pl.savefig(os.path.join(savepath, '{0}{1}.png'.format(prefix, sourcename)),
-                       bbox_inches='tight')
+    cx,cy = pixreg.bounding_box.ixmin+result.x_mean, pixreg.bounding_box.iymin+result.y_mean
+    clon,clat = datawcs.wcs_pix2world(cx, cy, 0)
 
-        if covariance not in fit_info or fit_info[covariance] is None:
-            fit_info[covariance] = np.zeros([6,6])
-            success = False
-        else:
-            success = True
+    major,minor = (result.x_stddev * STDDEV_TO_FWHM * pixscale.to(u.arcsec),
+                   result.y_stddev * STDDEV_TO_FWHM * pixscale.to(u.arcsec))
+    majind, minind = 3,4
+    pa = (result.theta*u.rad).to(u.deg)
+    if minor > major:
+        major,minor = minor,major
+        majind,minind = minind,majind
+        pa += 90*u.deg
 
-        cx,cy = pixreg.bounding_box.ixmin+result.x_mean_0, pixreg.bounding_box.iymin+result.y_mean_0
-        clon,clat = datawcs.wcs_pix2world(cx, cy, 0)
+    fitted_gaussian_as_beam = Beam(major=major, minor=minor, pa=pa)
+    try:
+        deconv_fit = fitted_gaussian_as_beam.deconvolve(beam)
+        deconv_major, deconv_minor, deconv_pa = (deconv_fit.major,
+                                                 deconv_fit.minor,
+                                                 deconv_fit.pa)
+        deconv_maj_err = fit_info[covariance][majind,majind]**0.5 * STDDEV_TO_FWHM * pixscale.to(u.arcsec)
+        deconv_min_err = fit_info[covariance][minind,minind]**0.5 * STDDEV_TO_FWHM * pixscale.to(u.arcsec)
+        deconv_pa_err = fit_info[covariance][5,5]**0.5 * u.deg
+    except ValueError:
+        print("Could not deconvolve {0} from {1}".format(beam.__repr__(), fitted_gaussian_as_beam.__repr__()))
+        deconv_major, deconv_minor, deconv_pa = np.nan, np.nan, np.nan
+        deconv_maj_err, deconv_min_err, deconv_pa_err = np.nan, np.nan, np.nan
+    fit_data[sourcename] = {'amplitude': result.amplitude,
+                            'center_x': float(clon)*u.deg,
+                            'center_y': float(clat)*u.deg,
+                            'fwhm_major': major,
+                            'fwhm_minor': minor,
+                            'pa': pa,
+                            'deconv_fwhm_major': deconv_major,
+                            'e_deconv_fwhm_major' : deconv_maj_err,
+                            'deconv_fwhm_minor': deconv_minor,
+                            'e_deconv_fwhm_minor': deconv_min_err,
+                            'deconv_pa': deconv_pa,
+                            'e_deconv_pa': deconv_pa_err,
+                            'chi2': chi2,
+                            'chi2/n': chi2/mask.data.sum(),
+                            'e_amplitude': fit_info[covariance][0,0]**0.5,
+                            'e_center_x': fit_info[covariance][1,1]**0.5*pixscale,
+                            'e_center_y': fit_info[covariance][2,2]**0.5*pixscale,
+                            'e_fwhm_major': fit_info[covariance][majind,majind]**0.5 * STDDEV_TO_FWHM * pixscale.to(u.arcsec),
+                            'e_fwhm_minor': fit_info[covariance][minind,minind]**0.5 * STDDEV_TO_FWHM * pixscale.to(u.arcsec),
+                            'e_pa': fit_info[covariance][5,5]**0.5 * u.deg,
+                            'success': success,
+                            'ampguess': ampguess,
+                            'peak': mx,
+                            'fit_info': fit_info,
+                           }
 
-        major,minor = (result.x_stddev_0 * STDDEV_TO_FWHM * pixscale.to(u.arcsec),
-                       result.y_stddev_0 * STDDEV_TO_FWHM * pixscale.to(u.arcsec))
-        majind, minind = 3,4
-        pa = (result.theta_0*u.rad).to(u.deg)
-        if minor > major:
-            major,minor = minor,major
-            majind,minind = minind,majind
-            pa += 90*u.deg
+    if raise_for_failure and not success:
+        raise ValueError("Fit failed.")
 
-        fitted_gaussian_as_beam = Beam(major=major, minor=minor, pa=pa)
-        try:
-            deconv_fit = fitted_gaussian_as_beam.deconvolve(beam)
-            deconv_major, deconv_minor, deconv_pa = (deconv_fit.major,
-                                                     deconv_fit.minor,
-                                                     deconv_fit.pa)
-            deconv_maj_err = fit_info[covariance][majind,majind]**0.5 * STDDEV_TO_FWHM * pixscale.to(u.arcsec)
-            deconv_min_err = fit_info[covariance][minind,minind]**0.5 * STDDEV_TO_FWHM * pixscale.to(u.arcsec)
-            deconv_pa_err = fit_info[covariance][5,5]**0.5 * u.deg
-        except ValueError:
-            print("Could not deconvolve {0} from {1}".format(beam.__repr__(), fitted_gaussian_as_beam.__repr__()))
-            deconv_major, deconv_minor, deconv_pa = np.nan, np.nan, np.nan
-            deconv_maj_err, deconv_min_err, deconv_pa_err = np.nan, np.nan, np.nan
-        fit_data[sourcename] = {'amplitude': result.amplitude_0,
-                                'center_x': float(clon)*u.deg,
-                                'center_y': float(clat)*u.deg,
-                                'fwhm_major': major,
-                                'fwhm_minor': minor,
-                                'pa': pa,
-                                'deconv_fwhm_major': deconv_major,
-                                'e_deconv_fwhm_major' : deconv_maj_err,
-                                'deconv_fwhm_minor': deconv_minor,
-                                'e_deconv_fwhm_minor': deconv_min_err,
-                                'deconv_pa': deconv_pa,
-                                'e_deconv_pa': deconv_pa_err,
-                                'chi2': chi2,
-                                'chi2/n': chi2/mask.data.sum(),
-                                'e_amplitude': fit_info[covariance][0,0]**0.5,
-                                'e_center_x': fit_info[covariance][1,1]**0.5*pixscale,
-                                'e_center_y': fit_info[covariance][2,2]**0.5*pixscale,
-                                'e_fwhm_major': fit_info[covariance][majind,majind]**0.5 * STDDEV_TO_FWHM * pixscale.to(u.arcsec),
-                                'e_fwhm_minor': fit_info[covariance][minind,minind]**0.5 * STDDEV_TO_FWHM * pixscale.to(u.arcsec),
-                                'e_pa': fit_info[covariance][5,5]**0.5 * u.deg,
-                                'success': success,
-                                'ampguess': ampguess,
-                                'peak': mx,
-                                'fit_info': fit_info,
-                               }
-
-        if raise_for_failure and not success:
-            raise ValueError("Fit failed.")
-
-        signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
 
     return fit_data
+
+
+
+def gaussfit_image_single(image, gauss_params, bound_params, weights=None,
+                   fitter=fitting.LevMarLSQFitter(), plot=False):
+    """
+    Fit a gaussian to an image and optionally plot the data, the fitted
+    gaussian, and the residual.
+
+    Parameters
+    ----------
+    image : 2-dimensional array
+        The image to be fit.  Cannot contain any NaNs.
+    gaussian : list of floats
+        [amplitude guess, x and y mean (center), beam major pix, beam minor pix, beam pa]
+    fitter : `astropy.modeling.fitting.Fitter`
+        A fitter instance.  Can be any of the optimizers, in principle, but it
+        needs to take keywords ``weight`` and ``maxiter``.
+    plot : bool
+        Make the "diagnostic plot" showing the image, the fitted image, the
+        residual, and the image with the fits contoured over it?
+
+    Returns
+    -------
+    fitted : `astropy.modeling.fitting.Fitter`
+        The fitter instance
+    fitter.fit_info : dict
+        The dictionary containing the ``fit_info`` from the fitter
+    residualsquaredsum : float
+        The sum of the squares of the residual, e.g., chi^2.
+    """
+    yy, xx = np.mgrid[:image.shape[0], :image.shape[1]]
+
+    src_gaussian = models.Gaussian2D(amplitude=gauss_params[0],
+                                   x_mean=gauss_params[1],
+                                   y_mean=gauss_params[1],
+                                   x_stddev=gauss_params[2]/STDDEV_TO_FWHM,
+                                   y_stddev=gauss_params[3]/STDDEV_TO_FWHM,
+                                   theta=gauss_params[4],
+                                   bounds={'x_stddev':(gauss_params[3]/STDDEV_TO_FWHM*0.75,
+                                                       gauss_params[2]*bound_params[0]/STDDEV_TO_FWHM),
+                                           'y_stddev':(gauss_params[3]/STDDEV_TO_FWHM*0.75,
+                                                       gauss_params[2]*bound_params[0]/STDDEV_TO_FWHM),
+                                           'x_mean':(gauss_params[1]-bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM,
+                                                     gauss_params[1]+bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM),
+                                           'y_mean':(gauss_params[1]-bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM,
+                                                     gauss_params[1]+bound_params[1]*gauss_params[2]/STDDEV_TO_FWHM),
+                                           'amplitude':(gauss_params[0]*0.9, gauss_params[0]*1.1)
+                                          }
+                                     )
+
+    gauss_init = src_gaussian
+
+    with warnings.catch_warnings():
+        # Ignore model linearity warning from the fitter
+        warnings.simplefilter('ignore')
+        fitted = fitter(gauss_init, xx, yy, image, weights=weights,
+                        maxiter=1000)
+
+    print(fitted)
+    fitim = fitted(xx,yy)
+    residual = image-fitim
+    residualsquaredsum = np.nansum(residual**2*weights)
+
+    if plot:
+        pl.clf()
+        ax1 = pl.subplot(2,2,1)
+        im = ax1.imshow(image, cmap='viridis', origin='lower',
+                        interpolation='nearest')
+        vmin, vmax = im.get_clim()
+        ax2 = pl.subplot(2,2,2)
+        ax2.imshow(fitim, cmap='viridis', origin='lower',
+                   interpolation='nearest', vmin=vmin, vmax=vmax)
+        ax3 = pl.subplot(2,2,3)
+        ax3.imshow(residual, cmap='viridis', origin='lower',
+                   interpolation='nearest', vmin=vmin, vmax=vmax)
+        ax4 = pl.subplot(2,2,4)
+        ax4.imshow(image, cmap='viridis', origin='lower',
+                   interpolation='nearest', vmin=vmin, vmax=vmax)
+    
+        vmin, vmax = im.get_clim()
+        scalefactor = fitim.max()
+        if scalefactor < 0:
+            scalefactor = fitim.max() - fitim.min()
+        ax4.contour(fitim, levels=np.array([0.00269, 0.0455, 0.317])*scalefactor,
+                    colors=['w']*4)
+        axlims = ax4.axis()
+        ax4.plot(fitted.x_mean, fitted.y_mean, 'w+')
+        ax4.axis(axlims)
+        
+    return fitted, fitter.fit_info, residualsquaredsum, fitter

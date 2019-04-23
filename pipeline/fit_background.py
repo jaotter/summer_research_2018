@@ -1,4 +1,4 @@
-from multi_gauss_fit import bg_gaussfit
+from multi_gauss_fit import bg_gaussfit, gaussfit_cutoutim
 import regions
 import radio_beam
 
@@ -36,7 +36,7 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
         #pixels away from center (origin) in x/y direction for background gaussian mean guess
     #zoom : float
         #amount of zoom, values greater than 1 are zoom ins
-    ref_data_name = '/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_add_final2.fits'
+    ref_data_name = '/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_add_final2_success.fits'
     ref_data = Table.read(ref_data_name)
     
     fl = fits.open(img)
@@ -74,9 +74,16 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
         dec_i = ref_data['DEC_'+band][ind]
         region_i = regions.CircleSkyRegion(center=SkyCoord(ra_i, dec_i, unit='deg'), radius=1*u.arcsecond)
         region_list.append(region_i)
-        
+
     cat_r = Angle(0.5, 'arcsecond')/zoom #radius for gaussian fitting
-    gauss_cat = bg_gaussfit(img, reg, region_list, cat_r, bg_stddev_x=bg_stddev_x, bg_stddev_y=bg_stddev_y, bg_mean_x=bg_mean_x, bg_mean_y=bg_mean_y, savepath=gauss_save_dir, max_offset_in_beams = max_offset_in_beams, max_offset_in_beams_bg = 10, max_radius_in_beams = max_radius_in_beams, mask_size=mask_size)
+    gauss_cat, fitim_bg = bg_gaussfit(img, reg, region_list, cat_r, bg_stddev_x=bg_stddev_x, bg_stddev_y=bg_stddev_y, bg_mean_x=bg_mean_x, bg_mean_y=bg_mean_y, savepath=gauss_save_dir, max_offset_in_beams = max_offset_in_beams, max_offset_in_beams_bg = 10, max_radius_in_beams = max_radius_in_beams, mask_size=mask_size)
+
+    print('gauss_cat length ',len(gauss_cat))
+    k = list(gauss_cat.keys())[0]
+    if gauss_cat[k]['success'] == False:
+        gauss_cat = gaussfit_cutoutim(img, fitim_bg, reg, region_list, cat_r, savepath=gauss_save_dir, max_offset_in_beams = max_offset_in_beams, max_radius_in_beams = max_radius_in_beams)
+        success = gauss_cat[k]['success']
+        print(F'ALTERNATIVE FIT SUCCESS: {success}')
 
     img_table = Table(names=('D_ID', 'fwhm_maj_'+band, 'fwhm_maj_err_'+band, 'fwhm_min_'+band, 'fwhm_min_err_'+band, 'pa_'+band, 'pa_err_'+band, 'gauss_amp_'+band, 'gauss_amp_err_'+band, 'RA_'+band,'RA_err_'+band, 'DEC_'+band, 'DEC_err_'+band, 'success_'+band), dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'S8'))
     for key in gauss_cat:

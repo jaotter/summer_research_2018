@@ -58,6 +58,7 @@ for i in range(len(bands)): #loop thru bands
         if srcs[i][j] == 3:
             mask_size = 10
         fit = fit_source(srcs[i][j], imgs[i], names[i], bands[i], xstddevs[i][j], ystddevs[i][j], xmeans[i][j], ymeans[i][j], zoom=zooms[i][j], nonconv_img = nonconv_imgs[i], mask_size = mask_size)
+        print(fit)
         cat_ind = np.where(catalog['D_ID'] == fit['D_ID'][0])[0]
         for nm in fit.colnames:
             catalog[nm][cat_ind] = fit[nm][0]
@@ -72,7 +73,7 @@ catalog['pa_B7'] = catalog['pa_B7']%360-90
 #ind4 = np.where(catalog['D_ID'] == 48)[0][0]
 #catalog.remove_rows([ind1,ind2,ind3,ind4])
 
-catalog.write('../tables/r0.5_catalog_conv_bgfitted_add_final2_success.fits',overwrite=True)
+catalog.write('../tables/r0.5_catalog_conv_bgfitted_add_final2_test.fits',overwrite=True)
 
 #fit params: - default xmean 0, ymean 0, zoom 1
 #B7:
