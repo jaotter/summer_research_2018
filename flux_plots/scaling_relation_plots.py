@@ -66,6 +66,8 @@ d = (414*u.pc).to(u.au)
 Rau = (Rarcsec.to(u.rad)*d).value
 Rau_err = (((data['fwhm_maj_err_'+band][deconv_ind])*u.arcsec).to(u.rad)*d).value
 
+scaled_B3flux = data['ap_flux_B3'][deconv_ind]*(414/140)**2
+
 Lmm = data_inf['lower_lum_'+band][deconv_ind]
 
 Mdust = data_inf['dust_mass_'+band][deconv_ind]
@@ -78,6 +80,50 @@ SIGMA_TO_FWHM = np.sqrt(8*np.log(2))
 FWHM_andrw = R_eff_andrw.value*SIGMA_TO_FWHM
 FWHM_err_andrw = R_eff_err_andrw*SIGMA_TO_FWHM
 
+plt.figure()
+
+
+q = 0.57
+x = 0.68
+scriptF = 0.3
+T0 = 30*u.K
+r0 = 10*u.au
+
+coeff = ((((2-q)*x*constants.c**2)/(4*np.pi*(andrews_freq**2)*constants.k_B*scriptF*T0*(r0**q)))**(1/(2-q)))
+#coeff = (coeff.value*u.m).to(u.au)
+
+Lstar1 = 1
+Lstar10 = 10
+Lmm_arr = np.logspace(-3, 0, 4)*u.Jy
+
+R_eqn9_1 = (Lstar1**(-1/(4*(2-q)))*Lmm_arr**(1/(2-q))*coeff/SIGMA_TO_FWHM).decompose()
+R_eqn9_10 = (Lstar10**(-1/(4*(2-q)))*Lmm_arr**(1/(2-q))*coeff/SIGMA_TO_FWHM).decompose()
+
+
+
+srcIind = np.where(data['D_ID'][deconv_ind] == 10)[0]
+BNind = np.where(data['D_ID'][deconv_ind] == 20)[0]
+print('source I scaled Lmm: %f' % (scaled_B3flux[srcIind]))
+print('source BN scaled Lmm: %f' % (scaled_B3flux[BNind]))
+
+print('source I R: %f' % (Rau[srcIind]))
+print('source BN R: %f' % (Rau[BNind]))
+
+
+plt.errorbar(scaled_B3flux, Rau, yerr=Rau_err, linestyle='', marker='o', label='Band 3 measurements')
+plt.errorbar(Lmm_scaled_andrw.value, FWHM_andrw, yerr=FWHM_err_andrw, linestyle='', marker='o', label='Andrews et al. 2018')
+
+#plt.plot(Lmm_arr, R_eqn9_1, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 1 L_\odot$')
+#plt.plot(Lmm_arr, R_eqn9_10, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 10 L_\odot$')
+plt.legend()
+plt.xlabel('Scaled luminosity (Jy)')
+plt.ylabel('R (au)')
+plt.yscale('log')
+plt.xscale('log')
+
+plt.savefig('plots/scaling_rels_scaledflux.png', dpi=300)
+
+'''
 plt.errorbar(Lmm, Rau, yerr=Rau_err, linestyle='', marker='o', label='Band 3 measurements')
 plt.errorbar(L_mm_andrw.value, FWHM_andrw, yerr=FWHM_err_andrw, linestyle='', marker='o', label='Andrews et al. 2018')
 plt.legend()
@@ -88,21 +134,6 @@ plt.xscale('log')
 
 plt.savefig('plots/scaling_rels_flux.png')
 
-plt.clf()
-plt.figure()
-scaled_B3flux = data['ap_flux_B3']*(414/140)**2
-
-B3deconv_ind = np.where(np.isnan(Rau) == False)[0]
-
-plt.errorbar(scaled_B3flux[B3deconv_ind], Rau[B3deconv_ind], yerr=Rau_err[B3deconv_ind], linestyle='', marker='o', label='Band 3 measurements')
-plt.errorbar(Lmm_scaled_andrw.value, FWHM_andrw, yerr=FWHM_err_andrw, linestyle='', marker='o', label='Andrews et al. 2018')
-plt.legend()
-plt.xlabel('Scaled luminosity (Jy)')
-plt.ylabel('R (au)')
-plt.yscale('log')
-plt.xscale('log')
-
-plt.savefig('plots/scaling_rels_scaledflux.png', dpi=300)
 
 plt.clf()
 plt.figure()
@@ -123,3 +154,4 @@ plt.bar(plotpts, flux_B3_hist, widths, label='B3 data', alpha=0.5)
 plt.bar(plotpts, andrews_flux_hist, widths, label='Andrews et. al. 2018', alpha=0.5)
 plt.legend()
 plt.savefig('plots/andrews_flux_hist.png',dpi=300)
+'''
