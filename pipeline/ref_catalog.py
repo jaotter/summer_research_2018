@@ -24,9 +24,9 @@ ref_table['B6_detect'][ind1] = True
 ind2 = np.where(ref_table['D_ID'] == 52)[0]
 ref_table['B6_detect'][ind2] = True
 
-ras = [RA_to_deg(5,35,14.0589), RA_to_deg(5,35,16.3130), RA_to_deg(5,35,15.889), RA_to_deg(5,35,16.1474), RA_to_deg(5,35,16.0796)]
-decs = [DEC_to_deg(-5,22,5.661), DEC_to_deg(-5,22,21.525), DEC_to_deg(-5,22,33.19), DEC_to_deg(-5,22,55.313), DEC_to_deg(-5,22,54.345)]
-#corresponding eisner IDs: none, 163-222, HC447, HC393, HC401
+ras = [RA_to_deg(5,35,14.0589), RA_to_deg(5,35,16.3130), RA_to_deg(5,35,15.889), RA_to_deg(5,35,16.1474), RA_to_deg(5,35,16.0796), RA_to_deg(5,35,15.6387)]
+decs = [DEC_to_deg(-5,22,5.661), DEC_to_deg(-5,22,21.525), DEC_to_deg(-5,22,33.19), DEC_to_deg(-5,22,55.313), DEC_to_deg(-5,22,54.345), DEC_to_deg(-5,22,56.453)]
+#corresponding eisner IDs: none, 163-222, HC447, HC393, HC401, HC389
 
 for i  in range(len(ras)):
     new_id = ref_table['D_ID'][-1]+1
