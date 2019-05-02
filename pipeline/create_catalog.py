@@ -22,7 +22,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
     #creates catalog from one image in each band
     #B3_names, B6_names, B7_names only used for gaussian diag directory names
     
-    ref_data_name = '/users/jotter/summer_research_2018/tables/ref_catalog_added.fits' #master_500klplus_B3_ref.fits'
+    ref_data_name = '/users/jotter/summer_research_2018/tables/ref_catalog_added.fits'
     ref_data = Table.read(ref_data_name)
     ref_arrs = [ref_data['B3_detect'], ref_data['B6_detect'], ref_data['B7_detect']]
   
@@ -128,7 +128,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
 
                 #now make annulus for measuring background and error
                 annulus_width = 15 #pixels
-                annulus_radius = 0.1*u.arcsecond
+                annulus_radius = img_table['fwhm_maj_'+name][row]*u.arcsecond#+0.05*u.arcsecond
                 annulus_radius_pix = (annulus_radius.to(u.degree)/pixel_scale).decompose()
 
                 #cutout image
@@ -145,6 +145,8 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                 # Calculate the SNR and aperture flux sums
                 pixels_in_annulus = cutout.data[annulus_mask.astype('bool')]
                 bg_rms = rms(pixels_in_annulus)
+                print(img_table['D_ID'][row])
+                print('BG RMS: %f' % (bg_rms))
                 ap_bg_rms = bg_rms/np.sqrt(npix/ppbeam) #rms/sqrt(npix/ppbeam) - rms error per beam
                 bg_median = np.median(pixels_in_annulus)
 
@@ -336,5 +338,5 @@ def imgs_catalog(B3_imgs, B3_names, B6_imgs, B6_names, B7_imgs, B7_names, short_
     B3B6 = join(band_tables[0], band_tables[1], keys='D_ID', join_type='outer')
     all_bands = join(B3B6, band_tables[2], keys='D_ID', join_type='outer')
 
-    all_bands.write('/lustre/aoc/students/jotter/dendro_catalogs/'+cat_name+'.fits',  overwrite=True)
+    #all_bands.write('/lustre/aoc/students/jotter/dendro_catalogs/'+cat_name+'.fits',  overwrite=True)
     #lastly, match with other data

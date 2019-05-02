@@ -36,7 +36,7 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
         #pixels away from center (origin) in x/y direction for background gaussian mean guess
     #zoom : float
         #amount of zoom, values greater than 1 are zoom ins
-    ref_data_name = '/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_add_final2_success.fits'
+    ref_data_name = '/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_add_final3.fits'
     ref_data = Table.read(ref_data_name)
     
     fl = fits.open(img)
@@ -142,7 +142,7 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
 
             #now make annulus for measuring background and error
             annulus_width = 15 #pixels
-            annulus_radius = 0.1*u.arcsecond
+            annulus_radius = img_table['fwhm_maj_'+band][row]*u.arcsecond#0.1*u.arcsecond
             annulus_radius_pix = (annulus_radius.to(u.degree)/pixel_scale).decompose()
 
             #cutout image

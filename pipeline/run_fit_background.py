@@ -2,7 +2,7 @@ from fit_background import *
 from astropy.io import fits
 from astropy.table import Table
 
-catalog = Table(fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_add_final2_success.fits'))
+catalog = Table(fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_add_final3_ann2.fits'))
 
 bands = ['B3','B6', 'B7']
 B6_img = '/lustre/aoc/students/jotter/directory/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
@@ -20,12 +20,12 @@ nonconv_imgs = [None, B6_nonconv_img, B7_nonconv_img]
 imgs = [B3_img, B6_img, B7_img]
 names = [B3_name, B6_name, B7_name]
 
-B3_srcs = [2,17,21,29,46,49,57,6,7,13,19,26,8,69,70,71,72,73,74]
-B3_xstddevs = [20,30,30,30,30,30,30,30,40,20,40,40,50,30,30,30,30,30,30]
-B3_ystddevs = [20,30,30,30,30,30,30,30,40,20,40,40,50,30,30,30,30,30,30]
-B3_zooms = [2,2,2,2,2,2,2,2,1.5,2,2,2,2,2,2,2,2.5,2.5,2.5]
-B3_xmeans = [30,0,0,0,0,0,0,0,50,-50,-50,0,0,0,0,0,0,0,0]
-B3_ymeans = [-30,0,0,0,0,0,0,0,0,-20,0,0,0,0,0,0,0,0,0]
+B3_srcs = [2,17,21,29,46,49,57,6,7,13,19,26,8,69,70,71,72,73,74,75]
+B3_xstddevs = [20,30,30,30,30,30,30,30,40,20,40,40,50,30,30,30,30,30,30,30]
+B3_ystddevs = [20,30,30,30,30,30,30,30,40,20,40,40,50,30,30,30,30,30,30,30]
+B3_zooms = [2,2,2,2,2,2,2,2,1.5,2,2,2,2,2,2,2,2.5,2.5,2.5,2]
+B3_xmeans = [30,0,0,0,0,0,0,0,50,-50,-50,0,0,0,0,0,0,0,0,0]
+B3_ymeans = [-30,0,0,0,0,0,0,0,0,-20,0,0,0,0,0,0,0,0,0,0]
 
 B6_srcs = [2,3,7,8,16,17,19,24,34,40]
 B6_xstddevs = [50,50,30,50,50,40,50,40,30,40]
@@ -34,12 +34,12 @@ B6_zooms = [2,1.5,2,1.5,1.5,2,1.5,2,1.5,2]
 B6_xmeans = [0,0,0,0,0,0,0,0,10,0]
 B6_ymeans = [0,0,0,0,0,0,0,0,10,0]
 
-B7_srcs = [0,3,16,17]
-B7_xstddevs = [30,50,40,20]
-B7_ystddevs = [30,50,40,20]
-B7_xmeans = [-40,0,-25,20]
-B7_ymeans = [40,0,25,-15]
-B7_zooms = [1.3,1.5,2,3.5]
+B7_srcs = [0,3,16,17,27]
+B7_xstddevs = [30,50,40,20,30]
+B7_ystddevs = [30,50,40,20,30]
+B7_xmeans = [-40,0,-25,20,0]
+B7_ymeans = [40,0,25,-15,0]
+B7_zooms = [1.3,1.5,2,3.5,2]
 
 srcs = [B3_srcs, B6_srcs, B7_srcs]
 xstddevs = [B3_xstddevs, B6_xstddevs, B7_xstddevs]
@@ -73,7 +73,7 @@ catalog['pa_B7'] = catalog['pa_B7']%360-90
 #ind4 = np.where(catalog['D_ID'] == 48)[0][0]
 #catalog.remove_rows([ind1,ind2,ind3,ind4])
 
-catalog.write('../tables/r0.5_catalog_conv_bgfitted_add_final2_test.fits',overwrite=True)
+catalog.write('../tables/r0.5_catalog_conv_bgfitted_add_final3_ann2.fits',overwrite=True)
 
 #fit params: - default xmean 0, ymean 0, zoom 1
 #B7:
