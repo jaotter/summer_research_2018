@@ -103,7 +103,7 @@ def R_hist_eisner(size_arr, xlabel, label, filename, nbins=10):
     plt.bar(plotpts, hist, widths, edgecolor = 'black', label=label, alpha=0.4)
     plt.bar(plotpts, eis_hist, widths, edgecolor='black', label='Eisner sizes', alpha=0.4)
     plt.legend()
-    plt.xlabel('deconvolved FWHM major (as)')
+    plt.xlabel('deconvolved FWHM major (AU)')
     plt.ylabel('number of disks')
     #plt.xlim(0,0.35)
     plt.style.use(mpl_style.style1)
@@ -156,7 +156,7 @@ def size_comp_simple(arrs, errs, labels, filename):
 def size_comp_eisner(filename):
     fig = plt.figure()
 
-    data = Table.read('../tables/measured_vals_all.fits')
+    data = Table.read('../tables/table_meas_B3.fits')
     
     eisner_data = ascii.read('../tables/eisner_tbl.txt', format='tab')
     eis_UL_ind = np.where(eisner_data['R_disk'] == '<5')[0]
@@ -167,13 +167,13 @@ def size_comp_eisner(filename):
     eisner_R_err = eisner_data['R_disk']
     eisner_R_err[eis_UL_ind] = '0.0'
     eisner_R_err = [float(x.split()[-1])*2 for x in eisner_R_err]
-    
+    print(data['Eisner_ID'])
     eis_ind = np.where(data['Eisner_ID'] != 'none')[0]
     data_R = data['fwhm_maj_deconv_B3'][eis_ind]*u.arcsec
     data_R = (data_R.to(u.rad)*(414*u.pc).to(u.au)).value
     data_R_err = data['fwhm_maj_err_B3'][eis_ind]*u.arcsec
     data_R_err = (data_R_err.to(u.rad)*(414*u.pc).to(u.au)).value
-
+    print(data_R)
     data_R = data_R[np.where(np.isnan(data['fwhm_maj_deconv_B3'][eis_ind]) == False)[0]]
     data_R_err = data_R_err[np.where(np.isnan(data['fwhm_maj_deconv_B3'][eis_ind]) == False)[0]]
     
@@ -190,10 +190,11 @@ def size_comp_eisner(filename):
     ind2 = np.where(data_R-3*data_R_err > eisner_R + 3*eisner_R_err)[0]
     ind = np.concatenate((ind1, ind2))
     
+    print(data['D_ID'][eis_ind], data['D_ID'][eis_ind][ind1])
     plt.errorbar(data_R, eisner_R, xerr=3*data_R_err, yerr=3*eisner_R_err, linestyle='', marker='.')
     plt.errorbar(data_R[ind], eisner_R[ind], xerr=3*data_R_err[ind], yerr=3*eisner_R_err[ind], linestyle='', marker='.')
-    plt.xlabel('B3 FWHM (au)')
-    plt.ylabel('Eisner et al FWHM (au)')
+    plt.xlabel('B3 FWHM (AU)')
+    plt.ylabel('Eisner et al FWHM (AU)')
     plt.xlim(0,100)
     plt.ylim(0,100)
     plt.plot(np.arange(0,101,50), np.arange(0,101,50), color='k')

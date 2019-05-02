@@ -7,7 +7,7 @@ from astropy.io import fits
 from astropy.table import Table
 from functools import reduce
 
-data = Table(fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted_apflux_final.fits'))
+data = Table(fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted_add_final3_ann2.fits'))
 
 B3_deconv_maj = data['fwhm_maj_deconv_B3']
 B3_deconv_maj_err = data['fwhm_maj_deconv_err_B3']

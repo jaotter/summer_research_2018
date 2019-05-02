@@ -48,14 +48,15 @@ Fnu_andrw = np.array(Fnu_andrw)*u.mJy
 dists_andrw = np.array(dists_andrw)*u.pc
 
 andrews_freq = 335*u.GHz
-andrews_beam = Beam(major=0.29*u.arcsec, minor=0.25*u.arcsec, pa=89*u.degree)
+
+'''andrews_beam = Beam(major=0.29*u.arcsec, minor=0.25*u.arcsec, pa=89*u.degree)
 R_andrw = (np.sin(0.25*u.arcsec)*dists_andrw).to(u.au)/2
 
 #T_B = L_mm.to(u.K, equivalencies=u.brightness_temperature(andrews_freq))
 #val = ((2*constants.h*(andrews_freq**3))/(L_mm*(constants.c**2))).decompose()
 #T_B = ((constants.h*andrews_freq/constants.k_B)*(np.log(1+val))**(-1)).decompose()
 T_B_andrw = Fnu_andrw.to(u.K, andrews_beam.jtok_equiv(andrews_freq))
-L_mm_andrw = (4*np.pi*(R_andrw**2)*constants.sigma_sb*(T_B_andrw)**4).to(u.L_sun)
+L_mm_andrw = (4*np.pi*(R_andrw**2)*constants.sigma_sb*(T_B_andrw)**4).to(u.L_sun)'''
 
 fig = plt.figure(figsize=(5,5))
 
@@ -77,6 +78,7 @@ Mdust_err = data_inf['dust_mass_err_'+band][deconv_ind]
 R_eff_err_andrw = np.array((R_eff_err_up_andrw, R_eff_err_down_andrw))
 
 SIGMA_TO_FWHM = np.sqrt(8*np.log(2))
+
 FWHM_andrw = R_eff_andrw.value*SIGMA_TO_FWHM
 FWHM_err_andrw = R_eff_err_andrw*SIGMA_TO_FWHM
 
@@ -89,16 +91,10 @@ scriptF = 0.3
 T0 = 30*u.K
 r0 = 10*u.au
 
-coeff = ((((2-q)*x*constants.c**2)/(4*np.pi*(andrews_freq**2)*constants.k_B*scriptF*T0*(r0**q)))**(1/(2-q)))
-#coeff = (coeff.value*u.m).to(u.au)
-
-Lstar1 = 1
-Lstar10 = 10
-Lmm_arr = np.logspace(-3, 0, 4)*u.Jy
-
-R_eqn9_1 = (Lstar1**(-1/(4*(2-q)))*Lmm_arr**(1/(2-q))*coeff/SIGMA_TO_FWHM).decompose()
-R_eqn9_10 = (Lstar10**(-1/(4*(2-q)))*Lmm_arr**(1/(2-q))*coeff/SIGMA_TO_FWHM).decompose()
-
+Rau_arr = np.logspace(0,3,5)*u.au
+Lmm_eqn9_01 = ((Rau_arr*SIGMA_TO_FWHM)**(2-q)*andrews_freq**2*(.1)**(.25)*constants.k_B*scriptF*T0*r0**q/((2-q)*constants.c**2*(140*u.pc)**2)).decompose().to(u.Jy)
+Lmm_eqn9 = ((Rau_arr*SIGMA_TO_FWHM)**(2-q)*andrews_freq**2*constants.k_B*scriptF*T0*r0**q/((2-q)*constants.c**2*(140*u.pc)**2)).decompose().to(u.Jy)
+Lmm_eqn9_10 = ((Rau_arr*SIGMA_TO_FWHM)**(2-q)*andrews_freq**2*(10)**(.25)*constants.k_B*scriptF*T0*r0**q/((2-q)*constants.c**2*(140*u.pc)**2)).decompose().to(u.Jy)
 
 
 srcIind = np.where(data['D_ID'][deconv_ind] == 10)[0]
@@ -113,9 +109,12 @@ print('source BN R: %f' % (Rau[BNind]))
 plt.errorbar(scaled_B3flux, Rau, yerr=Rau_err, linestyle='', marker='o', label='Band 3 measurements')
 plt.errorbar(Lmm_scaled_andrw.value, FWHM_andrw, yerr=FWHM_err_andrw, linestyle='', marker='o', label='Andrews et al. 2018')
 
-#plt.plot(Lmm_arr, R_eqn9_1, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 1 L_\odot$')
-#plt.plot(Lmm_arr, R_eqn9_10, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 10 L_\odot$')
+plt.plot(Lmm_eqn9_01, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 0.1 L_\odot$')
+plt.plot(Lmm_eqn9, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 1 L_\odot$')
+plt.plot(Lmm_eqn9_10, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 10 L_\odot$')
 plt.legend()
+plt.xlim(0.001, 1)
+plt.ylim(7, 600)
 plt.xlabel('Scaled luminosity (Jy)')
 plt.ylabel('R (au)')
 plt.yscale('log')

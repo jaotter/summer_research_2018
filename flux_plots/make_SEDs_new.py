@@ -13,7 +13,7 @@ import fnmatch
 from astropy.coordinates import Angle, SkyCoord
 
 def get_ind(names): #returns indices where sources are detected in all bands
-    data = fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted_apflux_final.fits')
+    data = fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted_add_final3_ann2.fits')
     flux_inds = [np.where(np.isnan(data['ap_flux_'+n]) == False)[0] for n in names]
     #fit_ind =  np.where(data['good_fit_flag'] == True)[0]
     ind1 = reduce(np.intersect1d, flux_inds)
@@ -25,10 +25,12 @@ def get_ind(names): #returns indices where sources are detected in all bands
 def plot_SEDs(names):
     freqs = {'B3':98*u.GHz, 'B6':223.5*u.GHz, 'B7':339.7672758867*u.GHz}
     #freqs = {'B3':98*u.GHz, 'B6':223.5*u.GHz, 'B7_hr':339.7672758867*u.GHz}
-    data = fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted_apflux_final.fits')
+    data = fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted_add_final3_ann2.fits')
     ind = get_ind(names)
 
     alpha = [1.5,2,2.5]
+
+    imgs = ['/lustre/aoc/students/jotter/directory/OrionB3/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits', '/lustre/aoc/students/jotter/directory/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits', '/lustre/aoc/students/jotter/directory/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits']
     freq_x = np.array([freqs[n].value for n in names])
     for i in ind:
         #fluxes = [data['gauss_amp_'+n][i] for n in names]
@@ -55,6 +57,28 @@ def plot_SEDs(names):
         #plt.ylabel('gaussian amplitude (Jy)')
         plt.xlabel('frequency (GHz)')
         plt.legend()
-        plt.savefig('/users/jotter/summer_research_2018/flux_plots/plots/SEDs/SED_'+str(data['D_ID'][i])+'_apflux_bgfitted_apflux_final.png', dpi=300)
+
+        locs_x = [0.3, 0.5, 0.7]
+        locs_y = [0.15, 0.15, 0.15]
+        
+        for j in range(len(imgs)):
+            img_file = imgs[j]
+            img_fl = fits.open(img_file)
+            img_data = img_fl[0].data.squeeze()
+            img_header = img_fl[0].header
+            mywcs = WCS(img_header).celestial
+            pixel_scale = np.abs(mywcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg
+            center_coord = SkyCoord(data['RA_'+names[j]][i], data['DEC_'+names[j]][i], frame='icrs', unit=(u.deg, u.deg))
+            center_coord_pix = center_coord.to_pixel(mywcs)
+            if j == 0:
+                pix_major_fwhm = ((data['fwhm_maj_B3'][j]*u.arcsec).to(u.degree)/pixel_scale).decompose()
+                size = 3*pix_major_fwhm.value
+            cutout = Cutout2D(img_data, center_coord_pix, size, mywcs, mode='partial')
+            a = plt.axes([locs_x[j], locs_y[j], .2, .2])
+            plt.imshow(cutout.data, origin='lower')
+            plt.title(names[j])
+            a.tick_params(labelleft=False, labelbottom=False)
+
+        plt.savefig('/users/jotter/summer_research_2018/flux_plots/plots/SEDs/SED_'+str(data['D_ID'][i])+'_apflux_bgfitted_add_final3_ann2.png', dpi=300)
 
 plot_SEDs(['B3', 'B6', 'B7'])
