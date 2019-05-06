@@ -122,35 +122,62 @@ plt.xscale('log')
 
 plt.savefig('plots/scaling_rels_scaledflux.png', dpi=300)
 
-'''
-plt.errorbar(Lmm, Rau, yerr=Rau_err, linestyle='', marker='o', label='Band 3 measurements')
-plt.errorbar(L_mm_andrw.value, FWHM_andrw, yerr=FWHM_err_andrw, linestyle='', marker='o', label='Andrews et al. 2018')
+fig = plt.figure()
+
+d = 414*u.pc
+d = d.to(u.AU)
+
+size_arr = data['fwhm_maj_deconv_B3']
+
+size_arr = size_arr[np.isnan(size_arr)==False]*u.arcsec
+size_arr = (size_arr.to(u.rad)*d).value
+#size_arr = np.log10(size_arr)
+hist, bins = np.histogram(size_arr, density=False, bins=10)
+plotpts = []
+widths = []
+for b in range(len(bins[:-1])): #creating points to plot - midpoints of bbins
+    plotpts.append(bins[b] + (bins[b+1]-bins[b])/2)
+    widths.append((bins[b+1]-bins[b]))
+
+eisner_data = ascii.read('../tables/eisner_tbl.txt', format='tab')
+eisner_ind = np.where(eisner_data['R_disk'] != '<5')[0]
+eisner_R = [float(x.split()[0])*2 for x in eisner_data['R_disk'][eisner_ind]]
+#eisner_R = np.log10(eisner_R)
+eis_hist, bins = np.histogram(eisner_R, density=False, bins=bins)
+
+#FWHM_andrw = np.log10(FWHM_andrw)
+andrw_hist, bins = np.histogram(FWHM_andrw, density=False, bins=bins)
+
+plt.bar(plotpts, hist, widths, edgecolor = 'black', label='band 3 sizes', alpha=0.4)
+plt.bar(plotpts, eis_hist, widths, edgecolor='black', label='E18 sizes', alpha=0.4)
+plt.bar(plotpts, andrw_hist, widths, edgecolor='black', label='A18 sizes', alpha=0.4)
+
+plt.xlabel('Major FWHM (au)')
+plt.ylabel('Number')
 plt.legend()
-plt.xlabel('L lower limit (Lsun)')
-plt.ylabel('R (au)')
-plt.yscale('log')
-plt.xscale('log')
 
-plt.savefig('plots/scaling_rels_flux.png')
+plt.savefig('plots/R_hist_all.png', dpi=500)
 
 
-plt.clf()
-plt.figure()
-flux_B3_hist, bins = np.histogram(data['ap_flux_B3'], density=False, bins=20)
-andrews_flux_hist, bins2  = np.histogram(Fnu_andrw.value/1000, bins=bins, density=False)
-
-print(data['ap_flux_B3'])
-print(Fnu_andrw.value/1000)
+fig = plt.figure()
+#scaled_B3flux = np.log10(scaled_B3flux)
+hist_L, bins = np.histogram(scaled_B3flux, density=False, bins=10)
 
 plotpts = []
 widths = []
-for b in range(len(bins[:-1])): #creating points to plot - midpoints of bins
+
+for b in range(len(bins[:-1])): #creating points to plot - midpoints of bbins
     plotpts.append(bins[b] + (bins[b+1]-bins[b])/2)
     widths.append((bins[b+1]-bins[b]))
-                                             
 
-plt.bar(plotpts, flux_B3_hist, widths, label='B3 data', alpha=0.5)
-plt.bar(plotpts, andrews_flux_hist, widths, label='Andrews et. al. 2018', alpha=0.5)
+#Lmm_scaled_andrw = np.log10(Lmm_scaled_andrw.value)
+andrw_hist_L, bins = np.histogram(Lmm_scaled_andrw, density=False, bins=bins)
+
+plt.bar(plotpts, hist_L, widths, edgecolor = 'black', label='band 3 sizes', alpha=0.4)
+plt.bar(plotpts, andrw_hist_L, widths, edgecolor='black', label='A18 sizes', alpha=0.4)
+
+plt.xlabel('Scaled Luminosity (Jy)')
+plt.ylabel('Number')
 plt.legend()
-plt.savefig('plots/andrews_flux_hist.png',dpi=300)
-'''
+
+plt.savefig('plots/L_hist_all.png', dpi=500)
