@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 
 import astropy.constants as constants
 
+from scipy.stats import linregress
+
 band='B3'
 
 #three plots: R and L, R and M, L and M
@@ -99,19 +101,41 @@ Lmm_eqn9_10 = ((Rau_arr*SIGMA_TO_FWHM)**(2-q)*andrews_freq**2*(10)**(.25)*consta
 
 srcIind = np.where(data['D_ID'][deconv_ind] == 10)[0]
 BNind = np.where(data['D_ID'][deconv_ind] == 20)[0]
-print('source I scaled Lmm: %f' % (scaled_B3flux[srcIind]))
-print('source BN scaled Lmm: %f' % (scaled_B3flux[BNind]))
+#print('source I scaled Lmm: %f' % (scaled_B3flux[srcIind]))
+#print('source BN scaled Lmm: %f' % (scaled_B3flux[BNind]))
 
-print('source I R: %f' % (Rau[srcIind]))
-print('source BN R: %f' % (Rau[BNind]))
+#print('source I R: %f' % (Rau[srcIind]))
+#print('source BN R: %f' % (Rau[BNind]))
 
+scaled_B3flux_rem = np.delete(scaled_B3flux, [srcIind[0], BNind[0]])
+Rau_rem = np.delete(Rau, [srcIind[0], BNind[0]])
+Rau_rem_err = np.delete(Rau_err, [srcIind[0], BNind[0]])
+
+linreg_params_B3 = linregress(np.log10(scaled_B3flux_rem), np.log10(Rau_rem))
+Lmm_arr = np.logspace(-3, 0, 5)
+linreg_line_B3 = np.log10(Lmm_arr)*linreg_params_B3[0] + linreg_params_B3[1]
+
+#plt.plot(Lmm_arr, 10**linreg_line_B3, linestyle='-', marker='', label='Fit to B3 data')
+print('linreg params for B3 fit', linreg_params_B3)
+
+linreg_params_andrw = linregress(np.log10(Lmm_scaled_andrw.value), np.log10(FWHM_andrw))
+linreg_line_andrw = np.log10(Lmm_arr)*linreg_params_andrw[0] + linreg_params_andrw[1]
+
+#plt.plot(Lmm_arr, 10**linreg_line_andrw, linestyle='-', marker='', label='Fit to A18 data')
+print('linreg params for A18 fit', linreg_params_andrw)
+
+linreg_params_all = linregress(np.log10(np.concatenate((Lmm_scaled_andrw.value, scaled_B3flux_rem))), np.log10(np.concatenate((FWHM_andrw, Rau_rem))))
+linreg_line_all = np.log10(Lmm_arr)*linreg_params_all[0] + linreg_params_all[1]
+
+plt.plot(Lmm_arr, 10**linreg_line_all, linestyle='-', marker='', label='Fit to B3 and A18 data')
+print('linreg params for all fit', linreg_params_all)
 
 plt.errorbar(scaled_B3flux, Rau, yerr=Rau_err, linestyle='', marker='o', label='Band 3 measurements')
 plt.errorbar(Lmm_scaled_andrw.value, FWHM_andrw, yerr=FWHM_err_andrw, linestyle='', marker='o', label='Andrews et al. 2018')
 
-plt.plot(Lmm_eqn9_01, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 0.1 L_\odot$')
+#plt.plot(Lmm_eqn9_01, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 0.1 L_\odot$')
 plt.plot(Lmm_eqn9, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 1 L_\odot$')
-plt.plot(Lmm_eqn9_10, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 10 L_\odot$')
+#plt.plot(Lmm_eqn9_10, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 10 L_\odot$')
 plt.legend()
 plt.xlim(0.001, 1)
 plt.ylim(7, 600)
@@ -131,28 +155,34 @@ size_arr = data['fwhm_maj_deconv_B3']
 
 size_arr = size_arr[np.isnan(size_arr)==False]*u.arcsec
 size_arr = (size_arr.to(u.rad)*d).value
-#size_arr = np.log10(size_arr)
-hist, bins = np.histogram(size_arr, density=False, bins=10)
+size_arr = np.log10(size_arr)
+
+eisner_data = ascii.read('../tables/eisner_tbl.txt', format='tab')
+eisner_ind = np.where(eisner_data['R_disk'] != '<5')[0]
+eisner_R = [float(x.split()[0])*2 for x in eisner_data['R_disk'][eisner_ind]]
+eisner_R = np.log10(eisner_R)
+
+FWHM_andrw = np.log10(FWHM_andrw)
+
+total_R = np.concatenate((FWHM_andrw, eisner_R, size_arr))
+total_hist_R, bins_R = np.histogram(total_R, bins=10)
+andrw_hist, bins = np.histogram(FWHM_andrw, density=False, bins=bins_R)
+eis_hist, bins = np.histogram(eisner_R, density=False, bins=bins_R)
+hist, bins = np.histogram(size_arr, density=False, bins=bins_R)
+
+
 plotpts = []
 widths = []
 for b in range(len(bins[:-1])): #creating points to plot - midpoints of bbins
     plotpts.append(bins[b] + (bins[b+1]-bins[b])/2)
     widths.append((bins[b+1]-bins[b]))
 
-eisner_data = ascii.read('../tables/eisner_tbl.txt', format='tab')
-eisner_ind = np.where(eisner_data['R_disk'] != '<5')[0]
-eisner_R = [float(x.split()[0])*2 for x in eisner_data['R_disk'][eisner_ind]]
-#eisner_R = np.log10(eisner_R)
-eis_hist, bins = np.histogram(eisner_R, density=False, bins=bins)
-
-#FWHM_andrw = np.log10(FWHM_andrw)
-andrw_hist, bins = np.histogram(FWHM_andrw, density=False, bins=bins)
 
 plt.bar(plotpts, hist, widths, edgecolor = 'black', label='band 3 sizes', alpha=0.4)
 plt.bar(plotpts, eis_hist, widths, edgecolor='black', label='E18 sizes', alpha=0.4)
 plt.bar(plotpts, andrw_hist, widths, edgecolor='black', label='A18 sizes', alpha=0.4)
 
-plt.xlabel('Major FWHM (au)')
+plt.xlabel('log(Major FWHM / AU)')
 plt.ylabel('Number')
 plt.legend()
 
@@ -160,8 +190,15 @@ plt.savefig('plots/R_hist_all.png', dpi=500)
 
 
 fig = plt.figure()
-#scaled_B3flux = np.log10(scaled_B3flux)
-hist_L, bins = np.histogram(scaled_B3flux, density=False, bins=10)
+scaled_B3flux = np.log10(scaled_B3flux)
+
+Lmm_scaled_andrw = np.log10(Lmm_scaled_andrw.value)
+
+L_tot = np.concatenate((scaled_B3flux, Lmm_scaled_andrw))
+hist_Ltot, bins_L = np.histogram(L_tot, density=False, bins=10)
+
+hist_L, bins = np.histogram(scaled_B3flux, density=False, bins=bins_L)
+andrw_hist_L, bins = np.histogram(Lmm_scaled_andrw, density=False, bins=bins_L)
 
 plotpts = []
 widths = []
@@ -170,13 +207,10 @@ for b in range(len(bins[:-1])): #creating points to plot - midpoints of bbins
     plotpts.append(bins[b] + (bins[b+1]-bins[b])/2)
     widths.append((bins[b+1]-bins[b]))
 
-#Lmm_scaled_andrw = np.log10(Lmm_scaled_andrw.value)
-andrw_hist_L, bins = np.histogram(Lmm_scaled_andrw, density=False, bins=bins)
-
 plt.bar(plotpts, hist_L, widths, edgecolor = 'black', label='band 3 sizes', alpha=0.4)
 plt.bar(plotpts, andrw_hist_L, widths, edgecolor='black', label='A18 sizes', alpha=0.4)
 
-plt.xlabel('Scaled Luminosity (Jy)')
+plt.xlabel('log(Scaled Luminosity / Jy)')
 plt.ylabel('Number')
 plt.legend()
 
