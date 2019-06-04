@@ -8,6 +8,61 @@ from functools import reduce
 
 import mpl_style
 
+def disk_mass_comp():
+    vt19_data = Table.read('../tables/VT19.txt', format='latex')
+    eis_data = Table.read('../tables/eisner_tbl.txt', format='ascii')
+    dmass_data = Table.read('../tables/inf_vals_all_updt.fits')
+
+    vt19_dmass_raw = vt19_data['Mass']
+    eis_dmass_raw = eis_data['M_dust^a']
+    B3_dmass = np.log10(dmass_data['dust_mass_B3'])
+    B7_dmass = np.log10(dmass_data['dust_mass_B7'])
+
+    vt19_dmass = []
+    for dm in vt19_dmass_raw:
+        vt19_dmass.append(dm.split()[0][1:])
+
+    vt19_dmass = np.log10(np.array(vt19_dmass[1:],dtype='float'))
+    
+    eis_dmass = []
+    for dm in eis_dmass_raw:
+        eis_dmass.append(dm.split()[0])
+    eis_dmass = np.log10(np.array(eis_dmass, dtype='float'))
+    eis_dmass = eis_dmass[np.where(np.isinf(eis_dmass) == False)[0]]
+    
+    print(vt19_dmass, eis_dmass, B3_dmass)
+    all_masses_B3 = np.concatenate((vt19_dmass, eis_dmass, B3_dmass))
+    all_hist_B3, bins_B3 = np.histogram(all_masses_B3)
+
+    vt_hist_B3, b = np.histogram(vt19_dmass, bins=bins_B3)
+    eis_hist_B3, b = np.histogram(eis_dmass, bins=bins_B3)
+    B3_hist, b = np.histogram(B3_dmass, bins=bins_B3)
+    eis_B3_combined_hist = eis_hist_B3+B3_hist
+    
+    plotpts = []
+    widths = []
+    for b in range(len(bins_B3[:-1])): #creating points to plot - midpoints of bins
+        plotpts.append(bins_B3[b] + (bins_B3[b+1]-bins_B3[b])/2)
+        widths.append((bins_B3[b+1]-bins_B3[b]))
+    
+    
+    fig = plt.figure(figsize=(10,8))
+    plt.bar(plotpts, vt_hist_B3, widths, edgecolor = 'black', label='VT19', alpha=0.5)
+    plt.bar(plotpts, eis_hist_B3, widths, edgecolor = 'black', label='E18', alpha=0.5)
+    plt.bar(plotpts, B3_hist, widths, edgecolor = 'black', label='band 3', alpha=0.5)
+    plt.xlabel(r'$\log(M_{dust}/M_\oplus)$')
+    plt.ylabel('number of disks')
+    plt.legend()
+    plt.savefig('plots/dust_mass_hist_B3.png', dpi=400)
+
+    fig = plt.figure(figsize=(10,8))
+    plt.bar(plotpts, vt_hist_B3, widths, edgecolor = 'black', label='VT19', alpha=0.5)
+    plt.bar(plotpts, eis_B3_combined_hist, widths, edgecolor = 'black', label='E18 and band 3', alpha=0.5)
+    plt.xlabel(r'$\log(M_{dust}/M_\oplus)$')
+    plt.ylabel('number of disks')
+    plt.legend()
+    plt.savefig('plots/dust_mass_hist_B3_combined.png', dpi=400)
+    
 def disk_size_hist(arrs, labels, filename):
     fig = plt.figure()
     for a in range(len(arrs)):
@@ -200,7 +255,6 @@ def size_comp_eisner(filename):
     plt.plot(np.arange(0,101,50), np.arange(0,101,50), color='k')
     plt.style.use(mpl_style.style1)
     plt.savefig('plots/size_plots/'+filename, dpi=400)
-
     
 def img_size_comp(arrs, err_arrs,  labels):
     fig = plt.figure()
