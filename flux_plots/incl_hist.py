@@ -1,5 +1,6 @@
 from astropy.table import Table
 from astropy.io import ascii
+from scipy.stats import ks_2samp
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,11 +22,11 @@ prob = np.abs(np.cos(plotpts))
 prob = prob/np.sum(prob)
 cos_hist = tot*prob
 
-print(np.sum(cos_hist), np.sum(hist))
+#print(np.sum(cos_hist), np.sum(hist))
+Dval, pval = ks_2samp(cos_hist, hist)
+print('KS statistic: %f, p value: %f' % (Dval, pval))
 
 plt.bar(plotpts, cos_hist, widths, edgecolor='k', alpha=.5, label=r'$\cos(i)$')
-
-
 plt.bar(plotpts, hist, widths, edgecolor='k', alpha=0.5, label='band 3')
 plt.xlabel('Band 3 inclination angle (degrees)')
 plt.ylabel('number')
