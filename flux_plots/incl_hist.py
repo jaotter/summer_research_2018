@@ -1,8 +1,9 @@
 from astropy.table import Table
 from astropy.io import ascii
-from scipy.stats import ks_2samp
+from scipy.stats import kstest
 import astropy.units as u
 
+import math
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -26,9 +27,15 @@ prob = prob/np.sum(prob)
 sin_hist = tot*prob
 
 
-print(sin_hist)
-Dval, pval = ks_2samp(hist, sin_hist)
+incl = dataB3['inclination_B3'][ind]*u.degree
+incl = incl.to(u.radian)
+
+Dval, pval = kstest(incl, np.sin)
 print('KS statistic: %f, p value: %f' % (Dval, pval))
+
+Dval, pval = kstest(incl, 'cosine')
+print('KS statistic: %f, p value: %f' % (Dval, pval))
+
 
 plt.figure()
 plt.bar(plotpts, sin_hist, widths, edgecolor='k', alpha=.5, label=r'$\sin(i)$')
@@ -55,14 +62,9 @@ for b in range(len(cos_bins[:-1])): #creating points to plot - midpoints of bins
 tot = np.sum(cos_incl_hist)
 unif_hist= np.repeat(tot/len(cos_incl_hist), len(cos_incl_hist))
 
-Dval, pval = ks_2samp(unif_hist, cos_incl_hist)
+Dval, pval = kstest(np.cos(incl), 'uniform')
 print('KS statistic: %f, p value: %f' % (Dval, pval))
 
-#something wrong here with renaming widths
-print(np.sum(cos_incl_hist*widths))
-print(np.sum(hist*widths))
-#print(np.sum(cos_hist*cos_widths))
-print(np.sum(unif_hist*widths))
 
 plt.figure()
 plt.bar(plotpts, unif_hist, widths, edgecolor='k', alpha=.5, label='uniform')
