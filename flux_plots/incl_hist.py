@@ -1,11 +1,15 @@
 from astropy.table import Table
 from astropy.io import ascii
-from scipy.stats import kstest
+from scipy.stats import kstest, ks_2samp
 import astropy.units as u
 
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+
+def f(x): #for 2 sample ks test
+    return (1 - np.cos(x))*(x>0)*(x<np.pi/2)+(x>np.pi/2)
+
 
 dataB3 = Table.read('../tables/table_meas_B3.fits')
 
@@ -28,13 +32,27 @@ sin_hist = tot*prob
 
 
 incl = dataB3['inclination_B3'][ind]*u.degree
-incl = incl.to(u.radian)
+incl = incl.to(u.radian).value
+incl_filtered = incl % np.pi/2
 
-Dval, pval = kstest(incl, np.sin)
-print('KS statistic: %f, p value: %f' % (Dval, pval))
 
-Dval, pval = kstest(incl, 'cosine')
-print('KS statistic: %f, p value: %f' % (Dval, pval))
+#Dval, pval = kstest(incl_filtered, np.cos)
+#print('KS statistic: %f, p value: %f' % (Dval, pval))
+
+#'cosine' is just a normal distribution approximation
+#Dval, pval = kstest(incl_filtered, 'cosine')
+#print('KS statistic: %f, p value: %f' % (Dval, pval))
+
+x = np.random.rand(10000)
+y = np.arccos(1-x)
+
+#2 sample ks test
+Dval, pval = ks_2samp(incl_filtered, y) 
+print('2 sample KS statistic: %f, p value: %f' % (Dval, pval))
+
+#1 sample test
+Dval, pval = kstest(incl_filtered, f) 
+print('1 sample KS statistic: %f, p value: %f' % (Dval, pval))
 
 
 plt.figure()
@@ -62,7 +80,7 @@ for b in range(len(cos_bins[:-1])): #creating points to plot - midpoints of bins
 tot = np.sum(cos_incl_hist)
 unif_hist= np.repeat(tot/len(cos_incl_hist), len(cos_incl_hist))
 
-Dval, pval = kstest(np.cos(incl), 'uniform')
+Dval, pval = kstest(np.cos(incl_filtered), 'uniform')
 print('KS statistic: %f, p value: %f' % (Dval, pval))
 
 
