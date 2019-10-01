@@ -8,7 +8,9 @@ from functools import reduce
 
 import mpl_style
 
-def disk_mass_comp():
+from lifelines import KaplanMeierFitter
+
+def dust_mass_KM():
     vt19_data = Table.read('../tables/VT19.txt', format='latex')
     eis_data = Table.read('../tables/eisner_tbl.txt', format='ascii')
     dmass_data = Table.read('../tables/inf_vals_all_updt.fits')
@@ -17,6 +19,52 @@ def disk_mass_comp():
     eis_dmass_raw = eis_data['M_dust^a']
     B3_dmass = np.log10(dmass_data['dust_mass_B3'])
     B7_dmass = np.log10(dmass_data['dust_mass_B7'])
+    B7_dmass = B7_dmass[np.where(np.isnan(B7_dmass) == False)[0]]
+
+    vt19_dmass = []
+    for dm in vt19_dmass_raw:
+        vt19_dmass.append(dm.split()[0][1:])
+
+    vt19_dmass = np.log10(np.array(vt19_dmass[1:],dtype='float'))
+    
+    eis_dmass = []
+    for dm in eis_dmass_raw:
+        eis_dmass.append(dm.split()[0])
+    eis_dmass = np.log10(np.array(eis_dmass, dtype='float'))
+    eis_dmass = eis_dmass[np.where(np.isinf(eis_dmass) == False)[0]]
+
+    kmf = KaplanMeierFitter()
+    kmf.fit(vt19_dmass)
+
+    fig = plt.figure()
+    ax = kmf.plot()
+    plt.savefig('VT19_KM_plot.png')
+
+def KM_hist(hist):
+    #hist is histogram to compute KM estimator for (deaths), bins is right edge of hist bins (time)
+    Si = []
+    Sprob = []
+    surv = np.sum(hist)
+    for i in range(len(hist)):
+        val = 1 - hist[i]/surv
+        surv = surv - hist[i]
+        print(surv, val, hist[i])
+        Si.append(val)
+        Sprob.append(np.prod(Si))
+
+    return Sprob
+    
+    
+def dust_mass_comp():
+    vt19_data = Table.read('../tables/VT19.txt', format='latex')
+    eis_data = Table.read('../tables/eisner_tbl.txt', format='ascii')
+    dmass_data = Table.read('../tables/inf_vals_all_updt.fits')
+
+    vt19_dmass_raw = vt19_data['Mass']
+    eis_dmass_raw = eis_data['M_dust^a']
+    B3_dmass = np.log10(dmass_data['dust_mass_B3'])
+    B7_dmass = np.log10(dmass_data['dust_mass_B7'])
+    B7_dmass = B7_dmass[np.where(np.isnan(B7_dmass) == False)[0]]
 
     vt19_dmass = []
     for dm in vt19_dmass_raw:
@@ -39,25 +87,71 @@ def disk_mass_comp():
     B3_hist, b = np.histogram(B3_dmass, bins=bins_B3)
     eis_B3_combined_hist = eis_hist_B3+B3_hist
     
-    plotpts = []
-    widths = []
+    plotpts_B3 = []
+    widths_B3 = []
     for b in range(len(bins_B3[:-1])): #creating points to plot - midpoints of bins
-        plotpts.append(bins_B3[b] + (bins_B3[b+1]-bins_B3[b])/2)
-        widths.append((bins_B3[b+1]-bins_B3[b]))
+        plotpts_B3.append(bins_B3[b] + (bins_B3[b+1]-bins_B3[b])/2)
+        widths_B3.append((bins_B3[b+1]-bins_B3[b]))
+
+    all_masses_B7 = np.concatenate((vt19_dmass, eis_dmass, B7_dmass))
+    print(all_masses_B7)
+    all_hist_B7, bins_B7 = np.histogram(all_masses_B7)
+
+    vt_hist_B7, b = np.histogram(vt19_dmass, bins=bins_B7)
+    eis_hist_B7, b = np.histogram(eis_dmass, bins=bins_B7)
+    B7_hist, b = np.histogram(B7_dmass, bins=bins_B7)
+    eis_B7_combined_hist = eis_hist_B7+B7_hist
     
+    plotpts_B7 = []
+    widths_B7 = []
+    for b in range(len(bins_B7[:-1])): #creating points to plot - midpoints of bins
+        plotpts_B7.append(bins_B7[b] + (bins_B7[b+1]-bins_B7[b])/2)
+        widths_B7.append((bins_B7[b+1]-bins_B7[b]))
+
+    vtdist = KM_hist(vt_hist_B3)
+    eisdist = KM_hist(eis_hist_B3)
+    B3dist = KM_hist(B3_hist)
+    eisB3dist = KM_hist(eis_B3_combined_hist)
+
+    fig = plt.figure()
+    plt.plot(bins_B3[1:], vtdist, linestyle='--', label='VT19', marker='o')
+    plt.plot(bins_B3[1:], eisdist, linestyle=':', label='E18', marker='o')
+    plt.plot(bins_B3[1:], B3dist, linestyle='-', label='band 3', marker='o')
+    plt.xlabel(r'$\log(M_{dust}/M_\oplus)$')
+    plt.ylabel('Probability of greater mass')
+    plt.legend()
+    plt.savefig('plots/KM_dust_mass_B3.png', dpi=400)
+
+    fig = plt.figure()
+    plt.plot(bins_B3[1:], vtdist, linestyle='--', label='VT19', marker='o')
+    plt.plot(bins_B3[1:], eisB3dist, linestyle='-', label='band 3 and E18', marker='o')
+    plt.xlabel(r'$\log(M_{dust}/M_\oplus)$')
+    plt.ylabel('Probability of greater mass')
+    plt.legend()
+    plt.savefig('plots/KM_dust_mass_B3_combined.png', dpi=400)
+
     
-    fig = plt.figure(figsize=(10,8))
-    plt.bar(plotpts, vt_hist_B3, widths, edgecolor = 'black', label='VT19', alpha=0.5)
-    plt.bar(plotpts, eis_hist_B3, widths, edgecolor = 'black', label='E18', alpha=0.5)
-    plt.bar(plotpts, B3_hist, widths, edgecolor = 'black', label='band 3', alpha=0.5)
+    fig = plt.figure()
+    plt.bar(plotpts_B3, vt_hist_B3, widths_B3, edgecolor = 'black', label='VT19', alpha=0.5)
+    plt.bar(plotpts_B3, eis_hist_B3, widths_B3, edgecolor = 'black', label='E18', alpha=0.5)
+    plt.bar(plotpts_B3, B3_hist, widths_B3, edgecolor = 'black', label='band 3', alpha=0.5)
     plt.xlabel(r'$\log(M_{dust}/M_\oplus)$')
     plt.ylabel('number of disks')
     plt.legend()
     plt.savefig('plots/dust_mass_hist_B3.png', dpi=400)
 
-    fig = plt.figure(figsize=(10,8))
-    plt.bar(plotpts, vt_hist_B3, widths, edgecolor = 'black', label='VT19', alpha=0.5)
-    plt.bar(plotpts, eis_B3_combined_hist, widths, edgecolor = 'black', label='E18 and band 3', alpha=0.5)
+    '''fig = plt.figure()
+    plt.bar(plotpts_B7, vt_hist_B7, widths_B7, edgecolor = 'black', label='VT19', alpha=0.5)
+    plt.bar(plotpts_B7, eis_hist_B7, widths_B7, edgecolor = 'black', label='E18', alpha=0.5)
+    plt.bar(plotpts_B7, B7_hist, widths_B7, edgecolor = 'black', label='band 7', alpha=0.5)
+    plt.xlabel(r'$\log(M_{dust}/M_\oplus)$')
+    plt.ylabel('number of disks')
+    plt.legend()
+    plt.savefig('plots/dust_mass_hist_B7.png', dpi=400)'''
+    
+    fig = plt.figure()
+    plt.bar(plotpts_B3, vt_hist_B3, widths_B3, edgecolor = 'black', label='VT19', alpha=0.5)
+    plt.bar(plotpts_B3, eis_B3_combined_hist, widths_B3, edgecolor = 'black', label='E18 and band 3', alpha=0.5)
     plt.xlabel(r'$\log(M_{dust}/M_\oplus)$')
     plt.ylabel('number of disks')
     plt.legend()

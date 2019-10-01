@@ -25,6 +25,37 @@ def get_ind(names): #returns indices where sources are detected in all bands wit
     ind = np.intersect1d(ind1, fit_ind)
     return ind
 
+def flux_hist():
+    data = Table.read('../tables/r0.5_catalog_conv_bgfitted_add_final3_ann2.fits')
+    eis = Table.read('../tables/eisner_tbl.txt', format='ascii')
+
+    B7flux = np.log10(data['ap_flux_B7']*1000)
+    B7flux = B7flux[np.where(np.isnan(B7flux) == False)[0]]
+
+    eisflux_str = eis['F_lambda 850mum']
+    eisflux = []
+    for es in eisflux_str:
+        eisflux.append(np.log10(float(es.split()[0])))
+    
+    eisflux = np.array(eisflux)[np.where(np.isinf(eisflux) == False)[0]]
+        
+    allhist, abins = np.histogram(np.concatenate((B7flux, eisflux)))
+    B7hist, b = np.histogram(B7flux, bins=abins)
+    eishist, b = np.histogram(eisflux, bins=abins)
+
+    plotpts = []
+    widths = []
+    for b in range(len(abins[:-1])): #creating points to plot - midpoints of bins
+        plotpts.append(abins[b] + (abins[b+1]-abins[b])/2)
+        widths.append((abins[b+1]-abins[b]))
+
+    plt.bar(plotpts, B7hist, widths, alpha=0.5, edgecolor='black', label='band 7')
+    plt.bar(plotpts, eishist, widths, alpha=0.5, edgecolor='black', label='E18')
+    plt.legend()
+    plt.ylabel('number')
+    plt.xlabel('Flux (mJy)')
+    plt.savefig('plots/flux_hist_eis_B7.png', dpi=400)
+    
 def plot_alpha(names, imgs, only_deconv=False, flux_type='aperture'): 
     #plot flux-flux alpha scatterplot, and alpha histogram
     #accepts 2 names/imgs, first will be plotted on x axis, second on y

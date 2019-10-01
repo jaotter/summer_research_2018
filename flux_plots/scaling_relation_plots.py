@@ -115,17 +115,19 @@ linreg_params_B3 = linregress(np.log10(scaled_B3flux_rem), np.log10(Rau_rem))
 Lmm_arr = np.logspace(-3, 0, 5)
 linreg_line_B3 = np.log10(Lmm_arr)*linreg_params_B3[0] + linreg_params_B3[1]
 
-#plt.plot(Lmm_arr, 10**linreg_line_B3, linestyle='-', marker='', label='Fit to B3 data')
+plt.plot(Lmm_arr, 10**linreg_line_B3, linestyle='-', marker='', label='Fit to B3 data')
 print('linreg params for B3 fit', linreg_params_B3)
 
 linreg_params_andrw = linregress(np.log10(Lmm_scaled_andrw.value), np.log10(FWHM_andrw))
 linreg_line_andrw = np.log10(Lmm_arr)*linreg_params_andrw[0] + linreg_params_andrw[1]
 
-#plt.plot(Lmm_arr, 10**linreg_line_andrw, linestyle='-', marker='', label='Fit to A18 data')
+plt.plot(Lmm_arr, 10**linreg_line_andrw, linestyle='-', marker='', label='Fit to A18 data')
 print('linreg params for A18 fit', linreg_params_andrw)
 
 linreg_params_all = linregress(np.log10(np.concatenate((Lmm_scaled_andrw.value, scaled_B3flux_rem))), np.log10(np.concatenate((FWHM_andrw, Rau_rem))))
 linreg_line_all = np.log10(Lmm_arr)*linreg_params_all[0] + linreg_params_all[1]
+
+print(len(Lmm_scaled_andrw.value) + len(scaled_B3flux_rem))
 
 plt.plot(Lmm_arr, 10**linreg_line_all, linestyle='-', marker='', label='Fit to B3 and A18 data')
 print('linreg params for all fit', linreg_params_all)
@@ -134,13 +136,13 @@ plt.errorbar(scaled_B3flux, Rau, yerr=Rau_err, linestyle='', marker='o', label='
 plt.errorbar(Lmm_scaled_andrw.value, FWHM_andrw, yerr=FWHM_err_andrw, linestyle='', marker='o', label='Andrews et al. 2018')
 
 #plt.plot(Lmm_eqn9_01, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 0.1 L_\odot$')
-plt.plot(Lmm_eqn9, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 1 L_\odot$')
+plt.plot(Lmm_eqn9, Rau_arr, linestyle='--', marker='', label='A18 Eqn 9, '+r'$L_* = 1 L_\odot$')
 #plt.plot(Lmm_eqn9_10, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 10 L_\odot$')
 plt.legend()
 plt.xlim(0.001, 1)
 plt.ylim(7, 600)
 plt.xlabel('Scaled luminosity (Jy)')
-plt.ylabel('R (au)')
+plt.ylabel('R (AU)')
 plt.yscale('log')
 plt.xscale('log')
 
