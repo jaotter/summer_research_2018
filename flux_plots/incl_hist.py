@@ -1,6 +1,6 @@
 from astropy.table import Table
 from astropy.io import ascii
-from scipy.stats import kstest, ks_2samp
+from scipy.stats import kstest, ks_2samp, gaussian_kde
 import astropy.units as u
 
 import math
@@ -32,16 +32,8 @@ sin_hist = tot*prob
 
 
 incl = dataB3['inclination_B3'][ind]*u.degree
-incl = incl.to(u.radian).value
-incl_filtered = incl % np.pi/2
-
-
-#Dval, pval = kstest(incl_filtered, np.cos)
-#print('KS statistic: %f, p value: %f' % (Dval, pval))
-
-#'cosine' is just a normal distribution approximation
-#Dval, pval = kstest(incl_filtered, 'cosine')
-#print('KS statistic: %f, p value: %f' % (Dval, pval))
+incl_rad = incl.to(u.radian).value
+incl_filtered = incl_rad % np.pi/2
 
 x = np.random.rand(10000)
 y = np.arccos(1-x)
@@ -54,15 +46,27 @@ print('2 sample KS statistic: %f, p value: %f' % (Dval, pval))
 Dval, pval = kstest(incl_filtered, f) 
 print('1 sample KS statistic: %f, p value: %f' % (Dval, pval))
 
+#KDE
+cos_grid = np.linspace(0,1,100)
+degree_grid = np.linspace(0,90,100)
+cos_kde = gaussian_kde(np.cos(dataB3['inclination_B3'][ind]*u.degree))
+degree_kde = gaussian_kde(dataB3['inclination_B3'][ind])
+cos_pdf = cos_kde.evaluate(cos_grid)
+norm_cos_pdf = cos_pdf*len(ind)*(1/9)
+#to normalize, multiply by bin width and number of points
+degree_pdf = degree_kde.evaluate(degree_grid)
+norm_degree_pdf = degree_pdf*len(ind)*10
 
 plt.figure()
 plt.bar(plotpts, sin_hist, widths, edgecolor='k', alpha=.5, label=r'$\sin(i)$')
 plt.bar(plotpts, hist, widths, edgecolor='k', alpha=0.5, label='band 3')
+plt.plot(degree_grid, norm_degree_pdf, color='b', label='KDE')
 plt.xlabel('Band 3 inclination angle (degrees)')
 plt.ylabel('number')
 plt.legend()
 plt.xlim(0,90)
 plt.savefig('plots/incl_hist.png',dpi=300)
+
 
 
 #histogram of cos(i)
@@ -84,9 +88,11 @@ Dval, pval = kstest(np.cos(incl_filtered), 'uniform')
 print('KS statistic: %f, p value: %f' % (Dval, pval))
 
 
+
 plt.figure()
 plt.bar(plotpts, unif_hist, widths, edgecolor='k', alpha=.5, label='uniform')
 plt.bar(plotpts, cos_incl_hist, widths, edgecolor='k', alpha=0.5, label='band 3')
+plt.plot(cos_grid, norm_cos_pdf, color='b', label='KDE')
 plt.xlabel('cos(i)')
 plt.ylabel('number')
 plt.legend()
