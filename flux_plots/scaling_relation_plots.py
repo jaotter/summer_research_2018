@@ -84,6 +84,7 @@ Rau = (Rarcsec.to(u.rad)*d).value
 Rau_err = (((data['fwhm_maj_err_'+band][deconv_ind])*u.arcsec).to(u.rad)*d).value
 
 scaled_B3flux = data['ap_flux_B3'][deconv_ind]*(414/140)**2
+scaled_B3flux_err = data['ap_flux_err_B3'][deconv_ind]*(414/140)**2
 
 Lmm = data_inf['lower_lum_'+band][deconv_ind]
 
@@ -146,7 +147,7 @@ print(len(Lmm_scaled_andrw.value) + len(scaled_B3flux_rem))
 plt.plot(Lmm_arr, 10**linreg_line_all, linestyle='-', marker='', label='Fit to B3 and A18 data')
 print('linreg params for all fit', linreg_params_all)
 
-plt.errorbar(scaled_B3flux, Rau, yerr=Rau_err, linestyle='', marker='o', label='Band 3 measurements')
+plt.errorbar(scaled_B3flux, Rau, yerr=Rau_err, xerr=scaled_B3flux_err, linestyle='', marker='o', label='Band 3 measurements')
 plt.errorbar(Lmm_scaled_andrw.value, FWHM_andrw, yerr=FWHM_err_andrw, xerr=Lmm_scaled_err_andrw, linestyle='', marker='o', label='Andrews et al. 2018')
 
 #plt.plot(Lmm_eqn9_01, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 0.1 L_\odot$')
