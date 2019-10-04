@@ -25,29 +25,43 @@ andrews.remove_row(0)
 andrews_table4 = ascii.read('../tables/andrews_table4.txt', format='tab')
 andrews_table4.rename_column('$d/\mathrm{pc}$', 'd')
 
-R_eff_andrw = []
+R_eff_andrw_log = []
 R_eff_err_up_andrw = []
 R_eff_err_down_andrw = []
 
 Fnu_andrw = []
-Lmm_scaled_andrw = []
-
+Lmm_scaled_andrw_log = []
+Lmm_scaled_err_up_andrw = []
+Lmm_scaled_err_down_andrw = []
 dists_andrw = []
 
 for ind in range(len(andrews)):
     if len(andrews['R_eff'][ind]) > 10:
-        R_eff_andrw.append(float(andrews['R_eff'][ind][0:4]))
-        R_eff_err_up_andrw.append(float(andrews['R_eff'][ind][-6:-3]))
-        R_eff_err_down_andrw.append(float(andrews['R_eff'][ind][10:14]))
+        R_eff_andrw_log.append(float(andrews['R_eff'][ind][0:4]))
+        R_eff_err_up_andrw.append(float(andrews['R_eff'][ind][-6:-2]))
+        R_eff_err_down_andrw.append(float(andrews['R_eff'][ind][9:14]))
         
         Fnu_andrw.append(float(andrews['Fnu'][ind].split('$')[0]))
-        Lmm_scaled_andrw.append(float(andrews['L_mm'][ind][0:4]))
+        Lmm_scaled_andrw_log.append(float(andrews['L_mm'][ind][0:5]))
+        Lmm_scaled_err_up_andrw.append(float(andrews['L_mm'][ind][-6:-2]))
+        Lmm_scaled_err_down_andrw.append(float(andrews['L_mm'][ind][10:15]))
+        
         dists_andrw.append(float(andrews_table4['d'][ind][0:3]))
 
-Lmm_scaled_andrw = 10**np.array(Lmm_scaled_andrw)*u.Jy
-R_eff_andrw = 10**np.array(R_eff_andrw)*u.au
+print(andrews['L_mm'][0],Lmm_scaled_andrw_log[0], Lmm_scaled_err_up_andrw[0], Lmm_scaled_err_down_andrw[0]) 
+        
+print(andrews['R_eff'][0],R_eff_andrw_log[0], R_eff_err_up_andrw[0], R_eff_err_down_andrw[0]) 
+
+Lmm_scaled_andrw = 10**np.array(Lmm_scaled_andrw_log)*u.Jy
+Lmm_scaled_err_up_andrw = 10**np.array(np.array(Lmm_scaled_andrw_log)+np.array(Lmm_scaled_err_up_andrw))*u.Jy - Lmm_scaled_andrw
+Lmm_scaled_err_down_andrw = 10**np.array(np.array(Lmm_scaled_andrw_log)-np.array(Lmm_scaled_err_down_andrw))*u.Jy - Lmm_scaled_andrw
+Lmm_scaled_err_andrw = np.array((Lmm_scaled_err_up_andrw.value, Lmm_scaled_err_down_andrw.value))
+R_eff_andrw = 10**np.array(R_eff_andrw_log)*u.au
 Fnu_andrw = np.array(Fnu_andrw)*u.mJy
 dists_andrw = np.array(dists_andrw)*u.pc
+
+R_eff_err_up_andrw = 10**np.array(np.array(R_eff_andrw_log) + np.array(R_eff_err_up_andrw))*u.au - R_eff_andrw
+R_eff_err_down_andrw = 10**np.array(np.array(R_eff_andrw_log) - np.array(R_eff_err_down_andrw))*u.au - R_eff_andrw
 
 andrews_freq = 335*u.GHz
 
@@ -133,7 +147,7 @@ plt.plot(Lmm_arr, 10**linreg_line_all, linestyle='-', marker='', label='Fit to B
 print('linreg params for all fit', linreg_params_all)
 
 plt.errorbar(scaled_B3flux, Rau, yerr=Rau_err, linestyle='', marker='o', label='Band 3 measurements')
-plt.errorbar(Lmm_scaled_andrw.value, FWHM_andrw, yerr=FWHM_err_andrw, linestyle='', marker='o', label='Andrews et al. 2018')
+plt.errorbar(Lmm_scaled_andrw.value, FWHM_andrw, yerr=FWHM_err_andrw, xerr=Lmm_scaled_err_andrw, linestyle='', marker='o', label='Andrews et al. 2018')
 
 #plt.plot(Lmm_eqn9_01, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 0.1 L_\odot$')
 plt.plot(Lmm_eqn9, Rau_arr, linestyle='--', marker='', label='A18 Eqn 9, '+r'$L_* = 1 L_\odot$')
