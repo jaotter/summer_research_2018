@@ -24,6 +24,6 @@ Dec_ind = np.intersect1d(Dec_ind1,Dec_ind2)
 eis_ind = np.intersect1d(RA_ind, Dec_ind)
 
 #load in eisner data:
-eis_tab = Table.read('/users/jotter/summer_research_2018/tables/eisner_tbl.txt')
+eis_tab = Table.read('/users/jotter/summer_research_2018/tables/eisner_tbl.txt', format='ascii')
 print(eis_tab.info)
 print(eis_tab['RA'])
