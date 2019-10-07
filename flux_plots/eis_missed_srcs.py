@@ -24,6 +24,29 @@ Dec_ind = np.intersect1d(Dec_ind1,Dec_ind2)
 eis_ind = np.intersect1d(RA_ind, Dec_ind)
 
 #load in eisner data:
-eis_tab = Table.read('/users/jotter/summer_research_2018/tables/eisner_tbl.txt', format='ascii')
-print(eis_tab.info)
-print(eis_tab['RA'])
+eisner_data = Table.read('/users/jotter/summer_research_2018/tables/eisner_tbl.txt', format='ascii')
+eis_coord_tab = Table.read('/users/jotter/summer_research_2018/tables/eis_coord_table.fits')
+
+B3_coord = SkyCoord(ra=data['RA_B3']*u.deg, dec=data['DEC_B3']*u.deg)
+eis_coord = SkyCoord(ra=eis_coord_tab['RA']*u.deg, dec=eis_coord_tab['DEC']*u.deg)
+
+idx, d2d, d3d = eis_coord.match_to_catalog_sky(B3_coord)
+match = np.where(d2d < 0.5*u.arcsec)[0] #match within 0.1 arcsec
+
+data['Eis_ID'] = np.repeat(np.array('-',dtype='S8'), len(data))
+
+for eis_ind in match:
+    data['Eis_ID'][idx[eis_ind]] = eis_coord_tab['ID'][eis_ind]
+
+eis_match_ind = np.where(data['Eis_ID'] != '-')[0]
+print(len(eis_match_ind))
+
+fov_src_hist, bins = np.histogram(data['fwhm_maj_B3'][eis_ind], density=False)
+matched_hist, b = np.histogram(data['fwhm_maj_B3'][eis_match_ind], bins, density=False)
+
+plotpts = []
+widths = []
+for b in range(len(bins[:-1])): #creating points to plot - midpoints of bins
+    plotpts.append(bins[b] + (bins[b+1]-bins[b])/2)
+    widths.append((bins[b+1]-bins[b]))
+                            
