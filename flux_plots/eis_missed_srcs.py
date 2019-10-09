@@ -54,15 +54,15 @@ for b in range(len(bins[:-1])): #creating points to plot - midpoints of bins
     plotpts.append(bins[b] + (bins[b+1]-bins[b])/2)
     widths.append((bins[b+1]-bins[b]))
                             
-fig = plt.figure()
+fig, (ax1, ax2) = plt.subplots(2,1,figsize=(8,6))
+fig.subplots_adjust(hspace=0.3)
 
-plt.bar(plotpts, fov_src_hist, widths, label='B3 sources in E18 FOV', alpha=0.5, edgecolor='k')
-plt.bar(plotpts, matched_hist, widths, label='B3 sources detected by E18', alpha=0.5, edgecolor='k')
-plt.legend()
-plt.ylabel('Number')
-plt.xlabel('Deconvolved FWHM major (arcseconds)')
-plt.savefig('plots/R_hist_missed_srcs.png', dpi=400)
 
+ax1.bar(plotpts, fov_src_hist, widths, label='B3 sources in E18 FOV', alpha=0.5, edgecolor='k')
+ax1.bar(plotpts, matched_hist, widths, label='B3 sources detected by E18', alpha=0.5, edgecolor='k')
+ax1.legend()
+ax1.set_ylabel('Number')
+ax1.set_xlabel('Deconvolved FWHM major (arcseconds)')
 
 fov_src_hist_flux, bins = np.histogram(data['ap_flux_B3'][eis_ind], density=False)
 matched_hist_flux, b = np.histogram(data['ap_flux_B3'][eis_match_ind], bins, density=False)
@@ -77,14 +77,13 @@ for b in range(len(bins[:-1])): #creating points to plot - midpoints of bins
     plotpts.append(bins[b] + (bins[b+1]-bins[b])/2)
     widths.append((bins[b+1]-bins[b]))
                             
-fig = plt.figure()
+ax2.bar(plotpts, fov_src_hist_flux, widths, label='B3 sources in E18 FOV', alpha=0.5, edgecolor='k')
+ax2.bar(plotpts, matched_hist_flux, widths, label='B3 sources detected by E18', alpha=0.5, edgecolor='k')
+ax2.legend()
+ax2.set_ylabel('Number')
+ax2.set_xlabel('log(band 3 flux (Jy))')
 
-plt.bar(plotpts, fov_src_hist_flux, widths, label='B3 sources in E18 FOV', alpha=0.5, edgecolor='k')
-plt.bar(plotpts, matched_hist_flux, widths, label='B3 sources detected by E18', alpha=0.5, edgecolor='k')
-plt.legend()
-plt.ylabel('Number')
-plt.xlabel('log(band 3 flux (Jy))')
-plt.savefig('plots/F_hist_missed_srcs.png', dpi=400)
+plt.savefig('plots/comb_hist_missed_srcs.png', dpi=400)
 
 
 
