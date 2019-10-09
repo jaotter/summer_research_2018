@@ -1,6 +1,7 @@
 #script to look at sources missed by Eisner 2018
 from astropy.table import Table
 from astropy.coordinates import SkyCoord
+from scipy.stats import ks_2samp
 import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
@@ -48,6 +49,11 @@ print(data['D_ID'][idx[match]])
 fov_src_hist, bins = np.histogram(data['fwhm_maj_B3'][eis_ind], density=False)
 matched_hist, b = np.histogram(data['fwhm_maj_B3'][eis_match_ind], bins, density=False)
 
+print('KS test for size:')
+Dval, pval = ks_2samp(data['fwhm_maj_B3'][eis_ind], data['fwhm_maj_B3'][eis_match_ind])
+print('2 sample KS statistic: %f, p value: %f' % (Dval, pval))
+
+
 plotpts = []
 widths = []
 for b in range(len(bins[:-1])): #creating points to plot - midpoints of bins
@@ -71,6 +77,10 @@ matched_hist_flux, b = np.histogram(data['ap_flux_B3'][eis_match_ind], bins, den
 #matched_hist_flux, b = np.histogram(np.log10(data['ap_flux_B3'][eis_match_ind]), bins, density=False)
 
 
+print('KS test for flux:')
+Dval, pval = ks_2samp(data['ap_flux_B3'][eis_ind], data['ap_flux_B3'][eis_match_ind])
+print('2 sample KS statistic: %f, p value: %f' % (Dval, pval))
+
 plotpts = []
 widths = []
 for b in range(len(bins[:-1])): #creating points to plot - midpoints of bins
@@ -87,11 +97,11 @@ plt.savefig('plots/comb_hist_missed_srcs.png', dpi=400)
 
 
 
-fig = plt.figure()
+vfig = plt.figure()
 
 plt.errorbar(data['ap_flux_B3'][eis_ind], data['fwhm_maj_B3'][eis_ind], xerr=data['ap_flux_err_B3'][eis_ind], yerr=data['fwhm_maj_err_B3'][eis_ind], label='B3 sources in E18 FOV', linestyle='', marker='.')
 plt.errorbar(data['ap_flux_B3'][eis_match_ind], data['fwhm_maj_B3'][eis_match_ind], xerr=data['ap_flux_err_B3'][eis_match_ind], yerr=data['fwhm_maj_err_B3'][eis_match_ind], label='B3 sources detected by E18', linestyle='', marker='.')
 plt.legend()
-plt.ylabel('Band 3 flux (Jy)')
-plt.xlabel('Deconovlved FWHM major (as)')
+plt.xlabel('Band 3 flux (Jy)')
+plt.ylabel('Deconovlved FWHM major (as)')
 plt.savefig('plots/size_flux_missed_srcs.png', dpi=400)
