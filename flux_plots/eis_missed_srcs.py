@@ -81,7 +81,7 @@ ax2.bar(plotpts, fov_src_hist_flux, widths, label='B3 sources in E18 FOV', alpha
 ax2.bar(plotpts, matched_hist_flux, widths, label='B3 sources detected by E18', alpha=0.5, edgecolor='k')
 ax2.legend()
 ax2.set_ylabel('Number')
-ax2.set_xlabel('log(band 3 flux (Jy))')
+ax2.set_xlabel('Band 3 flux (Jy)')
 
 plt.savefig('plots/comb_hist_missed_srcs.png', dpi=400)
 
