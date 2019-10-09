@@ -9,12 +9,23 @@ import matplotlib.pyplot as plt
 import astropy.units as u
 import numpy as np
 import regions
+import sys
 
-orig_fl = fits.open('/lustre/aoc/students/jotter/directory/OrionB3/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits')
+B3file = '/lustre/aoc/students/jotter/directory/OrionB3/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
+B6file = ''
+B7file = ''
 
-#create fake image data - one single bright pixel
-fake_img = np.zeros((1000,1000))
-fake_img[500,500] = 1
+orig_fl = fits.open(B3file)
+orig_data = fits.getdata(B3file)
+
+#create fake image data - uniform disk with radius r
+r = 0.0005 #r is radius in arcseconds
+
+fake_data = np.zeros(orig_data.size)
+fake_mgrid = np.mgrid[:len(orig_data), :len(orig_data)]
+print(fake_data.size, fake_mgrid.size)
+
+sys.exit('done')
 
 new_fl = orig_fl
 new_fl[0].data = fake_img
