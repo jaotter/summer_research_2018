@@ -11,10 +11,10 @@ import numpy as np
 import regions
 import sys
 
-def draw_circle(r,arr): #draw circle radius r in 2d rectangular array arr
-    xx, yy = np.mgrid[:len(arr), :len(arr[0])]
-    radius = np.sqrt((xx - len(arr)/2)**2 + (yy - len(arr[0])/2)**2)
-    circle_arr = np.zeros((len(arr), len(arr[0])))
+def draw_circle(r,size): #draw circle radius r in 2d rectangular array arr
+    xx, yy = np.mgrid[:size, :size]
+    radius = np.sqrt((xx - size/2)**2 + (yy - size/2)**2)
+    circle_arr = np.zeros((size, size))
     circle_ind = np.where(radius < r)
     circle_arr[circle_ind] = 1
     return circle_arr
@@ -25,23 +25,20 @@ B6file = ''
 B7file = ''
 
 orig_fl = fits.open(B3file)
-orig_data = fits.getdata(B3file)
 
 wcs = WCS(orig_fl[0].header).celestial
 beam = Beam.from_fits_header(orig_fl[0].header)
 
 pixel_scale = np.abs(wcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg
-print(pixel_scale)
 
 #create fake image data - uniform disk with radius r
 r_arcsec = 0.1*u.arcsec #radius in arcsec
 r = (r_arcsec/pixel_scale).decompose() #radius in pixel
-print(r)
-fake_data = draw_circle(r,orig_data)
+size = 1000 #size of square fake data in pixels
+fake_data = draw_circle(r,size)
 
 plt.imshow(fake_data)
-plt.savefig('test/r0.1ascircle.png')
-
+plt.savefig('size_lims/r0.1ascircle.png')
 
 kernel = beam.as_kernel(pixel_scale)
 convolved_img = convolve_fft(fake_data, kernel)
@@ -50,7 +47,11 @@ new_fl = orig_fl
 new_fl[0].data = convolved_img
 new_fl.writeto('/users/jotter/summer_research_2018/pipeline/size_lims/fake_conv_img.fits', overwrite=True)
 
-os.system
+sys.exit('done')
+
+#next step: add noise similar to images
+
+
 
 loc = wcs.wcs_pix2world(500,500,1)
 reg = regions.CircleSkyRegion(center=SkyCoord(loc[0], loc[1], unit='deg'), radius=0.5*u.arcsec, meta={'text':'test'})
