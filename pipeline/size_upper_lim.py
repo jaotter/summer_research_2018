@@ -11,12 +11,12 @@ import numpy as np
 import regions
 import sys
 
-def draw_circle(r,size): #draw circle radius r in 2d rectangular array arr
+def draw_circle(r,size,total_flux): #draw circle radius r in 2d rectangular array arr
     xx, yy = np.mgrid[:size, :size]
     radius = np.sqrt((xx - size/2)**2 + (yy - size/2)**2)
     circle_arr = np.zeros((size, size))
     circle_ind = np.where(radius < r)
-    circle_arr[circle_ind] = 1
+    circle_arr[circle_ind] = total_flux
     return circle_arr
 
     
@@ -35,23 +35,26 @@ pixel_scale = np.abs(wcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg
 r_arcsec = 0.1*u.arcsec #radius in arcsec
 r = (r_arcsec/pixel_scale).decompose() #radius in pixel
 size = 1000 #size of square fake data in pixels
-fake_data = draw_circle(r,size)
+tot_flux = 1e-4 #total flux of source
+fake_data = draw_circle(r,size,tot_flux)
 
 plt.imshow(fake_data)
 plt.savefig('size_lims/r0.1ascircle.png')
 
 kernel = beam.as_kernel(pixel_scale)
-convolved_img = convolve_fft(fake_data, kernel)
+convolved_fake_img = convolve_fft(fake_data, kernel)
+
+#next step: add noise similar to images
+noise_rms = 5e-5 
+noise_arr = np.random.normal(0, noise_rms, (size,size))
+
+noisy_conv_fake_img = noise_arr + convolved_fake_img
 
 new_fl = orig_fl
-new_fl[0].data = convolved_img
+new_fl[0].data = noisy_conv_fake_img
 new_fl.writeto('/users/jotter/summer_research_2018/pipeline/size_lims/fake_conv_img.fits', overwrite=True)
 
 sys.exit('done')
-
-#next step: add noise similar to images
-
-
 
 loc = wcs.wcs_pix2world(500,500,1)
 reg = regions.CircleSkyRegion(center=SkyCoord(loc[0], loc[1], unit='deg'), radius=0.5*u.arcsec, meta={'text':'test'})
