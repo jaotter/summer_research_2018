@@ -19,10 +19,12 @@ def draw_circle(r,size,flux): #draw circle radius r in 2d rectangular array arr
     circle_arr[circle_ind] = flux
     return circle_arr
 
-    
-B3file = '/lustre/aoc/students/jotter/directory/OrionB3/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
-B6file = '/lustre/aoc/students/jotter/directory/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
-B7file = '/lustre/aoc/students/jotter/directory/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
+
+#next step: get SNRs of all non-deconvolvable sources, loop thru
+
+B3file = '/home/jotter/Desktop/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
+B6file = '/home/jotter/Desktop/nrao/images/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
+B7file = '/home/jotter/Desktop/nrao/images/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
 
 B3noise = 5e-5
 B6noise = 1e-4
@@ -69,16 +71,16 @@ for i,rad in enumerate(radii_as):
 
   new_fl = orig_fl
   new_fl[0].data = noisy_conv_fake_img
-  new_fl.writeto('/users/jotter/summer_research_2018/pipeline/size_lims/fake_conv_img_r%s.fits'%(str(radii_au[i])), overwrite=True)
+  new_fl.writeto('/home/jotter/Desktop/nrao/summer_research_2018/pipeline/size_lims/fake_conv_img_r%s.fits'%(str(radii_au[i])), overwrite=True)
 
 
   loc = wcs.wcs_pix2world(size/2,size/2,1)
-  reg = regions.CircleSkyRegion(center=SkyCoord(loc[0], loc[1], unit='deg'), radius=0.5*u.arcsec, meta={'text':'r=%s'%str(radii_au[i])})
+  reg = regions.CircleSkyRegion(center=SkyCoord(loc[0], loc[1], unit='deg'), radius=0.5*u.arcsec, meta={'text':'r='+str(radii_au[i])})
   reg_pix = reg.to_pixel(wcs)
 
-  gaussfit = gaussfit_catalog('/users/jotter/summer_research_2018/pipeline/size_lims/fake_conv_img_r%s.fits'%(str(radii_au[i])), [reg], Angle(0.3, 'arcsecond'), savepath='/users/jotter/summer_research_2018/pipeline/size_lims/', max_radius_in_beams=15)
+  gaussfit = gaussfit_catalog('/home/jotter/Desktop/nrao/summer_research_2018/pipeline/size_lims/fake_conv_img_r%s.fits'%(str(radii_au[i])), [reg], Angle(0.3, 'arcsecond'), savepath='/home/jotter/Desktop/nrao/summer_research_2018/pipeline/size_lims/', max_radius_in_beams=15)
 
-  source_size = Beam(major=gaussfit['r=%s'%str(radii_au[i])]['fwhm_major'], minor=gaussfit['r=%s'%str(radii_au[i])]['fwhm_minor'], pa=(gaussfit['r=%s'%str(radii_au[i])]['pa'].value+90)*u.degree)
+  source_size = Beam(major=gaussfit['r='+str(radii_au[i])]['fwhm_major'], minor=gaussfit['r=%s'%str(radii_au[i])]['fwhm_minor'], pa=(gaussfit['r=%s'%str(radii_au[i])]['pa'].value+90)*u.degree)
   try:
       deconv_size = source_size.deconvolve(beam)
       print(deconv_size)
