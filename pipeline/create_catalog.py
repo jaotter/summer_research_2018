@@ -22,7 +22,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
     #creates catalog from one image in each band
     #B3_names, B6_names, B7_names only used for gaussian diag directory names
     
-    ref_data_name = '/users/jotter/summer_research_2018/tables/ref_catalog_added.fits'
+    ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/ref_catalog_added.fits'
     ref_data = Table.read(ref_data_name)
     ref_arrs = [ref_data['B3_detect'], ref_data['B6_detect'], ref_data['B7_detect']]
   
@@ -56,7 +56,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
             
         #now get ready to fit gaussians
         #start by setting up save directory for images
-        gauss_save_dir = '/lustre/aoc/students/jotter/gauss_diags/create_cat/'+img_name+'/'
+        gauss_save_dir = '/home/jotter/nrao/gauss_diags/'+img_name+'/'
         if not os.path.exists(gauss_save_dir):
             os.makedirs(gauss_save_dir)
         #now make region list
@@ -90,6 +90,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
         fwhm_min_deconv_err_arr = []
         pa_deconv_arr = []
         pa_deconv_err_arr = []
+        snr_arr = []
  
         for row in range(len(img_table)): #now loop through sources in reference data and make measurements
             ref_ind = np.where(ref_data['D_ID'] == img_table['D_ID'][row])[0]
@@ -119,7 +120,10 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                 center_coord_pix = center_coord.to_pixel(img_wcs)
                 center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
                 pos_ang = (img_table['pa_'+name][row]-90)*u.deg #must subtract 90 to be consistent
-                ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm*2, pix_minor_fwhm*2, angle=pos_ang)
+
+                print(pix_major_fwhm, pix_minor_fwhm,pos_ang)
+
+                ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm.value*2, pix_minor_fwhm.value*2, angle=pos_ang)
                 ap_mask = ellipse_reg.to_mask()
                 cutout_mask = ap_mask.cutout(img_data)
                 
@@ -136,8 +140,8 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                 cutout_center = regions.PixCoord(cutout.center_cutout[0], cutout.center_cutout[1])
 
                 #define aperture regions for SNR
-                innerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix)
-                outerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix+annulus_width)
+                innerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix.value)
+                outerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix.value+annulus_width)
 
                 #Make masks from aperture regions
                 annulus_mask = mask(outerann_reg, cutout) - mask(innerann_reg, cutout)
@@ -154,9 +158,10 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                 
                 ap_flux_err_arr.append(ap_bg_rms)
                 ap_flux_arr.append(aperture_flux - pix_bg)
+                snr_arr.append(img_table['amplitude'][row]/bg_rms)
                 
-        cols = ['ap_flux_'+name, 'ap_flux_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_maj_deconv_err_'+name, 'fwhm_min_deconv_'+name, 'fwhm_min_deconv_err_'+name, 'pa_deconv_'+name, 'pa_deconv_err_'+name]
-        arrs = [ap_flux_arr, ap_flux_err_arr, fwhm_maj_deconv_arr, fwhm_maj_deconv_err_arr, fwhm_min_deconv_arr, fwhm_min_deconv_err_arr, pa_deconv_arr, pa_deconv_err_arr]
+        cols = ['ap_flux_'+name, 'ap_flux_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_maj_deconv_err_'+name, 'fwhm_min_deconv_'+name, 'fwhm_min_deconv_err_'+name, 'pa_deconv_'+name, 'pa_deconv_err_'+name, 'SNR_'+name]
+        arrs = [ap_flux_arr, ap_flux_err_arr, fwhm_maj_deconv_arr, fwhm_maj_deconv_err_arr, fwhm_min_deconv_arr, fwhm_min_deconv_err_arr, pa_deconv_arr, pa_deconv_err_arr, snr_arr]
         for c in range(len(cols)):
             img_table.add_column(Column(np.array(arrs[c])), name=cols[c])
         img_table.add_column(Column(np.array(fwhm_maj_deconv_arr)/np.array(fwhm_min_deconv_arr)), name='ar_deconv_'+name)
