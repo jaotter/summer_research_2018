@@ -70,8 +70,9 @@ taurus_mdust_flag = np.repeat(True, len(taurus_mdust))
 #B3_mdust = B3_mdust[B3_mdust < 300]
 
 B6_mdust = B6_mdust[np.isnan(B6_mdust)==False]
-
+B6_mdust_flag = np.repeat(True, len(B6_mdust))
 B7_mdust = B7_mdust[np.isnan(B7_mdust)==False]
+B7_mdust_flag = np.repeat(True, len(B7_mdust))
 
 plot_KM([eis_mdust, lupus_mdust, sco_mdust, B3_mdust, ophi_mdust, taurus_mdust], ['E18', 'Lupus', 'Upper Sco', 'B3', 'Ophiucus', 'Taurus'],
         [eis_mdust_flag, lupus_mdust_flag, sco_mdust_flag, B3_mdust_flag, ophi_mdust_flag, taurus_mdust_flag])
