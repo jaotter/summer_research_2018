@@ -46,7 +46,7 @@ def create_catalog(param_file):
 		min_del = params['min_delta'][row]
 		n_pix = params['n_pix'][row]
 		img = params['file_name'][row]
-		reg_fname = '/users/jotter/summer_research_2018/final_regs/'+name+'_reg_file.reg'
+		reg_fname = '/home/jotter/nrao/images/dendro_regions/'+name+'_reg_file.reg'
 		dendro, cat = compute_regions(min_val, min_del, n_pix, img, reg_fname)
 		cat['flux_err_'+name] = np.zeros(len(cat))
 		if params['pbcorr'][row] != 'True': #if the image is not pb corrected, measure flux from pb corrected image
@@ -68,11 +68,11 @@ def create_catalog(param_file):
 		for ind,leaf in enumerate(dendro.all_structures): #.leaves #generate region list
 			regs.append(regions.CircleSkyRegion(center=SkyCoord(cat['x_cen'][ind]*u.degree, cat['y_cen'][ind]*u.degree), radius=rad, meta={'text':str(cat['_idx_'+name][ind])}))
 		print(len(regs))
-		if name == 'B6':
-			regs.append(regions.CircleSkyRegion(center=SkyCoord(83.81138026377482*u.degree, -5.374951161716349*u.degree), radius=rad, meta={'text':'54'}))#manually appending a source not picked up by dendrogram
+		#if name == 'B6':
+                        #regs.append(regions.CircleSkyRegion(center=SkyCoord(83.81138026377482*u.degree, -5.374951161716349*u.degree), radius=rad, meta={'text':'54'}))#manually appending a source not picked up by dendrogram
 
 		cat_r = Angle(0.3, 'arcsecond') #radius in gaussian fitting
-		gauss_cat = gaussfit_catalog(img, regs, cat_r, savepath='/lustre/aoc/students/jotter/gauss_diags/leaves/'+name) #output is nested dictionary structure
+		gauss_cat = gaussfit_catalog(img, regs, cat_r, savepath='/home/jotter/nrao/gauss_diags/leaves/'+name) #output is nested dictionary structure
 
 		gauss_fit_tab = Table(names=('_idx_'+name, 'gauss_x_'+name, 'x_err_'+name, 'gauss_y_'+name, 'y_err_'+name, 'FWHM_major_'+name, 'major_err_'+name, 'FWHM_minor_'+name, 'minor_err_'+name, 'position_angle_'+name, 'position_angle_err_'+name, 'peak_flux_'+name, 'gauss_amplitude_'+name, 'amplitude_err_'+name, 'ap_flux_'+name, 'ap_flux_err_'+name,'fit_goodness_'+name), dtype=('i4','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','U10')) #turn into astropy table
 		for key in gauss_cat:
@@ -96,7 +96,7 @@ def create_catalog(param_file):
 			#NOTE: aperture flux error and background fluxes will get filled in after running `snr_rejection.py`
 
 		full_cat = join(cat, gauss_fit_tab, keys='_idx_'+name, join_type='outer') #joining the gaussian centroid data with the rest
-		full_cat.write('/lustre/aoc/students/jotter/dendro_catalogs/'+name+'_dendro_catalog_leaves.fits', format='fits', overwrite=True)
+		full_cat.write('/home/jotter/nrao/tables/dendro_catalogs/'+name+'_dendro_catalog_leaves.fits', format='fits', overwrite=True)
 
 
 def measure_fluxes(data, ref_name, img, name):
