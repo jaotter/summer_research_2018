@@ -81,5 +81,40 @@ plt.xlabel('Band 3 flux (mJy)')
 
 plt.semilogx()
 
-plt.savefig('/home/jotter/nrao/plots/IR_B3_flux_plot.png', dpi=400)
+plt.savefig('/home/jotter/nrao/plots/Kband_B3_flux_plot.png', dpi=400)
+plt.close()
+
+
+MLLA_h_ind = np.where(np.isnan(IR_tab['Hmag1'])==False)
+HC2000_h_ind = np.where(np.isnan(IR_tab['Hmag'])==False)
+
+Hmag = np.repeat(np.nan, len(IR_tab))
+Hmag_err = np.repeat(np.nan, len(IR_tab))
+
+Hmag[HC2000_h_ind] = IR_tab['Hmag'][HC2000_h_ind]
+Hmag_err[HC2000_h_ind] = IR_tab['e_Hmag'][HC2000_h_ind]
+Hmag[MLLA_h_ind] = IR_tab['Hmag1'][MLLA_h_ind]
+Hmag_err[MLLA_h_ind] = IR_tab['e_Hmag1'][MLLA_h_ind]
+
+HK_color = Hmag-Kmag
+HK_color_err = np.sqrt(Hmag_err**2 + Kmag_err**2)
+
+HK_color_m = HK_color[matched_IR_ind]
+HK_color_m_err = HK_color_err[matched_IR_ind]
+
+HK_color_um = HK_color[unmatched_IR_ind]
+HK_color_um_err = HK_color_err[unmatched_IR_ind]
+
+
+fig = plt.figure(figsize=(8,8))
+
+plt.errorbar(IR_m['ap_flux_B3'], HK_color_m, xerr=IR_m['ap_flux_err_B3'], yerr=HK_color_m_err, marker='o', linestyle='')
+plt.errorbar(B3_upper_lim, HK_color_um, yerr=HK_color_um_err, marker='>', linestyle='')
+
+plt.ylabel('H-K magnitude')
+plt.xlabel('Band 3 flux (mJy)')
+
+plt.semilogx()
+
+plt.savefig('/home/jotter/nrao/plots/H-K_B3_flux_plot.png', dpi=400)
 plt.close()
