@@ -22,7 +22,8 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
     #creates catalog from one image in each band
     #B3_names, B6_names, B7_names only used for gaussian diag directory names
     
-    ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/ref_catalog_added.fits'
+    #ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/ref_catalog_added.fits'
+    ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/dendro_ref_catalog.fits'
     ref_data = Table.read(ref_data_name)
     ref_arrs = [ref_data['B3_detect'], ref_data['B6_detect'], ref_data['B7_detect']]
   
@@ -56,7 +57,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
             
         #now get ready to fit gaussians
         #start by setting up save directory for images
-        gauss_save_dir = '/home/jotter/nrao/gauss_diags/'+img_name+'/'
+        gauss_save_dir = '/home/jotter/nrao/gauss_diags_apr2020/'+img_name+'/'
         if not os.path.exists(gauss_save_dir):
             os.makedirs(gauss_save_dir)
         #now make region list
@@ -68,7 +69,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
         print(len(src_inds))
 
         for ind in src_inds:
-            reg = regions.CircleSkyRegion(center=SkyCoord(ref_data['RA_B3'][ind]*u.degree, ref_data['DEC_B3'][ind]*u.degree), radius=rad, meta={'text':str(ref_data['D_ID'][ind])})
+            reg = regions.CircleSkyRegion(center=SkyCoord(ref_data['RA'][ind]*u.degree, ref_data['DEC'][ind]*u.degree), radius=rad, meta={'text':str(ref_data['D_ID'][ind])})
             reg_pix = reg.to_pixel(img_wcs)
             if reg_pix.center.x > 0 and reg_pix.center.x < len(img_data[0]):
                 if reg_pix.center.y > 0 and reg_pix.center.y < len(img_data):
@@ -158,7 +159,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                 
                 ap_flux_err_arr.append(ap_bg_rms)
                 ap_flux_arr.append(aperture_flux - pix_bg)
-                snr_arr.append(img_table['amplitude'][row]/bg_rms)
+                snr_arr.append(img_table['gauss_amp_'+name][row]/bg_rms)
                 
         cols = ['ap_flux_'+name, 'ap_flux_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_maj_deconv_err_'+name, 'fwhm_min_deconv_'+name, 'fwhm_min_deconv_err_'+name, 'pa_deconv_'+name, 'pa_deconv_err_'+name, 'SNR_'+name]
         arrs = [ap_flux_arr, ap_flux_err_arr, fwhm_maj_deconv_arr, fwhm_maj_deconv_err_arr, fwhm_min_deconv_arr, fwhm_min_deconv_err_arr, pa_deconv_arr, pa_deconv_err_arr, snr_arr]
@@ -171,7 +172,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
     B3B6 = join(band_tables[0], band_tables[1], keys='D_ID', join_type='outer')
     all_bands = join(B3B6, band_tables[2], keys='D_ID', join_type='outer')
 
-    all_bands.write('/users/jotter/summer_research_2018/tables/'+cat_name+'.fits',  overwrite=True)
+    all_bands.write('/home/jotter/nrao/summer_research_2018/tables/'+cat_name+'.fits',  overwrite=True)
 
 
 
