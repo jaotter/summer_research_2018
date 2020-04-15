@@ -2,18 +2,18 @@ from fit_background import *
 from astropy.io import fits
 from astropy.table import Table
 
-catalog = Table(fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_add_final3_ann2.fits'))
+catalog = Table(fits.getdata('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_conv_snr.fits'))
 
 bands = ['B3','B6', 'B7']
-B6_img = '/lustre/aoc/students/jotter/directory/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
+B6_img = '/home/jotter/nrao/images/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
 B6_name = 'B6_conv_bg_cat'
-B7_img = '/lustre/aoc/students/jotter/directory/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
+B7_img = '/home/jotter/nrao/images/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
 B7_name = 'B7_conv_bg_cat'
-B3_img = '/lustre/aoc/students/jotter/directory/OrionB3/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
+B3_img = '/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
 B3_name = 'B3_bg_r0.5.clean0.05mJy.allbaselines_cat'
 
-B6_nonconv_img = '/lustre/aoc/students/jotter/directory/OrionB6/Orion_SourceI_B6_continuum_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
-B7_nonconv_img = '/lustre/aoc/students/jotter/directory/OrionB7/Orion_SourceI_B7_continuum_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
+B6_nonconv_img = '/home/jotter/nrao/images/Orion_SourceI_B6_continuum_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
+B7_nonconv_img = '/home/jotter/nrao/images/Orion_SourceI_B7_continuum_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
 
 nonconv_imgs = [None, B6_nonconv_img, B7_nonconv_img]
 
@@ -73,7 +73,7 @@ catalog['pa_B7'] = catalog['pa_B7']%360-90
 #ind4 = np.where(catalog['D_ID'] == 48)[0][0]
 #catalog.remove_rows([ind1,ind2,ind3,ind4])
 
-catalog.write('../tables/r0.5_catalog_conv_bgfitted_add_final3_ann2.fits',overwrite=True)
+catalog.write('../tables/r0.5_catalog_conv_bgfitted_snr.fits',overwrite=True)
 
 #fit params: - default xmean 0, ymean 0, zoom 1
 #B7:
