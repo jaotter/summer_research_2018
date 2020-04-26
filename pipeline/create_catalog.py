@@ -23,7 +23,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
     #B3_names, B6_names, B7_names only used for gaussian diag directory names
     
     #ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/ref_catalog_added.fits'
-    ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/dendro_ref_catalog.fits'
+    ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/dendro_ref_catalog_edited.fits'
     ref_data = Table.read(ref_data_name)
     ref_arrs = [ref_data['B3_detect'], ref_data['B6_detect'], ref_data['B7_detect']]
   
@@ -57,7 +57,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
             
         #now get ready to fit gaussians
         #start by setting up save directory for images
-        gauss_save_dir = '/home/jotter/nrao/gauss_diags_apr2020/'+img_name+'/'
+        gauss_save_dir = '/home/jotter/nrao/gauss_diags_apr20/'+img_name+'/'
         if not os.path.exists(gauss_save_dir):
             os.makedirs(gauss_save_dir)
         #now make region list
@@ -128,7 +128,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                 ap_mask = ellipse_reg.to_mask()
                 cutout_mask = ap_mask.cutout(img_data)
                 
-                aperture_flux = np.sum(cutout_mask[ap_mask.data==1])/ppbeam
+                aperture_flux = np.nansum(cutout_mask[ap_mask.data==1])/ppbeam
                 npix = len(cutout_mask[ap_mask.data==1])
 
                 #now make annulus for measuring background and error
