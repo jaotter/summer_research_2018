@@ -39,9 +39,9 @@ kappa0 = 2*u.cm**2/u.g
 dist = 414*u.pc
 nu0 = constants.c/(1.3*u.mm)
 
-ind3 = np.where(nonconv_data['D_ID'] == 3)[0]
-ind13 = np.where(nonconv_data['D_ID'] == 13)[0]
-src_inds = np.concatenate((ind3, ind13))
+#ind3 = np.where(nonconv_data['D_ID'] == 3)[0]
+#ind13 = np.where(nonconv_data['D_ID'] == 13)[0]
+#src_inds = np.concatenate((ind3, ind13))
 
 calc_tables = []
 
@@ -55,8 +55,9 @@ for i in range(2):
     inclination_arrs = []
     inclination_err_arrs = []
 
-    if i == 1:
-        data = nonconv_data[src_inds]
+    #if i == 1:
+    #    data = nonconv_data[src_inds]
+
     #calculated quantities not requiring loops
     A = np.log10(freqs[1]) - np.log10(freqs[0])
     alpha_B3B6 = (np.log10(data['ap_flux_B6'])-np.log10(data['ap_flux_B3']))/A
@@ -122,9 +123,9 @@ for i in range(2):
 data = conv_data
 calc_tab = calc_tables[0]
 
-for src in calc_tables[1]['D_ID']:
-    calc_ind = np.where(calc_tab['D_ID'] == src)[0]
-    calc_tab[calc_ind] = calc_tables[1][np.where(calc_tables[1]['D_ID'] == src)[0]]
+#for src in calc_tables[1]['D_ID']:
+#    calc_ind = np.where(calc_tab['D_ID'] == src)[0]
+#    calc_tab[calc_ind] = calc_tables[1][np.where(calc_tables[1]['D_ID'] == src)[0]]
 
 #this makes the calculated quantites in the table for sources 3 and 13 from the nonconvolved data
 
@@ -168,7 +169,7 @@ table_inf = Table((data['D_ID'], calc_tab['lower_lum_B3'], calc_tab['lower_lum_B
                 opt_depth))
 
 
-
+'''
 nonconv_srcs = [3,13]
 for src in nonconv_srcs:
     ind_tabB6 = np.where(table_meas_B6['D_ID'] == src)[0]
@@ -184,7 +185,7 @@ for src in nonconv_srcs:
     for col in table_inf.colnames:
         if col in nonconv_data.colnames:
             table_inf[col][ind_tab2] = nonconv_data[col][ind_nonconv]
-
+'''
 
 eisner_tab = ascii.read('../tables/eisner_tbl.txt', format='tab', delimiter='\t')
 eisner_tab.remove_column('remove')
