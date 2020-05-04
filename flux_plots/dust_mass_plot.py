@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import astropy.units as u
 
 
-def plot_KM(arrays, labels, upper_lim_flags, savepath='/home/jotter/nrao/summer_research_2018/flux_plots/plots/KM_comparisons.png'):
+def plot_KM(arrays, labels, upper_lim_flags, savepath='/home/jotter/nrao/plots/KM_dust_mass.png'):
 
     kmf = KaplanMeierFitter()
 
@@ -31,8 +31,9 @@ def plot_KM(arrays, labels, upper_lim_flags, savepath='/home/jotter/nrao/summer_
 
 tab_path = '/home/jotter/nrao/tables'
 
+dmass_data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_apr20_calc_vals.fits')
+
 eis_data = Table.read(f'{tab_path}/eisner_tbl.txt', format='ascii')
-dmass_data = Table.read(f'{tab_path}/inf_vals_all_updt.fits')
 lupus_data = Table.read(f'{tab_path}/LupusDisks_Ansdell2016.txt', format='ascii')
 ophi_data = Table.read(f'{tab_path}/Ophiucus_FluxSize_Cieza2018.txt', format='ascii.fixed_width', delimiter=' ', data_start=2)
 perseus_data = Table.read(f'{tab_path}/Perseus_Anderson2019.txt', format='ascii', header_start=2, data_start=4, data_end=63, delimiter='\t')
