@@ -13,16 +13,16 @@ from scipy.stats import linregress
 band='B3'
 
 #three plots: R and L, R and M, L and M
-data = Table.read('../tables/table_meas_B3.fits')
-data_inf = Table.read('../tables/inf_vals_all.fits')
+data = Table.read('../tables/r0.5_catalog_bgfit_apr20.fits')
+data_inf = Table.read('../tables/r0.5_apr20_calc_vals.fits')
 
-andrews = ascii.read('../tables/andrews_table.txt', format='tab')
+andrews = ascii.read('/home/jotter/nrao/tables/andrews_table.txt', format='tab')
 andrews.rename_column('$\mathrm{log}{R}_{\mathrm{eff}}/\mathrm{au}$', 'R_eff')
 andrews.rename_column('F_nu/mJy', 'Fnu')
 andrews.rename_column('$\mathrm{log}{L}_{\mathrm{mm}}/\mathrm{Jy}$', 'L_mm')
 andrews.remove_row(0)
 
-andrews_table4 = ascii.read('../tables/andrews_table4.txt', format='tab')
+andrews_table4 = ascii.read('/home/jotter/nrao/tables/andrews_table4.txt', format='tab')
 andrews_table4.rename_column('$d/\mathrm{pc}$', 'd')
 
 R_eff_andrw_log = []
@@ -48,9 +48,6 @@ for ind in range(len(andrews)):
         
         dists_andrw.append(float(andrews_table4['d'][ind][0:3]))
 
-print(andrews['L_mm'][0],Lmm_scaled_andrw_log[0], Lmm_scaled_err_up_andrw[0], Lmm_scaled_err_down_andrw[0]) 
-        
-print(andrews['R_eff'][0],R_eff_andrw_log[0], R_eff_err_up_andrw[0], R_eff_err_down_andrw[0]) 
 
 Lmm_scaled_andrw = 10**np.array(Lmm_scaled_andrw_log)*u.Jy
 Lmm_scaled_err_up_andrw = 10**np.array(np.array(Lmm_scaled_andrw_log)+np.array(Lmm_scaled_err_up_andrw))*u.Jy - Lmm_scaled_andrw
@@ -114,8 +111,8 @@ Lmm_eqn9 = ((Rau_arr*SIGMA_TO_FWHM)**(2-q)*andrews_freq**2*constants.k_B*scriptF
 Lmm_eqn9_10 = ((Rau_arr*SIGMA_TO_FWHM)**(2-q)*andrews_freq**2*(10)**(.25)*constants.k_B*scriptF*T0*r0**q/((2-q)*constants.c**2*(140*u.pc)**2)).decompose().to(u.Jy)
 
 
-srcIind = np.where(data['D_ID'][deconv_ind] == 10)[0]
-BNind = np.where(data['D_ID'][deconv_ind] == 20)[0]
+srcIind = np.where(data['D_ID'][deconv_ind] == 30)[0]
+BNind = np.where(data['D_ID'][deconv_ind] == 43)[0]
 #print('source I scaled Lmm: %f' % (scaled_B3flux[srcIind]))
 #print('source BN scaled Lmm: %f' % (scaled_B3flux[BNind]))
 
@@ -130,13 +127,13 @@ linreg_params_B3 = linregress(np.log10(scaled_B3flux_rem), np.log10(Rau_rem))
 Lmm_arr = np.logspace(-3, 0, 5)
 linreg_line_B3 = np.log10(Lmm_arr)*linreg_params_B3[0] + linreg_params_B3[1]
 
-plt.plot(Lmm_arr, 10**linreg_line_B3, linestyle='-', marker='', label='Fit to B3 data')
+#plt.plot(Lmm_arr, 10**linreg_line_B3, linestyle='-', marker='', label='Fit to B3 data')
 print('linreg params for B3 fit', linreg_params_B3)
 
 linreg_params_andrw = linregress(np.log10(Lmm_scaled_andrw.value), np.log10(FWHM_andrw))
 linreg_line_andrw = np.log10(Lmm_arr)*linreg_params_andrw[0] + linreg_params_andrw[1]
 
-plt.plot(Lmm_arr, 10**linreg_line_andrw, linestyle='-', marker='', label='Fit to A18 data')
+#plt.plot(Lmm_arr, 10**linreg_line_andrw, linestyle='-', marker='', label='Fit to A18 data')
 print('linreg params for A18 fit', linreg_params_andrw)
 
 linreg_params_all = linregress(np.log10(np.concatenate((Lmm_scaled_andrw.value, scaled_B3flux_rem))), np.log10(np.concatenate((FWHM_andrw, Rau_rem))))
@@ -161,7 +158,7 @@ plt.ylabel('R (AU)')
 plt.yscale('log')
 plt.xscale('log')
 
-plt.savefig('plots/scaling_rels_scaledflux.png', dpi=300)
+#plt.savefig('/home/jotter/nrao/plots/scaling_rels_scaledflux_allfit.png', dpi=300)
 
 fig = plt.figure()
 
@@ -174,7 +171,7 @@ size_arr = size_arr[np.isnan(size_arr)==False]*u.arcsec
 size_arr = (size_arr.to(u.rad)*d).value
 size_arr = np.log10(size_arr)
 
-eisner_data = ascii.read('../tables/eisner_tbl.txt', format='tab')
+eisner_data = ascii.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='tab')
 eisner_ind = np.where(eisner_data['R_disk'] != '<5')[0]
 eisner_R = [float(x.split()[0])*2 for x in eisner_data['R_disk'][eisner_ind]]
 eisner_R = np.log10(eisner_R)
@@ -203,7 +200,7 @@ plt.xlabel('log(Major FWHM / AU)')
 plt.ylabel('Number')
 plt.legend()
 
-plt.savefig('plots/R_hist_all.png', dpi=500)
+plt.savefig('/home/jotter/nrao/plots/R_hist_all.png', dpi=500)
 
 
 fig = plt.figure()
@@ -231,4 +228,4 @@ plt.xlabel('log(Scaled Luminosity / Jy)')
 plt.ylabel('Number')
 plt.legend()
 
-plt.savefig('plots/L_hist_all.png', dpi=500)
+plt.savefig('/home/jotter/nrao/plots/L_hist_all.png', dpi=500)

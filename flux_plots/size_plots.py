@@ -6,14 +6,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from functools import reduce
 
-import mpl_style
-
 from lifelines import KaplanMeierFitter
 
 def dust_mass_KM():
-    vt19_data = Table.read('../tables/VT19.txt', format='latex')
-    eis_data = Table.read('../tables/eisner_tbl.txt', format='ascii')
-    dmass_data = Table.read('../tables/inf_vals_all_updt.fits')
+    vt19_data = Table.read('/home/jotter/nrao/tables/VT19.txt', format='latex')
+    eis_data = Table.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='ascii')
+    dmass_data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_apr20_calc_vals.fits')
 
     vt19_dmass_raw = vt19_data['Mass']
     eis_dmass_raw = eis_data['M_dust^a']
@@ -27,19 +25,19 @@ def dust_mass_KM():
 
     vt19_dmass = np.log10(np.array(vt19_dmass[1:],dtype='float'))
     
-    eis_dmass = []
-    for dm in eis_dmass_raw:
-        eis_dmass.append(dm.split()[0])
-    eis_dmass = np.log10(np.array(eis_dmass, dtype='float'))
-    eis_dmass = eis_dmass[np.where(np.isinf(eis_dmass) == False)[0]]
+    #eis_dmass = []
+    #for dm in eis_dmass_raw:
+    #    eis_dmass.append(dm.split()[0])
+    #eis_dmass = np.log10(np.array(eis_dmass, dtype='float'))
+    #eis_dmass = eis_dmass[np.where(np.isinf(eis_dmass) == False)[0]]
 
     kmf = KaplanMeierFitter()
     kmf.fit(vt19_dmass)
 
     fig = plt.figure()
     ax = kmf.plot()
-    plt.savefig('VT19_KM_plot.png')
-
+    plt.savefig('/home/jotter/nrao/plots/VT19_KM_plot.png')
+    
 def KM_hist(hist):
     #hist is histogram to compute KM estimator for (deaths), bins is right edge of hist bins (time)
     Si = []
@@ -56,9 +54,9 @@ def KM_hist(hist):
     
     
 def dust_mass_comp():
-    vt19_data = Table.read('../tables/VT19.txt', format='latex')
-    eis_data = Table.read('../tables/eisner_tbl.txt', format='ascii')
-    dmass_data = Table.read('../tables/inf_vals_all_updt.fits')
+    vt19_data = Table.read('/home/jotter/nrao/tables/VT19.txt', format='latex')
+    eis_data = Table.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='ascii')
+    dmass_data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_apr20_calc_vals.fits')
 
     vt19_dmass_raw = vt19_data['Mass']
     eis_dmass_raw = eis_data['M_dust^a']
@@ -94,7 +92,6 @@ def dust_mass_comp():
         widths_B3.append((bins_B3[b+1]-bins_B3[b]))
 
     all_masses_B7 = np.concatenate((vt19_dmass, eis_dmass, B7_dmass))
-    print(all_masses_B7)
     all_hist_B7, bins_B7 = np.histogram(all_masses_B7)
 
     vt_hist_B7, b = np.histogram(vt19_dmass, bins=bins_B7)
@@ -120,7 +117,7 @@ def dust_mass_comp():
     plt.xlabel(r'$\log(M_{dust}/M_\oplus)$')
     plt.ylabel('Probability of greater mass')
     plt.legend()
-    plt.savefig('plots/KM_dust_mass_B3.png', dpi=400)
+    plt.savefig('/home/jotter/nrao/plots/KM_dust_mass_B3.png', dpi=400)
 
     fig = plt.figure()
     plt.plot(bins_B3[1:], vtdist, linestyle='--', label='VT19', marker='o')
@@ -128,7 +125,7 @@ def dust_mass_comp():
     plt.xlabel(r'$\log(M_{dust}/M_\oplus)$')
     plt.ylabel('Probability of greater mass')
     plt.legend()
-    plt.savefig('plots/KM_dust_mass_B3_combined.png', dpi=400)
+    plt.savefig('/home/jotter/nrao/plots/KM_dust_mass_B3_combined.png', dpi=400)
 
     
     fig = plt.figure()
@@ -138,7 +135,7 @@ def dust_mass_comp():
     plt.xlabel(r'$\log(M_{dust}/M_\oplus)$')
     plt.ylabel('number of disks')
     plt.legend()
-    plt.savefig('plots/dust_mass_hist_B3.png', dpi=400)
+    plt.savefig('/home/jotter/nrao/plots/dust_mass_hist_B3.png', dpi=400)
 
     '''fig = plt.figure()
     plt.bar(plotpts_B7, vt_hist_B7, widths_B7, edgecolor = 'black', label='VT19', alpha=0.5)
@@ -147,7 +144,7 @@ def dust_mass_comp():
     plt.xlabel(r'$\log(M_{dust}/M_\oplus)$')
     plt.ylabel('number of disks')
     plt.legend()
-    plt.savefig('plots/dust_mass_hist_B7.png', dpi=400)'''
+    plt.savefig('/home/jotter/nrao/plots/dust_mass_hist_B7.png', dpi=400)'''
     
     fig = plt.figure()
     plt.bar(plotpts_B3, vt_hist_B3, widths_B3, edgecolor = 'black', label='VT19', alpha=0.5)
@@ -155,7 +152,8 @@ def dust_mass_comp():
     plt.xlabel(r'$\log(M_{dust}/M_\oplus)$')
     plt.ylabel('number of disks')
     plt.legend()
-    plt.savefig('plots/dust_mass_hist_B3_combined.png', dpi=400)
+    plt.savefig('/home/jotter/nrao/plots/dust_mass_hist_B3_combined.png', dpi=400)
+
     
 def disk_size_hist(arrs, labels, filename):
     fig = plt.figure()
@@ -175,12 +173,10 @@ def disk_size_hist(arrs, labels, filename):
     plt.xlabel('deconvolved FWHM major (as)')
     plt.ylabel('number of disks')
     plt.xlim(0,0.35)
-    plt.style.use(mpl_style.style1)
-    plt.savefig('plots/size_plots/'+filename, dpi=500)
+    plt.savefig('/home/jotter/nrao/plots/size_plots/'+filename, dpi=500)
 
 def disk_size_hist_3panel(arrs, xlabels, filename, nbins=10):
     f, (ax1, ax2, ax3) = plt.subplots(3,1, figsize=(12,12), sharex='col')
-    f.subplots_adjust(hspace=0)
     ax = [ax1, ax2, ax3]
 
     d = 414*u.pc
@@ -207,26 +203,33 @@ def disk_size_hist_3panel(arrs, xlabels, filename, nbins=10):
         hist, b = np.histogram(size_arr, bins, density=False)
         allhist, b = np.histogram(arrs[a][allind], bins, density=False)
 
-        ax[a].bar(plotpts, hist, widths, edgecolor = 'black', alpha=0.5, label=xlabels[a])
-        ax[a].bar(plotpts, allhist, widths, edgecolor='black', alpha=0.5)
+        ax[a].bar(plotpts, hist, widths, edgecolor = 'black', alpha=0.5, label=f'{xlabels[a]} sources')
+        ax[a].bar(plotpts, allhist, widths, edgecolor='black', alpha=0.5, label=f'{xlabels[a]} sources detected in all bands')
         ax[a].set_xlim(0,0.27)
-        ax[a].set_ylim(0,17)
-        ax[a].set_ylabel('number of disks')
-        ax[a].legend()
+        ax[a].set_ylim(0,15)
+        ax[a].set_ylabel('number of disks', fontsize=18)
+        ax[a].legend(fontsize=16)
         ax[a].yaxis.set_major_locator(plt.MaxNLocator(5))
         
     altax = ax1.twiny()
     xlim = 0.27*u.arcsec.to(u.rad)
     xlim *= d
     altax.set_xlim(0, xlim.value)
-    altax.set_xlabel('deconvolved FWHM major (AU)')
-    ax3.set_xlabel('deconvolved FWHM major (as)')
+    altax.set_xlabel('deconvolved FWHM major (AU)', fontsize=18)
+    ax3.set_xlabel('deconvolved FWHM major (as)', fontsize=18)
 
     ax1.set_yticks(ax1.get_yticks()[1:])
     ax2.set_yticks(ax2.get_yticks()[1:])
+
+    altax.tick_params(axis='x', which='both', labelsize='large')
+    ax1.tick_params(axis='y', which='both', labelsize='large')
+    ax2.tick_params(axis='y', which='both', labelsize='large')
+    ax3.tick_params(axis='both', which='both', labelsize='large')
     
-    plt.style.use(mpl_style.style1)
-    plt.savefig('plots/size_plots/'+filename, dpi=500)
+    plt.tight_layout()
+    f.subplots_adjust(hspace=0)
+
+    plt.savefig('/home/jotter/nrao/plots/size_plots/'+filename, dpi=500)
 
 
 def R_hist_eisner(size_arr, xlabel, label, filename, nbins=10):
@@ -244,7 +247,7 @@ def R_hist_eisner(size_arr, xlabel, label, filename, nbins=10):
         plotpts.append(bins[b] + (bins[b+1]-bins[b])/2)
         widths.append((bins[b+1]-bins[b]))
 
-    eisner_data = ascii.read('../tables/eisner_tbl.txt', format='tab')
+    eisner_data = ascii.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='tab')
     eisner_ind = np.where(eisner_data['R_disk'] != '<5')[0]
     eisner_R = [float(x.split()[0])*2 for x in eisner_data['R_disk'][eisner_ind]]
     eis_hist, bins = np.histogram(eisner_R, density=False, bins=bins)
@@ -255,8 +258,8 @@ def R_hist_eisner(size_arr, xlabel, label, filename, nbins=10):
     plt.xlabel('deconvolved FWHM major (AU)')
     plt.ylabel('number of disks')
     #plt.xlim(0,0.35)
-    plt.style.use(mpl_style.style1)
-    plt.savefig('plots/size_plots/'+filename, dpi=400)
+    #plt.style.use(mpl_style.style1)
+    plt.savefig('/home/jotter/nrao/plots/size_plots/'+filename, dpi=400)
     
 def size_comp(conv_arrs, deconv_arrs, conv_errs, deconv_errs, labels, filename):
     #plot sizes of disks in two bands, arr1 and arr2 should have same length and sources
@@ -278,8 +281,8 @@ def size_comp(conv_arrs, deconv_arrs, conv_errs, deconv_errs, labels, filename):
     plt.ylim(0.0,0.3)
     plt.plot(np.arange(0,1,0.1), np.arange(0,1,0.1), color='k')
     plt.legend()
-    plt.style.use(mpl_style.style1)
-    plt.savefig('plots/size_plots/'+filename, dpi=400)
+    #plt.style.use(mpl_style.style1)
+    plt.savefig('/home/jotter/nrao/plots/size_plots/'+filename, dpi=400)
 
 def size_comp_simple(arrs, errs, labels, filename):
     
@@ -299,39 +302,35 @@ def size_comp_simple(arrs, errs, labels, filename):
     plt.xlim(0.0,0.3)
     plt.ylim(0.0,0.3)
     plt.plot(np.arange(0,1,0.1), np.arange(0,1,0.1), color='k')
-    plt.style.use(mpl_style.style1)
-    plt.savefig('plots/size_plots/'+filename, dpi=400)
+    #plt.style.use(mpl_style.style1)
+    plt.savefig('/home/jotter/nrao/plots/size_plots/'+filename, dpi=400)
 
 def size_comp_eisner(filename):
     fig = plt.figure()
 
-    data = Table.read('../tables/table_meas_B3.fits')
+    data = Table.read('/home/jotter/nrao/tables/eis_r0.5_apr20_match.fits')
     
-    eisner_data = ascii.read('../tables/eisner_tbl.txt', format='tab')
+    eisner_data = ascii.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='tab')
     eis_UL_ind = np.where(eisner_data['R_disk'] == '<5')[0]
-    eisner_R = eisner_data['R_disk']
-    eisner_R[eis_UL_ind] = '0.0'
-    eisner_R = [float(x.split()[0])*2 for x in eisner_R]
-
-    eisner_R_err = eisner_data['R_disk']
-    eisner_R_err[eis_UL_ind] = '0.0'
-    eisner_R_err = [float(x.split()[-1])*2 for x in eisner_R_err]
-    print(data['Eisner_ID'])
-    eis_ind = np.where(data['Eisner_ID'] != 'none')[0]
-    data_R = data['fwhm_maj_deconv_B3'][eis_ind]*u.arcsec
-    data_R = (data_R.to(u.rad)*(414*u.pc).to(u.au)).value
-    data_R_err = data['fwhm_maj_err_B3'][eis_ind]*u.arcsec
-    data_R_err = (data_R_err.to(u.rad)*(414*u.pc).to(u.au)).value
-    print(data_R)
-    data_R = data_R[np.where(np.isnan(data['fwhm_maj_deconv_B3'][eis_ind]) == False)[0]]
-    data_R_err = data_R_err[np.where(np.isnan(data['fwhm_maj_deconv_B3'][eis_ind]) == False)[0]]
+    eisner_R_str = eisner_data['R_disk']
+    eisner_R_str[eis_UL_ind] = '0.0'
+    eisner_R = [float(x.split()[0])*2 for x in eisner_R_str]
+    eisner_R_err = [float(x.split()[-1])*2 for x in eisner_R_str]
     
-    matched_eisID = data['Eisner_ID'][np.array(eis_ind)]
-    match_eis_ind = []
-    for ID in matched_eisID:
-        if np.isnan(data['fwhm_maj_deconv_B3'][np.where(data['Eisner_ID'] == ID)[0]]) == False:
-            match_eis_ind.append(np.where(eisner_data['ID'] == ID)[0][0])
+    data_R = data['fwhm_maj_deconv_B3']*u.arcsec
+    data_R = (data_R.to(u.rad)*(414*u.pc).to(u.au)).value
+    data_R_err = data['fwhm_maj_err_B3']*u.arcsec
+    data_R_err = (data_R_err.to(u.rad)*(414*u.pc).to(u.au)).value
 
+    deconv_ind = np.where(np.isnan(data['fwhm_maj_deconv_B3']) == False)[0]
+    data_R = data_R[deconv_ind]
+    data_R_err = data_R_err[deconv_ind]
+    
+    match_eis_ind = []
+    for ID in data['ID'][deconv_ind]:
+        match_eis_ind.append(np.where(eisner_data['ID'] == ID.strip())[0][0])
+        print(ID, match_eis_ind[-1])
+        
     eisner_R = np.array(eisner_R)[match_eis_ind]
     eisner_R_err = np.array(eisner_R_err)[match_eis_ind]
 
@@ -339,16 +338,15 @@ def size_comp_eisner(filename):
     ind2 = np.where(data_R-3*data_R_err > eisner_R + 3*eisner_R_err)[0]
     ind = np.concatenate((ind1, ind2))
     
-    print(data['D_ID'][eis_ind], data['D_ID'][eis_ind][ind1])
     plt.errorbar(data_R, eisner_R, xerr=3*data_R_err, yerr=3*eisner_R_err, linestyle='', marker='.')
     plt.errorbar(data_R[ind], eisner_R[ind], xerr=3*data_R_err[ind], yerr=3*eisner_R_err[ind], linestyle='', marker='.')
     plt.xlabel('B3 FWHM (AU)')
-    plt.ylabel('Eisner et al FWHM (AU)')
+    plt.ylabel('Eisner et al 2018 FWHM (AU)')
     plt.xlim(0,100)
     plt.ylim(0,100)
     plt.plot(np.arange(0,101,50), np.arange(0,101,50), color='k')
-    plt.style.use(mpl_style.style1)
-    plt.savefig('plots/size_plots/'+filename, dpi=400)
+    #plt.style.use(mpl_style.style1)
+    plt.savefig('/home/jotter/nrao/plots/size_plots/'+filename, dpi=400)
     
 def img_size_comp(arrs, err_arrs,  labels):
     fig = plt.figure()
