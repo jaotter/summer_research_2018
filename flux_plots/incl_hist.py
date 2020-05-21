@@ -11,7 +11,7 @@ def f(x): #for 2 sample ks test
     return (1 - np.cos(x))*(x>0)*(x<np.pi/2)+(x>np.pi/2)
 
 
-dataB3 = Table.read('../tables/table_meas_B3.fits')
+dataB3 = Table.read('../tables/r0.5_apr20_calc_vals.fits')
 
 ind = np.where(np.isnan(dataB3['inclination_B3']) == False)[0]
 incl_bins = np.arange(0,91,10)
@@ -49,13 +49,13 @@ print('1 sample KS statistic: %f, p value: %f' % (Dval, pval))
 #KDE
 cos_grid = np.linspace(0,1,100)
 degree_grid = np.linspace(0,90,100)
-cos_kde = gaussian_kde(np.cos(dataB3['inclination_B3'][ind]*u.degree))
+#cos_kde = gaussian_kde(np.cos(dataB3['inclination_B3'][ind]*u.degree))
 degree_kde = gaussian_kde(dataB3['inclination_B3'][ind])
-cos_pdf = cos_kde.evaluate(cos_grid)
-norm_cos_pdf = cos_pdf*len(ind)*(1/9)
+#cos_pdf = cos_kde.evaluate(cos_grid)
+#norm_cos_pdf = cos_pdf*len(ind)*(1/9)
 #to normalize, multiply by bin width and number of points
 degree_pdf = degree_kde.evaluate(degree_grid)
-norm_degree_pdf = degree_pdf*len(ind)*10
+norm_degree_pdf = degree_pdf*widths[0]*np.sum(hist)
 
 plt.figure()
 plt.bar(plotpts, sin_hist, widths, edgecolor='k', alpha=.5, label=r'$\sin(i)$')
@@ -65,12 +65,12 @@ plt.xlabel('Band 3 inclination angle (degrees)')
 plt.ylabel('number')
 plt.legend()
 plt.xlim(0,90)
-plt.savefig('plots/incl_hist.png',dpi=300)
+plt.savefig('../../plots/incl_hist.png',dpi=300)
 
 
 
 #histogram of cos(i)
-
+'''
 cos_bins = np.linspace(0,1,10)
 cos_incl_hist, bins = np.histogram(np.cos(dataB3['inclination_B3'][ind]*u.degree), bins=cos_bins)
 
@@ -97,7 +97,8 @@ plt.xlabel('cos(i)')
 plt.ylabel('number')
 plt.legend()
 plt.xlim(0,1)
-plt.savefig('plots/cos_incl_hist.png',dpi=300)
+plt.savefig('../../plots/cos_incl_hist.png',dpi=300)
 
 
 
+'''

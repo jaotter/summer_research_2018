@@ -1,3 +1,4 @@
+from scipy.stats import gaussian_kde
 from astropy.io import fits, ascii
 import matplotlib.pyplot as plt
 from astropy.table import Table
@@ -26,8 +27,8 @@ def get_ind(names): #returns indices where sources are detected in all bands wit
     return ind
 
 def flux_hist():
-    data = Table.read('../tables/r0.5_catalog_conv_bgfitted_add_final3_ann2.fits')
-    eis = Table.read('../tables/eisner_tbl.txt', format='ascii')
+    data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_apr20.fits')
+    eis = Table.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='ascii')
 
     B7flux = np.log10(data['ap_flux_B7']*1000)
     B7flux = B7flux[np.where(np.isnan(B7flux) == False)[0]]
@@ -43,18 +44,30 @@ def flux_hist():
     B7hist, b = np.histogram(B7flux, bins=abins)
     eishist, b = np.histogram(eisflux, bins=abins)
 
+    
     plotpts = []
     widths = []
     for b in range(len(abins[:-1])): #creating points to plot - midpoints of bins
         plotpts.append(abins[b] + (abins[b+1]-abins[b])/2)
         widths.append((abins[b+1]-abins[b]))
 
-    plt.bar(plotpts, B7hist, widths, alpha=0.5, edgecolor='black', label='band 7')
+    flux_grid = np.linspace(-1,3,100)
+    flux_kde = gaussian_kde(B7flux)
+    flux_pdf = flux_kde.evaluate(flux_grid)
+    norm_flux_pdf = flux_pdf*widths[0]*np.sum(B7hist)
+    plt.plot(flux_grid, norm_flux_pdf, label='Band 7 KDE')
+
+    eis_kde = gaussian_kde(eisflux)
+    eis_pdf = eis_kde.evaluate(flux_grid)
+    norm_eis_pdf = eis_pdf*widths[0]*np.sum(eishist)
+    plt.plot(flux_grid, norm_eis_pdf, label='E18 KDE')
+        
+    plt.bar(plotpts, B7hist, widths, alpha=0.5, edgecolor='black', label='Band 7')
     plt.bar(plotpts, eishist, widths, alpha=0.5, edgecolor='black', label='E18')
     plt.legend()
     plt.ylabel('number')
-    plt.xlabel('Flux (mJy)')
-    plt.savefig('plots/flux_hist_eis_B7.png', dpi=400)
+    plt.xlabel(r'$\log(F_{\nu=350 GHz} (mJy))$')
+    plt.savefig('/home/jotter/nrao/plots/flux_hist_eis_B7.png', dpi=400)
     
 def plot_alpha(names, imgs, only_deconv=False, flux_type='aperture'): 
     #plot flux-flux alpha scatterplot, and alpha histogram
@@ -358,4 +371,4 @@ def image_fluxes(srcID, flux_type='ap'):
     plt.show()
     
 
-
+flux_hist()
