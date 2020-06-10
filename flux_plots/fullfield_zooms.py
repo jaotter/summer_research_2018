@@ -11,14 +11,52 @@ from mpl_plot_templates import asinh_norm
 import matplotlib
 from collections import defaultdict
 import warnings
+import astropy.units as u
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 
-psf_center = coordinates.SkyCoord('5:35:14.511 -5:22:30.561',
-                                  unit=(u.h, u.deg),
-                                  frame='icrs')
 
-zoomregions1 = {'SourceI (10)':
+def calc_bbox(center, sidelength):
+    BL_ra = center.ra.degree + sidelength/2
+    BL_dec = center.dec.degree - sidelength/2
+    TR_ra = center.ra.degree - sidelength/2
+    TR_dec = center.dec.degree + sidelength/2
+    BL = coordinates.SkyCoord(BL_ra, BL_dec, unit=u.degree)
+    TR = coordinates.SkyCoord(TR_ra, TR_dec, unit=u.degree)
+    return BL, TR
+
+def create_zoomregion(srcid, table, bbox, name=None):
+    srcind = np.where(table['D_ID'] == srcid)[0]
+    srctab = table[srcind]
+    src_coord = coordinates.SkyCoord(ra=srctab['RA_B3'].data, dec=srctab['DEC_B3'].data, unit=u.degree)
+    src_fwhm = srctab['fwhm_maj_B3']*u.arcsecond
+    sidelength = src_fwhm.to(u.degree)*4
+    bottomleft, topright = calc_bbox(src_coord, sidelength.value)
+
+    zoom = 10
+    vmin = -0.0001
+    vmax = 90
+
+    #keys in reg_dict: 'bottomleft':SkyCoord, 'topright':SkyCoord, 'bbox':[float, float] (location of inset BL),
+    #l1,l2: int - corner to draw line (UR is 1, then ccw), min:float - vmin, max:float - vmax, if greater than 1 than is percent of max flux in inset, zoom:float
+
+    key = f'{name+" " if name is not None else ""}({srcid})'
+    reg_dict = {'bottomleft':bottomleft, 'topright':topright, 'bbox':bbox, 'min':vmin, 'max':vmax, 'zoom':zoom, 'loc':2, 'l1':1, 'l2':3}
+
+    return key, reg_dict
+
+
+table = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_apr20.fits')
+sources = [30]
+bboxes = [[0.25, 0.9]]
+names = ['Source I']
+zoomregions_auto = {}
+
+for i in range(len(sources)):
+    key, reg_dict = create_zoomregion(sources[i], table, bboxes[i], names[i])
+    zoomregions_auto[key] = reg_dict
+
+zoomregions = {'SourceI (10)':
                {'bottomleft': coordinates.SkyCoord("5:35:14.532",
                                                    "-5:22:30.810",
                                                    unit=(u.h, u.deg),
@@ -32,8 +70,8 @@ zoomregions1 = {'SourceI (10)':
                 'loc': 2,
                 'l1':3,
                 'l2':1,
-                'min': -0.001,
-                'max': 0.03,
+                'min': -0.0001,
+                'max': 0.02,
                 'zoom': 10,
                },
                'BN (20)':
@@ -50,8 +88,8 @@ zoomregions1 = {'SourceI (10)':
                 'loc': 2,
                 'l1':2,
                 'l2':3,
-                'min': -0.001,
-                'max': 0.14,
+                'min': -0.0001,
+                'max': 0.1,
                 'zoom': 10,
                },
                 '(9)':
@@ -68,8 +106,8 @@ zoomregions1 = {'SourceI (10)':
                 'loc': 2,
                 'l1':2,
                 'l2':4,
-                'min': -0.001,
-                'max': 0.014,
+                'min': -0.0001,
+                'max': 0.003,
                 'zoom': 10,
                },
                'SourceN (5)':
@@ -86,8 +124,8 @@ zoomregions1 = {'SourceI (10)':
                 'loc': 2,
                 'l1':1,
                 'l2':3,
-                'min': -0.001,
-                'max': 0.006,
+                'min': -0.0001,
+                'max': 0.001,
                 'zoom': 10,
                },
                'IRC6E (18)':
@@ -104,8 +142,8 @@ zoomregions1 = {'SourceI (10)':
                 'loc': 2,
                 'l1':2,
                 'l2':3,
-                'min': -0.001,
-                'max': 0.008,
+                'min': -0.0001,
+                'max': 0.005,
                 'zoom': 10,
                },
                'IRC2C (11)':
@@ -122,8 +160,8 @@ zoomregions1 = {'SourceI (10)':
                 'loc': 2,
                 'l1':2,
                 'l2':3,
-                'min': -0.001,
-                'max': 0.009,
+                'min': -0.0001,
+                'max': 0.005,
                 'zoom': 10,
                },
                '(16,17)':
@@ -140,8 +178,8 @@ zoomregions1 = {'SourceI (10)':
                 'loc': 2,
                 'l1':3,
                 'l2':4,
-                'min': -0.0005,
-                'max': 0.0025,
+                'min': -0.0001,
+                'max': 0.001,
                 'zoom': 10,
                },
                '(8)':
@@ -158,340 +196,29 @@ zoomregions1 = {'SourceI (10)':
                 'loc': 2,
                 'l1':1,
                 'l2':2,
-                'min': -0.001,
-                'max': 0.005,
-                'zoom': 10,
-               }
-}
-
-zoomregions2 = {'(4)':
-               {'bottomleft': coordinates.SkyCoord("5:35:14.884",
-                                                   "-5:22:32.9",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord("5:35:14.87",
-                                                 "-5:22:32.67",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.25,0.2],
-                'loc': 3,
-                'l1':2,
-                'l2':1,
                 'min': -0.0001,
                 'max': 0.005,
-                'zoom': 15,
-               },
-                '(14)':
-               {'bottomleft': coordinates.SkyCoord("5:35:15.185",
-                                                   "-5:22:29.73",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord("5:35:15.1738",
-                                                 "-5:22:29.57",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.35,0.7],
-                'loc': 5,
-                'l1':4,
-                'l2':3,
-                'min': -0.0001,
-                'max': 0.006,
-                'zoom': 15,
-               },
-                '(15)':
-               {'bottomleft': coordinates.SkyCoord("5:35:14.982",
-                                                   "-5:22:29.293",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord("5:35:14.964",
-                                                 "-5:22:29.05",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.55,0.7],
-                'loc': 1,
-                'l1':2,
-                'l2':3,
-                'min': -0.0001,
-                'max': 0.003,
-                'zoom': 17,
-               },
-                '(1)':
-               {'bottomleft': coordinates.SkyCoord("5:35:14.67",
-                                                   "-5:22:38.638",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord("5:35:14.6465",
-                                                 "-5:22:38.370",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.59,0.3],
-                'loc': 7,
-                'l1':4,
-                'l2':3,
-                'min': -0.0001,
-                'max': 0.004,
-                'zoom': 15,
-               },
-                '(6)':
-               {'bottomleft': coordinates.SkyCoord("5:35:13.969",
-                                                   "-5:22:31.933",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord("5:35:13.96",
-                                                 "-5:22:31.838",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.72,0.25],
-                'loc': 6,
-                'l1':2,
-                'l2':1,
-                'min': -0.0001,
-                'max': 0.002,
-                'zoom': 28,
-               },
-                '(21)':
-               {'bottomleft': coordinates.SkyCoord("5:35:14.9508",
-                                                   "-5:22:20.775",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord("5:35:14.9398",
-                                                 "-5:22:20.638",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.5,0.75],
-                'loc': 8,
-                'l1':3,
-                'l2':2,
-                'min': -0.0001,
-                'max': 0.003,
-                'zoom': 20,
-               }
-
-}
-
-zoomregions3 = {'(0)':
-               {'bottomleft': coordinates.SkyCoord("5:35:14.3596",
-                                                   "-5:22:40.505",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord("5:35:14.344",
-                                                 "-5:22:40.28",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.625,0.35],
-                'loc': 2,
-                'l1':3,
-                'l2':2,
-                'min': -0.001,
-                'max': 0.005,
-                'zoom': 20,
-               },
-                '(3)':
-               {'bottomleft': coordinates.SkyCoord("5:35:14.4169",
-                                                   "-5:22:33.386",                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord("5:35:14.4072",
-                                                 "-5:22:33.16",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.65,0.55],
-                'loc': 2,
-                'l1':2,
-                'l2':3,
-                'min': -0.001,
-                'max': 0.002,
-                'zoom': 20,
-               },
-                '(13)':
-               {'topright': coordinates.SkyCoord("5:35:14.726",
-                                                   "-5:22:29.750",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'bottomleft': coordinates.SkyCoord("5:35:14.7364",
-                                                 "-5:22:29.902",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.3,0.82],
-                'loc': 2,
-                'l1':3,
-                'l2':4,
-                'min': -0.0005,
-                'max': 0.001,
-                'zoom': 30,
-               },
-                '(19)':
-               {'topright': coordinates.SkyCoord("5:35:14.2625",
-                                                   "-5:22:27.00",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'bottomleft': coordinates.SkyCoord("5:35:14.283",
-                                                 "-5:22:27.31",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.55,0.82],
-                'loc': 2,
-                'l1':4,
-                'l2':3,
-                'min': -0.001,
-                'max': 0.003,
-                'zoom': 15,
-               },
-                '(27)':
-               {'topright': coordinates.SkyCoord("5:35:14.9813",
-                                                   "-5:22:39.366",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'bottomleft': coordinates.SkyCoord("5:35:15.0137",
-                                                 "-5:22:39.85",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.35,0.35],
-                'loc': 2,
-                'l1':2,
-                'l2':3,
-                'min': -0.001,
-                'max': 0.003,
                 'zoom': 10,
                }
 }
 
-
-zoomregions4 = {'163-249 (69)':
-               {'bottomleft': coordinates.SkyCoord("5:35:16.3535",
-                                                   "-5:22:49.262",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord("5:35:16.3289",
-                                                 "-5:22:48.900",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.27,0.45],
-                'loc': 2,
-                'l1':3,
-                'l2':2,
-                'min': -0.0001,
-                'max': 0.0015,
-                'zoom': 20,
-               },
-                '163-222 (71)':
-               {'bottomleft': coordinates.SkyCoord("5:35:16.3260",
-                                                   "-5:22:21.744",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord("5:35:16.2948",
-                                                 "-5:22:21.274",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.5,0.8],
-                'loc': 2,
-                'l1':2,
-                'l2':3,
-                'min': -0.0001,
-                'max': 0.0005,
-                'zoom': 20,
-               },
-                'HC393 (73)':
-               {'bottomleft': coordinates.SkyCoord("5:35:16.1581",
-                                                   "-5:22:55.494",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord("5:35:16.1300",
-                                                 "-5:22:55.068",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.57,0.4],
-                'loc': 2,
-                'l1':2,
-                'l2':3,
-                'min': -0.0001,
-                'max': 0.0005,
-                'zoom': 30,
-               },
-                'HC401 (74)':
-               {'bottomleft': coordinates.SkyCoord("5:35:16.0893",
-                                                   "-5:22:54.510",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord("5:35:16.0645",
-                                                 "-5:22:54.142",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.35,0.3],
-                'loc': 2,
-                'l1':1,
-                'l2':3,
-                'min': -0.0001,
-                'max': 0.0005,
-                'zoom': 15,
-               },
-                'HC447 (72)':
-               {'bottomleft': coordinates.SkyCoord("5:35:15.9025",
-                                                   "-5:22:33.400",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord("5:35:15.8711",
-                                                 "-5:22:32.932",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.4,0.6],
-                'loc': 2,
-                'l1':2,
-                'l2':3,
-                'min': -0.0001,
-                'max': 0.0005,
-                'zoom': 10,
-               },
-                'HC389 (75)':
-               {'bottomleft': coordinates.SkyCoord("5:35:15.65",
-                                                   "-5:22:56.632",
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord("5:35:15.6223",
-                                                 "-5:22:56.222",
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'inregion': 'SourceI',
-                'bbox':[0.45,0.25],
-                'loc': 2,
-                'l1':2,
-                'l2':3,
-                'min': -0.0001,
-                'max': 0.0005,
-                'zoom': 10,
-               }
-}
-
+#psf_center = coordinates.SkyCoord('5:35:14.511 -5:22:30.561',
+#                                  unit=(u.h, u.deg),
+#                                  frame='icrs')
 
 
 def inset_overlays(fn, zoomregions, fignum=1,
                    psffn=None,
                    vmin=-0.001, vmax=0.01,
                    directory = '/lustre/aoc/students/jotter/directory/',
-                   bottomleft=coordinates.SkyCoord('5:35:16.3847 -5:22:58.542', unit=(u.h, u.deg), frame='icrs'),
-                   topright=coordinates.SkyCoord('5:35:13.5 -5:22:15', unit=(u.h, u.deg), frame='icrs'),
+                   #bottomleft=coordinates.SkyCoord('5:35:16.3847 -5:22:58.542', unit=(u.h, u.deg), frame='icrs'),
+                   #topright=coordinates.SkyCoord('5:35:13.5 -5:22:15', unit=(u.h, u.deg), frame='icrs'),
+                   bottomleft=coordinates.SkyCoord('5:35:15.236 -5:22:41.85', unit=(u.h, u.deg), frame='icrs'),
+                   topright=coordinates.SkyCoord('5:35:13.586 -5:22:17.12', unit=(u.h, u.deg), frame='icrs'),
                    tick_fontsize=pl.rcParams['axes.labelsize']):
-    #bottomleft=coordinates.SkyCoord('5:35:15.236 -5:22:41.85', unit=(u.h, u.deg), frame='icrs'),
-    #topright=coordinates.SkyCoord('5:35:13.586 -5:22:17.12', unit=(u.h, u.deg), frame='icrs'),
                   
     fn = directory+fn
     hdu = fits.open(fn)[0]
-    print(fn)
 
     mywcs = wcs.WCS(hdu.header).celestial
 
@@ -515,7 +242,7 @@ def inset_overlays(fn, zoomregions, fignum=1,
                    vmin=vmin*1e3, vmax=vmax*1e3, cmap=pl.cm.gray_r,
                    interpolation='nearest',
                    origin='lower', norm=asinh_norm.AsinhNorm())
-
+    
     (x1,y1),(x2,y2) = (mywcs.wcs_world2pix([[bottomleft.ra.deg,
                                              bottomleft.dec.deg]],0)[0],
                        mywcs.wcs_world2pix([[topright.ra.deg,
@@ -543,10 +270,11 @@ def inset_overlays(fn, zoomregions, fignum=1,
         parent_ax = zoomregions[ZR['inset_axes']]['axins'] if 'inset_axes' in ZR else ax
 
         bl, tr = ZR['bottomleft'],ZR['topright'],
-        (zx1,zy1),(zx2,zy2) = (mywcs.wcs_world2pix([[bl.ra.deg,
-                                                     bl.dec.deg]],0)[0],
-                               mywcs.wcs_world2pix([[tr.ra.deg,
-                                                     tr.dec.deg]],0)[0]
+        
+        (zx1,zy1),(zx2,zy2) = (mywcs.wcs_world2pix([[bl.ra.deg[0],
+                                                     bl.dec.deg[0]]],0)[0],
+                               mywcs.wcs_world2pix([[tr.ra.deg[0],
+                                                     tr.dec.deg[0]]],0)[0]
                               )
         print(zoomregion,zx1,zy1,zx2,zy2)
 
@@ -561,10 +289,15 @@ def inset_overlays(fn, zoomregions, fignum=1,
                                   axes_class=astropy.visualization.wcsaxes.core.WCSAxes,
                                   axes_kwargs=dict(wcs=inset_wcs))
         ZR['axins'] = axins
+
+        vmax = ZR['max']
+        if vmax > 1:
+            vmax = (vmax/100)*np.nanmax(inset_data)
+            
         imz = axins.imshow(inset_data,
                            #transform=parent_ax.get_transform(inset_wcs),
                            extent=[int(zx1), int(zx2), int(zy1), int(zy2)],
-                           vmin=ZR['min'], vmax=ZR['max'], cmap=pl.cm.gray_r,
+                           vmin=ZR['min'], vmax=vmax, cmap=pl.cm.gray_r,
                            interpolation='nearest',
                            origin='lower', norm=asinh_norm.AsinhNorm())
 
@@ -661,14 +394,8 @@ def inset_overlays(fn, zoomregions, fignum=1,
 
 
 if __name__ == "__main__":
-
-    #for fn in (("Orion_SourceI_B6_continuum_r-2.clean0.1mJy.selfcal.phase4.deepmask.allbaselines.image.tt0.pbcor.fits", "/lustre/aoc/students/jotter/directory/"),
-            #"Orion_SourceI_B3_continuum_r-2.clean0.1mJy.image.tt0.pbcor.fits", "/lustre/aoc/students/jotter/directory/"),
-            #("Orion_SourceI_B6_continuum_r-2.clean0.5mJy.500klplus.image.tt0.pbcor.fits", "/lustre/aoc/students/jotter/directory/OrionB6/")):
-    #fn = 'B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
     fn = 'Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
-    directory='/lustre/aoc/students/jotter/directory/OrionB3/'
-    figure = inset_overlays(fn, zoomregions=zoomregions4, directory=directory,
-                                #psffn=fn.replace("image.tt0.pbcor","psf.tt0"),
-                                vmin=-0.0005, vmax=0.005)
-    figure.savefig('plots/'+fn.replace(".image.tt0.pbcor.fits","_inset4.pdf"), bbox_inches='tight', dpi=300)
+    directory='/home/jotter/nrao/images/'
+    figure = inset_overlays(fn, zoomregions=zoomregions_auto, directory=directory,
+                                vmin=-0.0005, vmax=0.003)
+    figure.savefig('/home/jotter/nrao/plots/inset_plots/B3_inset_test.png', bbox_inches='tight', dpi=300)
