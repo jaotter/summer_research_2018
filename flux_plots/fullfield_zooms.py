@@ -25,7 +25,7 @@ def calc_bbox(center, sidelength):
     TR = coordinates.SkyCoord(TR_ra, TR_dec, unit=u.degree)
     return BL, TR
 
-def create_zoomregion(srcid, table, bbox, locs=[1,3], name=None):
+def create_zoomregion(srcid, table, bbox, locs=[1,3], name=None, vmin=-0.0001):
     srcind = np.where(table['D_ID'] == srcid)[0]
     srctab = table[srcind]
     src_coord = coordinates.SkyCoord(ra=srctab['RA_B3'].data, dec=srctab['DEC_B3'].data, unit=u.degree)
@@ -34,7 +34,6 @@ def create_zoomregion(srcid, table, bbox, locs=[1,3], name=None):
     bottomleft, topright = calc_bbox(src_coord, sidelength.value)
 
     zoom = 10
-    vmin = -0.0001
     vmax = 90
 
     #keys in reg_dict: 'bottomleft':SkyCoord, 'topright':SkyCoord, 'bbox':[float, float] (location of inset BL),
@@ -48,38 +47,42 @@ def create_zoomregion(srcid, table, bbox, locs=[1,3], name=None):
 
 table = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_apr20.fits')
 
-sources = [30, 43, 31, 23, 38, 32, 28, 45, 20, 71, 22, 36]
-bboxes = [[0.25, 0.9],[0.725,0.85],[0.25,0.5],[0.75,0.25],[0.75,0.65],[0.75,0.50],[0.4,0.27],[0.55,0.85],[0.53,0.27],[0.65,0.25],[0.25,0.3],[0.25,0.7]]
-names = ['Source I', 'BN', None,'Source N','IRC6E','IRC2C',None,None,None,None,None,None]
-locs_all = [[1,3],[2,3],[2,4],[1,3],[2,3],[1,3],[1,2],[1,4],[1,2],[1,2],[2,4],[1,4]]
+#INSET 1
+#sources = [30, 43, 31, 23, 38, 32, 28, 45, 20, 71, 22, 36]
+#bboxes = [[0.25, 0.9],[0.725,0.85],[0.25,0.5],[0.75,0.25],[0.75,0.65],[0.75,0.50],[0.4,0.27],[0.55,0.85],[0.53,0.27],[0.65,0.25],[0.25,0.3],[0.25,0.7]]
+#names = ['Source I', 'BN', None,'Source N','IRC6E','IRC2C',None,None,None,None,None,None]
+#locs_all = [[1,3],[2,3],[2,4],[1,3],[2,3],[1,3],[1,2],[1,4],[1,2],[1,2],[2,4],[1,4]]
+#filename = 'B3_inset1.png'
+#vmin = -0.0001
+    
+#INSET 2
+sources = [34, 39, 41, 76, 79, 29, 80, 75, 35, 42, 49, 50]
+bboxes = [[0.6,0.4],[0.75,0.7],[0.5,0.72],[0.5,0.4],[0.6,0.55],[0.25,0.5],[0.4,0.27],[0.3,0.3],[0.25,0.66],[0.25, 0.9],[0.45,0.9],[0.65,0.9]]
+names = np.repeat(None, len(sources))
+locs_all = [[1,3],[2,3],[2,3],[1,3],[2,3],[1,4],[1,2],[2,4],[1,3],[3,4],[2,4],[2,3]]
+filename = 'B3_inset2.png'
+vmin = -0.00001
+    
 zoomregions_auto = {}
 
 for i in range(len(sources)):
-    key, reg_dict = create_zoomregion(sources[i], table, bboxes[i], locs=locs_all[i], name=names[i])
+    key, reg_dict = create_zoomregion(sources[i], table, bboxes[i], locs=locs_all[i], name=names[i], vmin=vmin)
     zoomregions_auto[key] = reg_dict
 
 srcI_ind = np.where(table['D_ID'] == 30)[0]
 srcI_coord = coordinates.SkyCoord(table['RA_B3'][srcI_ind], table['DEC_B3'][srcI_ind], unit=u.degree)
 BL, TR = calc_bbox(srcI_coord, sidelength=(30*u.arcsec).to(u.degree).value)
 
-zoomregions_auto['(72,37)'] = {'bottomleft': coordinates.SkyCoord(ra=["5:35:14.435"],
-                                                   dec=["-5:22:28.55"],
-                                                   unit=(u.h, u.deg),
-                                                   frame='icrs'),
-                'topright': coordinates.SkyCoord(ra=["5:35:14.403"],
-                                                 dec=["-5:22:28.28"],
-                                                 unit=(u.h, u.deg),
-                                                 frame='icrs'),
-                'bbox':[0.4,0.85],
-                'loc': 2,
-                'l1':3,
-                'l2':1,
-                'min': -0.0001,
-                'max': 0.0005,
-                'zoom': 10,
-               }
+#zoomregions_auto['(72,37)'] = {'bottomleft': coordinates.SkyCoord(ra=["5:35:14.435"],
+#                                                   dec=["-5:22:28.55"],
+#                                                   unit=(u.h, u.deg),
+#                                                   frame='icrs'),
+#                'topright': coordinates.SkyCoord(ra=["5:35:14.403"],
+#                                                 dec=["-5:22:28.28"],
+#                                                 unit=(u.h, u.deg),
+#                                                 frame='icrs'),
+#                'bbox':[0.4,0.85],'loc': 2,'l1':3,'l2':1,'min': -0.0001,'max': 0.0005,'zoom': 10}
 
-filename = 'B3_inset1.png'
 
 zoomregions = zoomregions_auto
 
