@@ -25,7 +25,7 @@ def calc_bbox(center, sidelength):
     TR = coordinates.SkyCoord(TR_ra, TR_dec, unit=u.degree)
     return BL, TR
 
-def create_zoomregion(srcid, table, bbox, name=None):
+def create_zoomregion(srcid, table, bbox, locs=[1,3], name=None):
     srcind = np.where(table['D_ID'] == srcid)[0]
     srctab = table[srcind]
     src_coord = coordinates.SkyCoord(ra=srctab['RA_B3'].data, dec=srctab['DEC_B3'].data, unit=u.degree)
@@ -39,22 +39,45 @@ def create_zoomregion(srcid, table, bbox, name=None):
 
     #keys in reg_dict: 'bottomleft':SkyCoord, 'topright':SkyCoord, 'bbox':[float, float] (location of inset BL),
     #l1,l2: int - corner to draw line (UR is 1, then ccw), min:float - vmin, max:float - vmax, if greater than 1 than is percent of max flux in inset, zoom:float
-
+    
     key = f'{name+" " if name is not None else ""}({srcid})'
-    reg_dict = {'bottomleft':bottomleft, 'topright':topright, 'bbox':bbox, 'min':vmin, 'max':vmax, 'zoom':zoom, 'loc':2, 'l1':1, 'l2':3}
+    reg_dict = {'bottomleft':bottomleft, 'topright':topright, 'bbox':bbox, 'min':vmin, 'max':vmax, 'zoom':zoom, 'loc':2, 'l1':locs[0], 'l2':locs[1]}
 
     return key, reg_dict
 
 
 table = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_apr20.fits')
-sources = [30]
-bboxes = [[0.25, 0.9]]
-names = ['Source I']
+sources = [30, 43, 31, 23, 38, 32, 28, 45, 20, 71, 22, 36]
+bboxes = [[0.25, 0.9],[0.725,0.85],[0.25,0.5],[0.75,0.25],[0.75,0.65],[0.75,0.50],[0.4,0.27],[0.55,0.85],[0.53,0.27],[0.65,0.25],[0.25,0.3],[0.25,0.7]]
+names = ['Source I', 'BN', None,'Source N','IRC6E','IRC2C',None,None,None,None,None,None]
+locs_all = [[1,3],[2,3],[2,4],[1,3],[2,3],[1,3],[1,2],[1,4],[1,2],[1,2],[2,4],[1,4]]
 zoomregions_auto = {}
 
 for i in range(len(sources)):
-    key, reg_dict = create_zoomregion(sources[i], table, bboxes[i], names[i])
+    key, reg_dict = create_zoomregion(sources[i], table, bboxes[i], locs=locs_all[i], name=names[i])
     zoomregions_auto[key] = reg_dict
+
+srcI_ind = np.where(table['D_ID'] == 30)[0]
+srcI_coord = coordinates.SkyCoord(table['RA_B3'][srcI_ind], table['DEC_B3'][srcI_ind], unit=u.degree)
+BL, TR = calc_bbox(srcI_coord, sidelength=(30*u.arcsec).to(u.degree).value)
+
+zoomregions_auto['(16,17)'] = {'bottomleft': coordinates.SkyCoord(ra=["5:35:14.435"],
+                                                   dec=["-5:22:28.55"],
+                                                   unit=(u.h, u.deg),
+                                                   frame='icrs'),
+                'topright': coordinates.SkyCoord(ra=["5:35:14.403"],
+                                                 dec=["-5:22:28.28"],
+                                                 unit=(u.h, u.deg),
+                                                 frame='icrs'),
+                'bbox':[0.4,0.85],
+                'loc': 2,
+                'l1':3,
+                'l2':1,
+                'min': -0.0001,
+                'max': 0.001,
+                'zoom': 10,
+               }
+filename = 'B3_inset1.png'
 
 zoomregions = {'SourceI (10)':
                {'bottomleft': coordinates.SkyCoord("5:35:14.532",
@@ -211,10 +234,8 @@ def inset_overlays(fn, zoomregions, fignum=1,
                    psffn=None,
                    vmin=-0.001, vmax=0.01,
                    directory = '/lustre/aoc/students/jotter/directory/',
-                   #bottomleft=coordinates.SkyCoord('5:35:16.3847 -5:22:58.542', unit=(u.h, u.deg), frame='icrs'),
-                   #topright=coordinates.SkyCoord('5:35:13.5 -5:22:15', unit=(u.h, u.deg), frame='icrs'),
-                   bottomleft=coordinates.SkyCoord('5:35:15.236 -5:22:41.85', unit=(u.h, u.deg), frame='icrs'),
-                   topright=coordinates.SkyCoord('5:35:13.586 -5:22:17.12', unit=(u.h, u.deg), frame='icrs'),
+                   bottomleft=coordinates.SkyCoord('5:35:15.236', '-5:22:41.85', unit=(u.h, u.deg), frame='icrs'),
+                   topright=coordinates.SkyCoord('5:35:13.586', '-5:22:17.12', unit=(u.h, u.deg), frame='icrs'),
                    tick_fontsize=pl.rcParams['axes.labelsize']):
                   
     fn = directory+fn
@@ -243,10 +264,10 @@ def inset_overlays(fn, zoomregions, fignum=1,
                    interpolation='nearest',
                    origin='lower', norm=asinh_norm.AsinhNorm())
     
-    (x1,y1),(x2,y2) = (mywcs.wcs_world2pix([[bottomleft.ra.deg,
-                                             bottomleft.dec.deg]],0)[0],
-                       mywcs.wcs_world2pix([[topright.ra.deg,
-                                             topright.dec.deg]],0)[0]
+    (x1,y1),(x2,y2) = (mywcs.wcs_world2pix([[bottomleft.ra.deg[0],
+                                             bottomleft.dec.deg[0]]],0)[0],
+                       mywcs.wcs_world2pix([[topright.ra.deg[0],
+                                             topright.dec.deg[0]]],0)[0]
                       )
 
     # we'll want this later
@@ -397,5 +418,5 @@ if __name__ == "__main__":
     fn = 'Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
     directory='/home/jotter/nrao/images/'
     figure = inset_overlays(fn, zoomregions=zoomregions_auto, directory=directory,
-                                vmin=-0.0005, vmax=0.003)
-    figure.savefig('/home/jotter/nrao/plots/inset_plots/B3_inset_test.png', bbox_inches='tight', dpi=300)
+                                vmin=-0.0005, vmax=0.003, bottomleft=BL, topright=TR)
+    figure.savefig('/home/jotter/nrao/plots/inset_plots/'+filename, bbox_inches='tight', dpi=300)
