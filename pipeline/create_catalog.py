@@ -8,6 +8,7 @@ from astropy.coordinates import Angle, SkyCoord
 from astropy.table import Table, join, Column
 from astropy.nddata import Cutout2D
 from astropy.wcs import WCS
+import scipy.special as special
 
 import numpy as np
 import os
@@ -122,8 +123,6 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                 center_coord_pix_reg = regions.PixCoord(center_coord_pix[0], center_coord_pix[1])
                 pos_ang = (img_table['pa_'+name][row]-90)*u.deg #must subtract 90 to be consistent
 
-                print(pix_major_fwhm, pix_minor_fwhm,pos_ang)
-
                 ellipse_reg = regions.EllipsePixelRegion(center_coord_pix_reg, pix_major_fwhm.value*2, pix_minor_fwhm.value*2, angle=pos_ang)
                 ap_mask = ellipse_reg.to_mask()
                 cutout_mask = ap_mask.cutout(img_data)
@@ -153,12 +152,15 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                 print(img_table['D_ID'][row])
                 print('BG RMS: %f' % (bg_rms))
                 ap_bg_rms = bg_rms/np.sqrt(npix/ppbeam) #rms/sqrt(npix/ppbeam) - rms error per beam
-                bg_median = np.median(pixels_in_annulus)
+                bg_median = np.nanmedian(pixels_in_annulus)
 
                 pix_bg = bg_median*npix/ppbeam
+
+                ap_flux_bgcorrect = aperture_flux - pix_bg
+                ap_flux_correct = ap_flux_bgcorrect + ap_flux_bgcorrect*(1 - special.erf(2*np.sqrt(np.log(2)))) #flux correction for summing within 2*fwhm
                 
                 ap_flux_err_arr.append(ap_bg_rms)
-                ap_flux_arr.append(aperture_flux - pix_bg)
+                ap_flux_arr.append(ap_flux_correct)
                 snr_arr.append(img_table['gauss_amp_'+name][row]/bg_rms)
                 
         cols = ['ap_flux_'+name, 'ap_flux_err_'+name, 'fwhm_maj_deconv_'+name, 'fwhm_maj_deconv_err_'+name, 'fwhm_min_deconv_'+name, 'fwhm_min_deconv_err_'+name, 'pa_deconv_'+name, 'pa_deconv_err_'+name, 'SNR_'+name]
