@@ -9,6 +9,7 @@ from astropy.nddata import Cutout2D
 from astropy.wcs import WCS
 from deconv_sources import deconv_srcs
 import regions
+from scipy.stats import ks_2samp
 from functools import reduce
 import fnmatch
 from astropy.coordinates import Angle, SkyCoord
@@ -27,7 +28,7 @@ def get_ind(names): #returns indices where sources are detected in all bands wit
     return ind
 
 def flux_hist():
-    data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_apr20.fits')
+    data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20.fits')
     eis = Table.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='ascii')
 
     B7flux = np.log10(data['ap_flux_B7']*1000)
@@ -61,13 +62,18 @@ def flux_hist():
     eis_pdf = eis_kde.evaluate(flux_grid)
     norm_eis_pdf = eis_pdf*widths[0]*np.sum(eishist)
     plt.plot(flux_grid, norm_eis_pdf, label='E18 KDE')
-        
+
+    print(flux_kde.n, eis_kde.n)
+    
+    Dval, pval = ks_2samp(B7flux, eisflux)
+    print(f'{pval} p value for ks test')
+    
     plt.bar(plotpts, B7hist, widths, alpha=0.5, edgecolor='black', label='Band 7')
     plt.bar(plotpts, eishist, widths, alpha=0.5, edgecolor='black', label='E18')
     plt.legend()
     plt.ylabel('number')
     plt.xlabel(r'$\log(F_{\nu=350 GHz} (mJy))$')
-    plt.savefig('/home/jotter/nrao/plots/flux_hist_eis_B7.png', dpi=400)
+    plt.savefig('/home/jotter/nrao/plots/flux_hist_eis_B7.pdf', dpi=400)
     
 def plot_alpha(names, imgs, only_deconv=False, flux_type='aperture'): 
     #plot flux-flux alpha scatterplot, and alpha histogram
