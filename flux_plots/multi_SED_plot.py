@@ -69,7 +69,7 @@ def create_multi_plot(tab_path, ncols=5):
                 ax.set_ylabel('Flux (mJy)')
                 
     plt.subplots_adjust(wspace=0.35, hspace=0.3)
-    plt.savefig('/home/jotter/nrao/plots/multi_SED_plot.png',dpi=300)
+    plt.savefig('/home/jotter/nrao/plots/multi_SED_plot.pdf')
 
     
 create_multi_plot('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20.fits')

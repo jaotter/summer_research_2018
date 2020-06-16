@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import astropy.units as u
 
 
-def plot_KM(arrays, labels, upper_lim_flags, savepath='/home/jotter/nrao/plots/KM_dust_mass.png'):
+def plot_KM(arrays, labels, upper_lim_flags, savepath='/home/jotter/nrao/plots/KM_dust_mass_onlyB3.pdf'):
 
     kmf = KaplanMeierFitter()
 
@@ -31,7 +31,7 @@ def plot_KM(arrays, labels, upper_lim_flags, savepath='/home/jotter/nrao/plots/K
 
 tab_path = '/home/jotter/nrao/tables'
 
-dmass_data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_apr20_calc_vals.fits')
+dmass_data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_jun20_calc_vals.fits')
 
 eis_data = Table.read(f'{tab_path}/eisner_tbl.txt', format='ascii')
 lupus_data = Table.read(f'{tab_path}/LupusDisks_Ansdell2016.txt', format='ascii')
@@ -75,5 +75,8 @@ B6_mdust_flag = np.repeat(True, len(B6_mdust))
 B7_mdust = B7_mdust[np.isnan(B7_mdust)==False]
 B7_mdust_flag = np.repeat(True, len(B7_mdust))
 
+#plot_KM([eis_mdust, lupus_mdust, sco_mdust, B3_mdust, B6_mdust, B7_mdust, ophi_mdust, taurus_mdust], ['E18', 'Lupus', 'Upper Sco', 'B3', 'B6', 'B7', 'Ophiucus', 'Taurus'],
+#        [eis_mdust_flag, lupus_mdust_flag, sco_mdust_flag, B3_mdust_flag, B6_mdust_flag, B7_mdust_flag, ophi_mdust_flag, taurus_mdust_flag],
+#        savepath='/home/jotter/nrao/plots/KM_dust_mass.pdf')
 plot_KM([eis_mdust, lupus_mdust, sco_mdust, B3_mdust, ophi_mdust, taurus_mdust], ['E18', 'Lupus', 'Upper Sco', 'B3', 'Ophiucus', 'Taurus'],
         [eis_mdust_flag, lupus_mdust_flag, sco_mdust_flag, B3_mdust_flag, ophi_mdust_flag, taurus_mdust_flag])
