@@ -33,7 +33,7 @@ def plot_MST_hist(coord_list, labels, filename, colors=['tab:blue', 'tab:orange'
         sep_pdf = sep_kde.evaluate(sep_grid)                                                                                                                                                         #to normalize, multiply by bin width and number of points
         sep_est = sep_pdf*len(sep_arr)*(bins[1]-bins[0])
 
-        plt.hist(sep_arr, bins=bins, label=labels[i], alpha=0.5, color=colors[i])
+        plt.hist(sep_arr, bins=bins, label=labels[i], alpha=0.5, color=colors[i], edgecolor='black')
         plt.plot(sep_grid, sep_est, label=labels[i]+' KDE', color=colors[i])
 
     plt.legend()
