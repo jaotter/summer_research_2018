@@ -27,10 +27,51 @@ def get_ind(names): #returns indices where sources are detected in all bands wit
     ind = np.intersect1d(ind1, fit_ind)
     return ind
 
-def flux_hist():
+def flux_hist(sources='all', exclude_BN=False, KS_test=False):
     data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20.fits')
     eis = Table.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='ascii')
+        
+    if sources == 'ONC':
+        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_apr20_full_edit.fits')
+        IR_src = IR_tab['D_ID']
+        IR_ind = [np.where(data['D_ID']==d_id)[0][0] for d_id in IR_src]
+        data = data[IR_ind]
 
+    if sources == 'OMC1':
+        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_apr20_full_edit.fits')
+        nonIR_src = np.setdiff1d(data['D_ID'], IR_tab['D_ID'])
+        nonIR_ind = [np.where(data['D_ID']==d_id)[0][0] for d_id in nonIR_src]
+        data = data[nonIR_ind]
+
+    if KS_test == True:
+        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_apr20_full_edit.fits')
+        nonIR_src = np.setdiff1d(data['D_ID'], IR_tab['D_ID'])
+        print(nonIR_src)
+        nonIR_ind = [np.where(data['D_ID']==d_id)[0][0] for d_id in nonIR_src]
+        IR_src = IR_tab['D_ID']
+        IR_ind = [np.where(data['D_ID']==d_id)[0][0] for d_id in IR_src]
+
+        B7flux = np.log10(data['ap_flux_B7']*1000)
+        
+        B7flux_IR = B7flux[IR_ind]
+        B7flux_IR = B7flux_IR[np.where(np.isnan(B7flux_IR) == False)[0]]
+
+        print(nonIR_ind)
+        B7flux_nonIR = B7flux[nonIR_ind]
+        #B7flux_nonIR = B7flux_nonIR[np.where(np.isnan(B7flux_nonIR) == False)[0]]
+
+        print(B7flux_IR, B7flux_nonIR)
+        
+        Dval, pval = ks_2samp(B7flux_IR, B7flux_nonIR)
+        print(f'{pval} p value for ks test of IR/nonIR')
+    
+        
+    if exclude_BN == True:
+        BN_id = 43
+        BN_ind = np.where(data['D_ID'] == 43)[0]
+        data.remove_rows([BN_ind[0]])
+
+        
     B7flux = np.log10(data['ap_flux_B7']*1000)
     B7flux = B7flux[np.where(np.isnan(B7flux) == False)[0]]
 
@@ -66,14 +107,15 @@ def flux_hist():
     print(flux_kde.n, eis_kde.n)
     
     Dval, pval = ks_2samp(B7flux, eisflux)
-    print(f'{pval} p value for ks test')
+    print(f'{pval} p value for ks test of b7/eisner')
     
-    plt.bar(plotpts, B7hist, widths, alpha=0.5, edgecolor='black', label='Band 7')
+    plt.bar(plotpts, B7hist, widths, alpha=0.5, edgecolor='black', label=f'Band 7 {sources} sources')
     plt.bar(plotpts, eishist, widths, alpha=0.5, edgecolor='black', label='E18')
     plt.legend()
     plt.ylabel('number')
     plt.xlabel(r'$\log(F_{\nu=350 GHz} (mJy))$')
-    plt.savefig('/home/jotter/nrao/plots/flux_hist_eis_B7.pdf', dpi=400)
+    plt.savefig(f'/home/jotter/nrao/plots/E18_comp/flux_hist_eis_B7_{sources}.pdf', dpi=400)
+    plt.close()
     
 def plot_alpha(names, imgs, only_deconv=False, flux_type='aperture'): 
     #plot flux-flux alpha scatterplot, and alpha histogram
@@ -377,4 +419,6 @@ def image_fluxes(srcID, flux_type='ap'):
     plt.show()
     
 
-flux_hist()
+flux_hist(sources='OMC1')
+flux_hist(sources='ONC')
+#flux_hist(sources='all')
