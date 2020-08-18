@@ -34,8 +34,24 @@ ax.imshow(np.flip(np.rot90(im,2,axes=(0,1)),axis=1), origin='lower', transform=a
 
 B3_pix = mywcs.all_world2pix(B3_table['RA_B3']*u.degree, B3_table['DEC_B3']*u.degree, 0)
 
+inset1 = [30, 43, 31, 23, 38, 32, 28, 45, 20, 71, 22, 36]
+inset2 = [34, 39, 41, 76, 79, 29, 80, 75, 35, 42, 49, 50] 
+inset3 = [14, 81, 17, 16, 12, 11, 18, 27, 83, 33] 
+inset4 = [10, 8, 13, 84, 74, 54, 55, 53, 46]
+inset5 = [5, 6, 9, 15, 40, 51, 21, 24, 48, 52, 63, 56, 61, 58, 7, 73, 4, 2, 3, 19, 44, 47, 78, 57, 60, 62, 59, 67, 66, 64, 70]
 for ind in range(len(B3_pix[0])):
-    circ = Circle((B3_pix[0][ind], B3_pix[1][ind]), radius=10, fill=False, color='tab:red')
+    did = B3_table['D_ID'][ind]
+    if did in inset1:
+        col = 'tab:red'
+    if did in inset2:
+        col = 'tab:orange'
+    if did in inset3:
+        col = 'tab:olive'
+    if did in inset4:
+        col = 'tab:pink'
+    if did in inset5:
+        col = 'tab:green'
+    circ = Circle((B3_pix[0][ind], B3_pix[1][ind]), radius=10, fill=False, color=col)
     ax.add_patch(circ)
     #ax.text(B3_pix[0][ind]-1, B3_pix[1][ind]+3, B3_table['D_ID'][ind], color='red')
 
