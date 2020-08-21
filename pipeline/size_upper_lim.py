@@ -19,7 +19,7 @@ def draw_circle(r,size,flux): #draw circle radius r in 2d rectangular array arr
     radius = np.sqrt((xx - size/2)**2 + (yy - size/2)**2)
     circle_arr = np.zeros((size, size))
     circle_ind = np.where(radius < r)
-    circle_arr[circle_ind] = flux
+    circle_arr[circle_ind] = flux/len(circle_ind)
     return circle_arr
 
 def f(x, a, b):
@@ -49,11 +49,15 @@ def size_ulim(band, radii_au, n_rep=10):
     pixel_scale = np.abs(wcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg
     kernel = beam.as_kernel(pixel_scale)
 
-    size=800 #square size of fake image
-
-    flux = 1e-4
-    snrs = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22.5,25,27.5,30]
-
+    size_as=3*u.arcsecond #square size of fake image
+    size = (size_as/pixel_scale).decompose().value
+    size = int(size)
+    print(size)
+    
+    noise_nonconv = 1e-4
+    #snrs = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22.5,25,27.5,30]
+    snrs = [4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22.5,25,27.5,30]
+    #snrs = [5]
     full_upper_lim = []
     full_snrs = []
     
@@ -66,12 +70,19 @@ def size_ulim(band, radii_au, n_rep=10):
             snr_vals.append(snr)
 
             print(f'Fitting S/N {snr} disk')
-            noise = flux/snr
-            src_name = 'SNR_'+str(snrs[id])
+
+            src_name = 'SNR_'+str(snrs[id])+'_'+band
 
             recovered_fwhm_maj = []
            
             for i,rad_init in enumerate(radii_as):
+                noise_arr_raw = np.random.normal(0, noise_nonconv, (size,size))
+                noisy_arr_conv = convolve_fft(noise_arr_raw, kernel)
+
+                noise_conv = np.std(noisy_arr_conv)
+
+                flux = noise_conv*snr
+
                 rand_val_au = np.random.normal(0,0.2,1)
                 rand_val_as = (((rand_val_au*u.AU)/(400*u.pc)).decompose()*u.radian).to(u.arcsecond).value
                 rad = rad_init + rand_val_as
@@ -81,13 +92,20 @@ def size_ulim(band, radii_au, n_rep=10):
                 #create fake image data - uniform disk with radius r
                 r_arcsec = rad*u.arcsec #radius in arcsec
                 r = (r_arcsec/pixel_scale).decompose() #radius in pixel
-                fake_data = draw_circle(r,size,flux)
+                fake_data = draw_circle(r,size,1)
                 fake_data_conv = convolve_fft(fake_data, kernel)
-                noise_arr_raw = np.random.normal(0, noise, (size,size))
-                noisy_arr_conv = convolve_fft(noise_arr_raw, kernel)
 
-                noisy_conv_fake_img = fake_data_conv + noisy_arr_conv
+                disk_conv_peak = np.max(fake_data_conv)
+                fake_data_conv_scaled = fake_data_conv * (flux/disk_conv_peak)
+                
+                noisy_conv_fake_img = fake_data_conv_scaled + noisy_arr_conv
 
+                print(f'std raw noise: {np.nanstd(noise_arr_raw)}, std conv noise: {np.nanstd(noisy_arr_conv)}, std image: {np.nanstd(noisy_conv_fake_img)}')
+                print(f'disk raw flux total: {np.sum(fake_data)}, disk conv flux total: {np.sum(fake_data_conv)}, scaled disk flux total: {np.sum(fake_data_conv_scaled)}')
+                print(f'disk raw flux peak: {np.max(fake_data)}, disk conv flux peak: {np.max(fake_data_conv)}, scaled disk flux peak: {np.max(fake_data_conv_scaled)}, theoretical flux: {flux}')
+
+
+                
                 savepth = f'/home/jotter/nrao/plots/size_lims/{src_name}/'
                 if not os.path.exists(savepth):
                     os.mkdir(savepth)
@@ -118,9 +136,9 @@ def size_ulim(band, radii_au, n_rep=10):
 
                 
         full_upper_lim.append(upper_size_lim)
-        full_snrs.append(snr_vals)
+        print(snr_vals)
+        full_snrs.append(np.array(snr_vals).flatten())
 
-    print(full_upper_lim)
     full_upper_lim = np.concatenate(full_upper_lim).flatten()
     full_snrs = np.concatenate(full_snrs).flatten()    
     
@@ -150,9 +168,72 @@ def size_ulim(band, radii_au, n_rep=10):
 
     return params, params_cov
 
+
+def table_fit(table_path, band, n_rep=10, plot=True):
+    tab = Table.read(table_path)
+    snrs = tab['SNR']
+    upper_lims = tab['R_UL']
+
+    params, params_cov = curve_fit(f, snrs, upper_lims)
+
+    print('fit parameters:', params, params_cov)
+
+    if plot == True:
+        plot_snrs = np.linspace(np.min(snrs), np.max(snrs), 30)
+        plt.figure()
+        plt.hist2d(snrs, upper_lims, cmap='Blues')
+        plt.plot(plot_snrs, f(plot_snrs, params[0], params[1]), color='tab:orange')
+        plt.xlabel('SNR')
+        #plt.ylim(0,20)
+        plt.ylabel('Greatest deconvolvable radius (AU)')
+        plt.colorbar()
+        plt.savefig(f'/home/jotter/nrao/plots/size_lims/SNR_radius_hist2d_{band}_{n_rep}_2.png', bbox_inches='tight')
+        plt.close()
+
+    
+    return params,params_cov
+
+
+def add_upper_lims(params, band, tab=None):
+    if tab is None:
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20.fits')
+    band_ind = np.where(np.isnan(tab[f'SNR_{band}']) == False)[0]
+
+    nondeconv_ind = np.where(np.isnan(tab[f'fwhm_maj_deconv_{band}']) == True)[0]
+    nd_band_ind = np.intersect1d(band_ind, nondeconv_ind)
+    
+    upper_lim_arr = np.repeat(np.nan, len(tab))
+    
+    for ind in nd_band_ind:
+        snr = tab[f'SNR_{band}'][ind]
+        ulim = f(snr, params[0], params[1])
+        upper_lim_arr[ind] = ulim
+        
+    tab.add_column(upper_lim_arr*u.AU, name=f'upper_lim_{band}')
+
+    return tab
+        
 band = 'B3'
 
-radii_au = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30,35]
+#radii_au = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30,35]
 #radii_au = [1,5,10,15,20]
-params, params_cov = size_ulim('B7', radii_au, n_rep=2)
-print(params, params_cov)
+#params, params_cov = size_ulim('B3', radii_au, n_rep=10)
+#params, params_cov = size_ulim('B6', radii_au, n_rep=10)
+#params, params_cov = size_ulim('B7', radii_au, n_rep=10)
+
+params_B3 = [13.23785536, -0.29474047]
+tab_b3ulim = add_upper_lims(params_B3, 'B3')
+
+params_B6 = [13.61374216, -0.30177011] 
+tab_b3b6ulim = add_upper_lims(params_B6, 'B6', tab=tab_b3ulim)
+params_B7 = [13.1351405, -0.28267385] 
+tab_ulim = add_upper_lims(params_B7, 'B7', tab=tab_b3b6ulim)
+
+tab_ulim.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20_ulim.fits')
+
+#print('B3')
+#table_fit('/home/jotter/nrao/plots/size_lims/size_lim_table_n=10_B3.fits', 'B3', plot=False)
+#print('B6')
+#table_fit('/home/jotter/nrao/plots/size_lims/size_lim_table_n=10.fits', 'B6')
+#print('B7')
+#table_fit('/home/jotter/nrao/plots/size_lims/size_lim_table_n=10_B7.fits', 'B7', plot=False)
