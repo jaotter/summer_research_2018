@@ -1,32 +1,10 @@
 from astropy.table import Table
 from lifelines import KaplanMeierFitter
 
+from KM_plot import plot_KM
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.units as u
-
-
-def plot_KM(arrays, labels, upper_lim_flags, savepath='/home/jotter/nrao/plots/KM_dust_mass_onlyB3.pdf'):
-
-    kmf = KaplanMeierFitter()
-
-    fig = plt.figure(figsize=(10,10))
-    ax = plt.axes()
-
-    for ind in range(len(arrays)):
-        print(labels[ind])
-        if upper_lim_flags[ind] is not None:
-            kmf.fit_left_censoring(arrays[ind], upper_lim_flags[ind], label=labels[ind])
-        else:
-            kmf.fit(arrays[ind], upper_lim_flags[ind], label=labels[ind])
-        
-        kmf.plot(ax=ax)
-
-    plt.legend()
-    ax.set_xlabel(r'$\log(M_{dust}/M_{\oplus})$')
-    ax.set_ylabel(r'$P \leq M_{dust}$')
-    ax.set_xlim(np.log10(0.01), 4)
-    plt.savefig(savepath)
 
 
 tab_path = '/home/jotter/nrao/tables'
@@ -78,5 +56,5 @@ B7_mdust_flag = np.repeat(True, len(B7_mdust))
 #plot_KM([eis_mdust, lupus_mdust, sco_mdust, B3_mdust, B6_mdust, B7_mdust, ophi_mdust, taurus_mdust], ['E18', 'Lupus', 'Upper Sco', 'B3', 'B6', 'B7', 'Ophiucus', 'Taurus'],
 #        [eis_mdust_flag, lupus_mdust_flag, sco_mdust_flag, B3_mdust_flag, B6_mdust_flag, B7_mdust_flag, ophi_mdust_flag, taurus_mdust_flag],
 #        savepath='/home/jotter/nrao/plots/KM_dust_mass.pdf')
-plot_KM([eis_mdust, lupus_mdust, sco_mdust, B3_mdust, ophi_mdust, taurus_mdust], ['E18', 'Lupus', 'Upper Sco', 'B3', 'Ophiucus', 'Taurus'],
-        [eis_mdust_flag, lupus_mdust_flag, sco_mdust_flag, B3_mdust_flag, ophi_mdust_flag, taurus_mdust_flag])
+plot_KM([eis_mdust, lupus_mdust, sco_mdust, ophi_mdust, B3_mdust, taurus_mdust], ['E18', 'Lupus', 'Upper Sco', 'Ophiucus', 'B3', 'Taurus'],
+        [eis_mdust_flag, lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, B3_mdust_flag, taurus_mdust_flag], savepath='/home/jotter/nrao/plots/KM_dust_mass_aug20_RC.png')
