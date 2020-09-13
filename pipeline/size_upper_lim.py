@@ -31,8 +31,9 @@ def size_ulim(band, radii_au, n_rep=10):
     radii_as = ((radii_au*u.AU).to(u.pc)/(400*u.pc)*u.rad).to(u.arcsecond).value
     
     B3file = '/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
-    B6file = '/home/jotter/nrao/images/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
-    B7file = '/home/jotter/nrao/images/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
+    B6file = '/home/jotter/nrao/images/Orion_SourceI_B6_continuum_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'#B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
+
+    B7file = '/home/jotter/nrao/images/Orion_SourceI_B7_continuum_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'#B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
 
     if band == 'B3':
         img = B3file
@@ -106,20 +107,20 @@ def size_ulim(band, radii_au, n_rep=10):
 
 
                 
-                savepth = f'/home/jotter/nrao/plots/size_lims/{src_name}/'
+                savepth = f'/home/jotter/nrao/plots/size_lims/imgs/'
                 if not os.path.exists(savepth):
                     os.mkdir(savepth)
 
                 new_fl = orig_fl
                 new_fl[0].data = noisy_conv_fake_img
-                new_fl.writeto(f'/home/jotter/nrao/plots/size_lims/{src_name}/fake_conv_img_r{str(radii_au[i])}_{src_name}.fits', overwrite=True)
+                new_fl.writeto(f'/home/jotter/nrao/plots/size_lims/imgs/fake_conv_img_r{str(radii_au[i])}_{src_name}.fits', overwrite=True)
                 
                 loc = wcs.wcs_pix2world(size/2,size/2,1)
                 reg = regions.CircleSkyRegion(center=SkyCoord(loc[0], loc[1], unit='deg'), radius=0.5*u.arcsec, meta={'text':f'r={str(radii_au[i])}_{n}'})
                 reg_pix = reg.to_pixel(wcs)
 
 
-                gaussfit = gaussfit_catalog(f'/home/jotter/nrao/plots/size_lims/{src_name}/fake_conv_img_r{str(radii_au[i])}_{src_name}.fits', [reg], Angle(0.3, 'arcsecond'), savepath=savepth, max_radius_in_beams=15)
+                gaussfit = gaussfit_catalog(f'/home/jotter/nrao/plots/size_lims/imgs/fake_conv_img_r{str(radii_au[i])}_{src_name}.fits', [reg], Angle(0.3, 'arcsecond'), savepath=savepth, max_radius_in_beams=15)
 
                 source_size = Beam(major=gaussfit[f'r={str(radii_au[i])}_{n}']['fwhm_major'], minor=gaussfit[f'r={str(radii_au[i])}_{n}']['fwhm_minor'], pa=(gaussfit[f'r={str(radii_au[i])}_{n}']['pa'].value+90)*u.degree)
                 try:
@@ -128,22 +129,21 @@ def size_ulim(band, radii_au, n_rep=10):
                 except ValueError:
                     print('could not be deconvolved')
                     recovered_fwhm_maj.append(0)
-                    upper_size_lim.append(rad_au)
+                    upper_size_lim.append(rad_au[0])
                     break
 
                 if i == len(radii_as)-1:
                     upper_size_lim.append(0)
 
                 
-        full_upper_lim.append(upper_size_lim)
-        print(snr_vals)
+        full_upper_lim.append(np.array(upper_size_lim).flatten())
         full_snrs.append(np.array(snr_vals).flatten())
 
     full_upper_lim = np.concatenate(full_upper_lim).flatten()
     full_snrs = np.concatenate(full_snrs).flatten()    
     
     params, params_cov = curve_fit(f, full_snrs, full_upper_lim)
-    
+
     plt.figure()
     plt.plot(full_snrs, full_upper_lim, marker='o', linestyle='', markersize=4)
     plt.plot(snrs, f(snrs, params[0], params[1]))
@@ -213,23 +213,27 @@ def add_upper_lims(params, band, tab=None):
 
     return tab
         
-band = 'B3'
+radii_au = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30,35]
+radii_au_B6 = [2,3.5,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30]
+radii_au_B7 = [2,3.5,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30]
 
-#radii_au = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30,35]
 #radii_au = [1,5,10,15,20]
-#params, params_cov = size_ulim('B3', radii_au, n_rep=10)
-#params, params_cov = size_ulim('B6', radii_au, n_rep=10)
-#params, params_cov = size_ulim('B7', radii_au, n_rep=10)
+params_B3, params_cov = size_ulim('B3', radii_au, n_rep=20)
+params_B6, params_cov = size_ulim('B6', radii_au_B6, n_rep=20)
+params_B7, params_cov = size_ulim('B7', radii_au_B7, n_rep=20)
 
-params_B3 = [13.23785536, -0.29474047]
-tab_b3ulim = add_upper_lims(params_B3, 'B3')
+print('B3 params', params_B3)
+print('B6 params', params_B6)
+print('B7 params', params_B7)
 
-params_B6 = [13.61374216, -0.30177011] 
-tab_b3b6ulim = add_upper_lims(params_B6, 'B6', tab=tab_b3ulim)
-params_B7 = [13.1351405, -0.28267385] 
-tab_ulim = add_upper_lims(params_B7, 'B7', tab=tab_b3b6ulim)
+#params_B3 = [13.23785536, -0.29474047]
+#tab_b3ulim = add_upper_lims(params_B3, 'B3')
+#params_B6 = [13.61374216, -0.30177011] 
+#tab_b3b6ulim = add_upper_lims(params_B6, 'B6', tab=tab_b3ulim)
+#params_B7 = [13.1351405, -0.28267385] 
+#tab_ulim = add_upper_lims(params_B7, 'B7', tab=tab_b3b6ulim)
 
-tab_ulim.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20_ulim.fits')
+#tab_ulim.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20_ulim.fits')
 
 #print('B3')
 #table_fit('/home/jotter/nrao/plots/size_lims/size_lim_table_n=10_B3.fits', 'B3', plot=False)
