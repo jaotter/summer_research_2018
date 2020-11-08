@@ -13,12 +13,12 @@ import matplotlib.gridspec as gridspec
 def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, sources='all', vbounds=(0,0.15)):
     
     if sources == 'all':
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20.fits')
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_nov20_ulim.fits')
     if sources == 'IR':
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_apr20_full.fits')
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_nov20_full.fits')
     if sources == 'nonIR' or sources == 'all_contour':
-        full_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20.fits')
-        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_apr20_full.fits')
+        full_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_nov20_ulim.fits')
+        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_nov20_full.fits')
 
         nonIR_src = np.setdiff1d(full_tab['D_ID'], IR_tab['D_ID'])
         nonIR_ind = [np.where(full_tab['D_ID']==d_id)[0][0] for d_id in nonIR_src]
@@ -26,8 +26,8 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
 
     if sources == 'all_contour':
         tab_omc1 = tab
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_apr20_full.fits')
-        
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_nov20_full.fits')
+    
     b3_fl = fits.open('/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits')
     b3_wcs = WCS(b3_fl[0].header).celestial
     b3_data = b3_fl[0].data.squeeze()
@@ -112,9 +112,8 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
     if sources != 'all_contour':
         ax.scatter(src_map_coords[1], src_map_coords[0], marker='*')
     elif sources == 'all_contour':
-        c_levels = np.linspace(vbounds[0], vbounds[1]/2, 6)
+        #c_levels = np.linspace(vbounds[0], vbounds[1]/2, 6)
         c_levels = [0.02,0.04,0.06,0.08]
-        print(c_levels)
         CS = ax.contour(density_map_omc1, c_levels, colors='tab:green')
         ax.clabel(CS, inline=True, fontsize=12, colors='tab:green')
         #plt.colorbar(im)
