@@ -12,6 +12,7 @@ import matplotlib
 from collections import defaultdict
 import warnings
 import astropy.units as u
+from matplotlib.patches import RegularPolygon
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 
@@ -45,49 +46,81 @@ def create_zoomregion(srcid, table, bbox, locs=[1,3], name=None, vmin=-0.0001):
     return key, reg_dict
 
 
-table = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_apr20.fits')
+table = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_nov20_ulim.fits')
 
 #INSET 1
-#sources = [30, 43, 31, 23, 38, 32, 28, 45, 20, 71, 22, 36]
+#sources = [30, 43, 31, 23, 38, 32, 28, 45, 20, 71, 22, 36, 34, 39, 41, 76, 79, 29, 80, 75, 35, 42, 49, 50, 14, 81, 17, 16, 12, 11, 18, 27, 83, 33]
 #bboxes = [[0.25, 0.9],[0.725,0.85],[0.25,0.5],[0.75,0.25],[0.75,0.65],[0.75,0.50],[0.4,0.27],[0.55,0.85],[0.53,0.27],[0.65,0.25],[0.25,0.3],[0.25,0.7]]
-#names = ['Source I', 'BN', None,'Source N','IRC6E','IRC2C',None,None,None,None,None,None]
+#names = np.concatenate((['Source I', 'BN', None,'Source N','IRC6E','IRC2C',None,None,None,None,None,None], np.repeat(None, len(sources)-12)))
 #locs_all = [[1,3],[2,3],[2,4],[1,3],[2,3],[1,3],[1,2],[1,4],[1,2],[1,2],[2,4],[1,4]]
-#filename = 'B3_inset1.png'
+#filename = 'B3_inset1.pdf'
 #vmin = -0.0001
-    
+#fov_size = (40*u.arcsec).to(u.degree).value
+
 #INSET 2
 #sources = [34, 39, 41, 76, 79, 29, 80, 75, 35, 42, 49, 50]
 #bboxes = [[0.6,0.4],[0.75,0.7],[0.5,0.72],[0.5,0.4],[0.6,0.55],[0.25,0.5],[0.4,0.27],[0.3,0.3],[0.25,0.66],[0.25, 0.9],[0.45,0.9],[0.65,0.9]]
 #names = np.repeat(None, len(sources))
 #locs_all = [[1,3],[2,3],[2,3],[1,3],[2,3],[1,4],[1,2],[2,4],[1,3],[3,4],[2,4],[2,3]]
-#filename = 'B3_inset2.png'
+#filename = 'B3_inset2.pdf'
 #vmin = -0.00001
+#fov_size = (30*u.arcsec).to(u.degree).value
+
+#INSET B7
+sources = [14, 81, 17, 16, 12, 11, 18, 27, 83, 33, 80, 75, 29, 35, 42, 38, 39, 43, 45, 50, 49, 23, 32, 41]
+bboxes = [[0.25,0.22],[0.33,0.2],[0.4,0.27],[0.52,0.31],[0.58,0.21],[0.76,0.22],[0.77,0.31],[0.77,0.4],[0.78,0.54],[0.77, 0.48],[0.25,0.32],[0.25,0.41],[0.25,0.5],[0.25,0.6],[0.25,0.68],[0.76,0.64],[0.777,0.73],[0.68,0.9],[0.755,0.86],[0.6,0.9],[0.5,0.9],[0.69,0.48],[0.59,0.58],[0.25,0.75]]
+names = np.repeat(None, len(sources))
+locs_all = [[1,4],[1,2],[1,2],[1,2],[1,2],[2,3],[2,3],[2,3],[2,3],[2,3],[1,4],[1,4],[1,4],[1,4],[1,4],[2,3],[2,3],[2,4],[2,4],[3,4],[3,4],[2,3],[1,4],[1,2]]
+filename = 'B3_inset3.pdf'
+vmin = -0.00001
+fov_size = (40*u.arcsec).to(u.degree).value
+
+print(len(sources), len(bboxes), len(locs_all))
+
+#INSET 1 (original)
+#sources = [30, 43, 31, 23, 38, 32, 28, 45, 20, 71, 22, 36]
+#bboxes = [[0.25, 0.9],[0.725,0.85],[0.25,0.5],[0.75,0.25],[0.75,0.65],[0.75,0.50],[0.4,0.27],[0.55,0.85],[0.53,0.27],[0.65,0.25],[0.25,0.3],[0.25,0.7]]
+#names = ['Source I', 'BN', None,'Source N','IRC6E','IRC2C',None,None,None,None,None,None]
+#locs_all = [[1,3],[2,3],[2,4],[1,3],[2,3],[1,3],[1,2],[1,4],[1,2],[1,2],[2,4],[1,4]]
+#filename = 'B3_inset1.pdf'
+#vmin = -0.0001
+#fov_size = (30*u.arcsec).to(u.degree).value
+
+#INSET 2
+#sources = [34, 39, 41, 76, 79, 29, 80, 75, 35, 42, 49, 50]
+#bboxes = [[0.6,0.4],[0.75,0.7],[0.5,0.72],[0.5,0.4],[0.6,0.55],[0.25,0.5],[0.4,0.27],[0.3,0.3],[0.25,0.66],[0.25, 0.9],[0.45,0.9],[0.65,0.9]]
+#names = np.repeat(None, len(sources))
+#locs_all = [[1,3],[2,3],[2,3],[1,3],[2,3],[1,4],[1,2],[2,4],[1,3],[3,4],[2,4],[2,3]]
+#filename = 'B3_inset2.pdf'
+#vmin = -0.00001
+#fov_size = (30*u.arcsec).to(u.degree).value
 
 #INSET 3
 #sources = [14, 81, 17, 16, 12, 11, 18, 27, 83, 33]
 #bboxes = [[0.25,0.25],[0.25,0.48],[0.34,0.7],[0.51,0.45],[0.4,0.25],[0.7,0.25],[0.6,0.45],[0.53,0.7],[0.65,0.7],[0.75, 0.9]]
 #names = np.repeat(None, len(sources))
 #locs_all = [[2,4],[1,3],[1,3],[3,4],[2,4],[2,3],[1,4],[1,3],[1,3],[3,4]]
-#filename = 'B3_inset3.png'
+#filename = 'B3_inset3.pdf'
 #vmin = -0.00001
+#fov_size = (30*u.arcsec).to(u.degree).value
 
 #INSET 4
-#sources = [10, 8, 13, 84, 74, 54, 55, 53, 46]
-#bboxes = [[0.65,0.25],[0.48,0.4],[0.3,0.35],[0.25,0.55],[0.4,0.7],[0.4,0.9],[0.25,0.84],[0.63,0.8],[0.7,0.65]]
+#sources = [10, 8, 13, 84, 54, 55, 53, 46]
+#bboxes = [[0.65,0.25],[0.48,0.4],[0.3,0.35],[0.25,0.55],[0.4,0.9],[0.25,0.84],[0.63,0.9],[0.7,0.65]]
 #names = np.repeat(None, len(sources))
-#locs_all = [[1,4],[2,4],[2,3],[3,4],[2,3],[2,3],[1,2],[2,4],[1,2]]
-#filename = 'B3_inset4.png'
+#locs_all = [[1,4],[2,4],[2,3],[3,4],[2,3],[1,2],[1,4],[1,2]]
+#filename = 'B3_inset4.pdf'
 #vmin = -0.00001
 #fov_size = (30*u.arcsec).to(u.degree).value
 
 #INSET 5
-sources =  [5, 6, 9, 15, 40, 51, 21, 24, 48, 52, 63, 56, 61, 58, 7, 73, 4, 2, 3, 19, 44, 47, 78, 57, 60, 62, 59, 67, 66, 64, 70]
-bboxes = [[0.6,0.2],[0.45,0.2],[0.68,0.3],[0.75,0.3],[0.75,0.55],[0.75,0.7],[0.32,0.4],[0.38,0.42],[0.35,0.63],[0.43,0.63],[0.45,0.7],[0.5,0.7],[0.55,0.8],[0.45,0.81],[0.26,0.31],[0.3,0.175],[0.3,0.23],[0.4,0.2],[0.7,0.2],[0.27,0.4],[0.25,0.6],[0.29,0.6],[0.25,0.75],[0.32,0.75],[0.32,0.9],[0.25,0.9],[0.35,0.82],[0.47,0.9],[0.63,0.8],[0.72,0.8],[0.72,0.9]]
-names = np.repeat(None, len(sources))
-locs_all = [[2,3],[2,4],[1,2],[1,2],[1,3],[2,3],[1,2],[1,3],[1,3],[1,3],[1,3],[1,3],[1,3],[1,4],[2,3],[2,3],[2,3],[2,3],[2,3],[2,3],[1,2],[1,2],[1,2],[1,2],[2,4],[3,4],[2,3],[2,3],[1,3],[1,3],[1,3]]
-filename = 'B3_inset5.png'
-vmin = -0.00001
-fov_size = (56*u.arcsec).to(u.degree).value
+#sources =  [5, 6, 9, 15, 40, 51, 21, 24, 48, 52, 63, 56, 61, 58, 7, 4, 2, 3, 19, 47, 57, 60, 62, 59, 67, 66, 64, 70]
+#bboxes = [[0.6,0.2],[0.45,0.2],[0.68,0.3],[0.75,0.3],[0.75,0.55],[0.75,0.7],[0.32,0.4],[0.38,0.42],[0.35,0.63],[0.43,0.63],[0.45,0.7],[0.5,0.7],[0.55,0.8],[0.45,0.81],[0.26,0.31],[0.3,0.23],[0.4,0.2],[0.7,0.2],[0.27,0.4],[0.29,0.6],[0.32,0.75],[0.32,0.9],[0.25,0.9],[0.35,0.82],[0.47,0.9],[0.63,0.8],[0.72,0.8],[0.72,0.9]]
+#names = np.repeat(None, len(sources))
+#locs_all = [[2,3],[2,4],[1,2],[1,2],[1,3],[2,3],[1,2],[1,3],[1,3],[1,3],[1,3],[1,3],[1,3],[1,4],[2,3],[2,3],[2,3],[2,3],[2,3],[1,2],[1,2],[2,4],[3,4],[2,3],[2,3],[1,3],[1,3],[1,3]]
+#filename = 'B3_inset5.pdf'
+#vmin = -0.00001
+#fov_size = (56*u.arcsec).to(u.degree).value
 
 
 print(len(sources), len(bboxes), len(locs_all))
@@ -101,16 +134,27 @@ for i in range(len(sources)):
 srcI_ind = np.where(table['D_ID'] == 30)[0]
 srcI_coord = coordinates.SkyCoord(table['RA_B3'][srcI_ind], table['DEC_B3'][srcI_ind], unit=u.degree)
 BL, TR = calc_bbox(srcI_coord, sidelength=fov_size)
+'''
+zoomregions_auto['(72,37)'] = {'bottomleft': coordinates.SkyCoord(ra=["5:35:14.435"],
+                                                   dec=["-5:22:28.55"],
+                                                   unit=(u.h, u.deg),
+                                                   frame='icrs'),
+                'topright': coordinates.SkyCoord(ra=["5:35:14.403"],
+                                                 dec=["-5:22:28.28"],
+                                                 unit=(u.h, u.deg),
+                                                 frame='icrs'),
+                'bbox':[0.4,0.85],'loc': 2,'l1':3,'l2':1,'min': -0.0001,'max': 0.0005,'zoom': 10}
 
-#zoomregions_auto['(72,37)'] = {'bottomleft': coordinates.SkyCoord(ra=["5:35:14.435"],
-#                                                   dec=["-5:22:28.55"],
-#                                                   unit=(u.h, u.deg),
-#                                                   frame='icrs'),
-#                'topright': coordinates.SkyCoord(ra=["5:35:14.403"],
-#                                                 dec=["-5:22:28.28"],
-#                                                 unit=(u.h, u.deg),
-#                                                 frame='icrs'),
-#                'bbox':[0.4,0.85],'loc': 2,'l1':3,'l2':1,'min': -0.0001,'max': 0.0005,'zoom': 10}
+zoomregions_auto['(20,71)'] = {'bottomleft': coordinates.SkyCoord(ra=["5:35:14.435"],
+                                                   dec=["-5:22:28.55"],
+                                                   unit=(u.h, u.deg),
+                                                   frame='icrs'),
+                'topright': coordinates.SkyCoord(ra=["5:35:14.403"],
+                                                 dec=["-5:22:28.28"],
+                                                 unit=(u.h, u.deg),
+                                                 frame='icrs'),
+                'bbox':[0.4,0.85],'loc': 2,'l1':3,'l2':1,'min': -0.0001,'max': 0.0005,'zoom': 10}
+'''
 
 
 zoomregions = zoomregions_auto
@@ -173,7 +217,19 @@ def inset_overlays(fn, zoomregions, fignum=1,
     ax.set_aspect(1)
     ax.axis([x1,x2,y1,y2])
 
+    tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20.fits')
+    srcI_ind = np.where(tab['D_ID'] == 30)[0]
+    BN_ind = np.where(tab['D_ID'] == 43)[0]
+    srcI_coord = mywcs.wcs_world2pix([[tab['RA_B3'][srcI_ind][0], tab['DEC_B3'][srcI_ind][0]]],0)
+    BN_coord = mywcs.wcs_world2pix([[tab['RA_B3'][BN_ind][0], tab['DEC_B3'][BN_ind][0]]],0)
 
+    srcI_reg = RegularPolygon((srcI_coord[0][0], srcI_coord[0][1]), 3, color='tab:cyan', fill=False, radius=75)
+    BN_reg = RegularPolygon((BN_coord[0][0], BN_coord[0][1]), 4, color='tab:orange', fill=False, radius=75)
+
+    ax.add_patch(srcI_reg)
+    ax.add_patch(BN_reg)
+    
+    
     for zoomregion in zoomregions:
 
         ZR = zoomregions[zoomregion]
@@ -205,7 +261,6 @@ def inset_overlays(fn, zoomregions, fignum=1,
         inset_data = hdu.data.squeeze()[int(zy1):int(zy2), int(zx1):int(zx2)]
         #inset_data = hdu.data.squeeze()
         inset_wcs = mywcs.celestial[int(zy1):int(zy2), int(zx1):int(zx2)]
-        #inset_wcs = mywcs
 
         axins = zoomed_inset_axes(parent_ax, zoom=ZR['zoom'], loc=ZR['loc'],
                                   bbox_to_anchor=ZR['bbox'],
@@ -256,7 +311,7 @@ def inset_overlays(fn, zoomregions, fignum=1,
                            ax.bbox._bbox.y1-ax.bbox._bbox.y0])
     cb = figure.colorbar(mappable=im, cax=cax)
     #print("1. cb labels: {0}".format([x.get_text() for x in cb.ax.get_yticklabels()]))
-    cb.set_label("$S_{1 mm}$ [mJy beam$^{-1}$]")
+    cb.set_label("$S_{3 mm}$ [mJy beam$^{-1}$]")
     #print("2. cb labels: {0}".format([x.get_text() for x in cb.ax.get_yticklabels()]))
     cb.formatter.format = "%3.1f"
     #print("3. cb labels: {0}".format([x.get_text() for x in cb.ax.get_yticklabels()]))
