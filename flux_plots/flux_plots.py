@@ -17,6 +17,42 @@ from astropy.coordinates import Angle, SkyCoord
 #names = ['B3', 'B6', 'B7_hr', 'B7_lr']
 #imgs = ['/lustre/aoc/students/jotter/directory/Orion_SourceI_B3_continuum_r-2.clean0.1mJy.image.tt0.pbcor.fits', '/lustre/aoc/students/jotter/directory/Orion_SourceI_B6_continuum_r-2.clean0.1mJy.selfcal.phase4.deepmask.allbaselines.image.tt0.pbcor.fits', '/lustre/aoc/students/jotter/directory/Orion_SourceI_B7_continuum_r-2.mask5mJy.clean4mJy.image.tt0.pbcor.fits', '/lustre/aoc/students/jotter/directory/member.uid___A001_X88e_X1dd.Orion_BNKL_source_I_sci.spw25_27_29_31.cont.I.pbcor.fits']
 
+def dist_flux_plot():
+    data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_nov20_ulim.fits')
+    theta1c = SkyCoord('05:35:16.46375', '-05:23:22.8486', unit=(u.hourangle, u.degree))
+    b3_coord = SkyCoord(ra=data['RA_B3'], dec=data['DEC_B3'], unit=(u.degree, u.degree))
+
+    
+    dist = theta1c.separation(b3_coord).to(u.arcsecond)
+    dist_pc = dist.to(u.radian)*400*u.pc
+    print(dist)
+    print(b3_coord)
+    
+    plt.plot(dist_pc, data['fwhm_maj_deconv_B3'], linestyle='', marker='o')
+    plt.xlabel('Distance to Theta 1C (pc)')
+    plt.ylabel('Disk Deconvolved FWHM (arcseconds)')
+    plt.savefig('/home/jotter/nrao/plots/dist_size_plot.png')
+
+    xlim = plt.xlim()
+    
+    plt.clf()
+
+    fb = Table.read('/home/jotter/nrao/tables/Forbrich_2016.fits')
+    fb_coord = SkyCoord(ra=fb['RAJ2000'], dec=fb['DEJ2000'], unit=(u.degree, u.degree))
+
+    dist_fb = theta1c.separation(fb_coord).to(u.arcsecond)
+    dist_fb_pc = dist_fb.to(u.radian)*400*u.pc
+
+    
+    plt.plot(dist_fb_pc, np.log10(fb['Spk']), linestyle='', marker='*', color='tab:orange', label='Forbrich+2016')
+    plt.xlabel('Distance to Theta 1C (pc)')
+    plt.ylabel(r'$\log(S_{5GHz})$ mJy')
+    #plt.xlim(xlim)
+    plt.savefig('/home/jotter/nrao/plots/dist_flux_forbrich_plot_full.png')
+
+    
+dist_flux_plot()
+
 def get_ind(names): #returns indices where sources are detected in all bands with good gaussian fits
     data = fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted.fits')
     flux_inds = [np.where(np.isnan(data['ap_flux_'+n]) == False)[0] for n in names]
@@ -419,6 +455,6 @@ def image_fluxes(srcID, flux_type='ap'):
     plt.show()
     
 
-flux_hist(sources='OMC1')
-flux_hist(sources='ONC')
+#flux_hist(sources='OMC1')
+#flux_hist(sources='ONC')
 #flux_hist(sources='all')
