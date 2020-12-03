@@ -49,7 +49,6 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
     new_header['NAXIS2'] = npix
 
     new_wcs = WCS(new_header).celestial
-
     
     #density_map = np.zeros((npix,npix))
     xx, yy = np.mgrid[0:npix, 0:npix] #grid with density map pixel coords
@@ -120,7 +119,7 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
 
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
-
+    
     if savepath is not None:
         plt.savefig(savepath, bbox_inches='tight')
 
@@ -133,13 +132,29 @@ savepath = f'/home/jotter/nrao/plots/density_map_npix{npix}_{nth_neighbor}neighb
 b3_fl = fits.open('/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits')
 b3_wcs = WCS(b3_fl[0].header).celestial
 
+zero_coord = b3_wcs.all_pix2world(0,0,0)
+b3_xmax=len(b3_fl[0].data)
+b3_ymax=b3_xmax
+npix=64
+new_header = b3_fl[0].header
+new_header['CDELT1'] = b3_wcs.wcs.cdelt[0]*(b3_xmax/npix)
+new_header['CDELT2'] = b3_wcs.wcs.cdelt[1]*(b3_ymax/npix)
+new_header['CRPIX1'] = 1
+new_header['CRPIX2'] = 1
+new_header['CRVAL1'] = float(zero_coord[0])
+new_header['CRVAL2'] = float(zero_coord[1])
+new_header['NAXIS1'] = npix
+new_header['NAXIS2'] = npix
+
+new_wcs = WCS(new_header).celestial
+ 
 
 #fig, [IR_ax, nonIR_ax, all_ax] = plt.subplots(1,3, subplot_kw={'projection':b3_wcs}, figsize=(15,4), constrained_layout=True)
 fig = plt.figure(figsize=(15.75,5), constrained_layout=False)
 gs = gridspec.GridSpec(1,3, figure=fig, wspace=0.05)
-IR_ax = fig.add_subplot(gs[0], projection=b3_wcs)
-nonIR_ax = fig.add_subplot(gs[1], projection=b3_wcs)
-all_ax = fig.add_subplot(gs[2], projection=b3_wcs)
+IR_ax = fig.add_subplot(gs[0], projection=new_wcs)
+nonIR_ax = fig.add_subplot(gs[1], projection=new_wcs)
+all_ax = fig.add_subplot(gs[2], projection=new_wcs)
 
 IR_ax, im = make_density_map(npix,nth_neighbor,savepath=None,sources='IR',pos=111, ax_input=IR_ax)
 nonIR_ax, im = make_density_map(npix,nth_neighbor,savepath=None,sources='nonIR',pos=122, ax_input=nonIR_ax)
