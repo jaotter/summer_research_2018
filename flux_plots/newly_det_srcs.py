@@ -5,8 +5,16 @@ import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
 
-data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20.fits')
+data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_nov20_ulim.fits')
 
+irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_nov20_full.fits')
+ir_did = irtab['D_ID']
+ir_ind = []
+for did in ir_did:
+    ir_ind.append(np.where(data['D_ID'] == did)[0][0])
+
+nonir_ind = np.setdiff1d(np.arange(0,len(data)), ir_ind)
+    
 new_srcs = [9,10,22,24,36,37,39,45,55,59,61,71,72,79,81,84]
 
 
@@ -65,7 +73,7 @@ ax2.legend()
 ax2.set_ylabel('Number')
 ax2.set_xlabel('log(Band 3 flux (Jy))')
 
-plt.savefig('/home/jotter/nrao/plots/comb_hist_new_srcs.pdf', dpi=300, bbox_inches='tight')
+#plt.savefig('/home/jotter/nrao/plots/comb_hist_new_srcs.pdf', dpi=300, bbox_inches='tight')
 
 
 
@@ -78,3 +86,13 @@ plt.loglog()
 plt.xlabel('Band 3 flux (Jy)')
 plt.ylabel('Non-deconovlved FWHM major (as)')
 plt.savefig('/home/jotter/nrao/plots/size_flux_new_srcs.pdf', dpi=300, bbox_inches='tight')
+
+fig = plt.figure()
+
+plt.errorbar(data['ap_flux_B3'][nonir_ind], data['fwhm_maj_B3'][nonir_ind], xerr=data['ap_flux_err_B3'][nonir_ind], yerr=data['fwhm_maj_err_B3'][nonir_ind], label='OMC1', linestyle='', marker='.')
+plt.errorbar(data['ap_flux_B3'][ir_ind], data['fwhm_maj_B3'][ir_ind], xerr=data['ap_flux_err_B3'][ir_ind], yerr=data['fwhm_maj_err_B3'][ir_ind], label='ONC', linestyle='', marker='.')
+plt.legend(loc='upper left')
+plt.loglog()
+plt.xlabel('Band 3 flux (Jy)')
+plt.ylabel('Non-deconovlved FWHM major (as)')
+plt.savefig('/home/jotter/nrao/plots/size_flux_onc_omc1.pdf', dpi=300, bbox_inches='tight')
