@@ -33,7 +33,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
     #B3_names, B6_names, B7_names only used for gaussian diag directory names
     
     #ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/ref_catalog_added.fits'
-    ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/ref_catalog_feb21.fits'
+    ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/ref_catalog_feb21_updt.fits'
     ref_data = Table.read(ref_data_name)
     ref_arrs = [ref_data['B3_detect'], ref_data['B6_detect'], ref_data['B7_detect']]
   
@@ -86,7 +86,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
                     if np.isnan(img_data[int(reg_pix.center.x), int(reg_pix.center.y)]) == False:
                         regs.append(reg)
 
-        cat_r = Angle(0.5, 'arcsecond') #radius for gaussian fitting
+        cat_r = Angle(0.5, 'arcsecond')/2 #radius for gaussian fitting
         print('ok')
         gauss_cat = gaussfit_catalog(img, regs, cat_r, savepath=gauss_save_dir, max_offset_in_beams = 1, max_radius_in_beams = 5)
         #table does not have all columns yet, add others later
