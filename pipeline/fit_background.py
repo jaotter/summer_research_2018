@@ -176,10 +176,12 @@ def fit_source(srcID, img, img_name, band, bg_stddev_x, bg_stddev_y, bg_mean_x, 
             bg_median = np.median(pixels_in_annulus)
 
             pix_bg = bg_median*npix/ppbeam
-
+            
             #flux corrections
             ap_flux_bgcorrect = aperture_flux - pix_bg
             ap_flux_correct = ap_flux_bgcorrect + ap_flux_bgcorrect*(1 - special.erf(2*np.sqrt(np.log(2)))) #flux correction for summing within 2*fwhm
+
+            print(f'Background: {pix_bg}, flux: {img_table["gauss_amp_"+band][row]}')
             
             ap_flux_err_arr.append(ap_bg_rms)
             ap_flux_arr.append(ap_flux_correct)
