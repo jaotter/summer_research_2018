@@ -194,7 +194,7 @@ def huge_B3_catalog(B3_img, cat_name):
     #B3_names, B6_names, B7_names only used for gaussian diag directory names
     
     #ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/ref_catalog_added.fits'
-    ref_data_name = 'ref_catalog_feb21.fits'
+    ref_data_name = '/lustre/cv/observers/cv-12578/orion_disks/tables/ref_catalog_feb21.fits'
     ref_data = Table.read(ref_data_name)
 
     band_tables = []
@@ -211,12 +211,12 @@ def huge_B3_catalog(B3_img, cat_name):
 
     #now get ready to fit gaussians
     #start by setting up save directory for images
-    gauss_save_dir = '/lustre/cv/observers/cv-12578/orion_disks/gauss_diags_feb21/'
+    gauss_save_dir = '/lustre/cv/observers/cv-12578/orion_disks/gauss_diags_feb21/B3_huge/'
     if not os.path.exists(gauss_save_dir):
         os.makedirs(gauss_save_dir)
     #now make region list
 
-    rad = Angle(1, 'arcsecond') #radius used in region list
+    rad = Angle(0.5, 'arcsecond') #radius used in region list
     regs = []
 
     for ind in range(len(ref_data)):
@@ -321,7 +321,7 @@ def huge_B3_catalog(B3_img, cat_name):
         print(len(arrs[c]))
         img_table.add_column(Column(np.array(arrs[c])), name=cols[c])
     img_table.add_column(Column(np.array(fwhm_maj_deconv_arr)/np.array(fwhm_min_deconv_arr)), name='ar_deconv_'+name)
-    img_table.write('/lustre/cv/observers/cv-12578/orion_disks/'+cat_name+'.fits',  overwrite=True)
+    img_table.write('/lustre/cv/observers/cv-12578/orion_disks/tables/'+cat_name+'.fits',  overwrite=True)
 
 
 
