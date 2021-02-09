@@ -74,7 +74,7 @@ def fit_source(srcID, img, img_name, band, fit_bg=False, bg_stddev_x=30, bg_stdd
     #now get ready to fit gaussians
     #start by setting up save directory for images
     #gauss_save_dir = '/home/jotter/nrao/gauss_diags_apr20/fitbg/'+img_name+'/'
-    gauss_save_dir = '/lustre/cv/observers/cv-12578/orion_disks/gauss_diags_feb21/B3_huge_bg/'
+    gauss_save_dir = '/lustre/cv/observers/cv-12578/orion_disks/gauss_diags_feb21/B3_huge_bg_cat/'
     
     print('saving plots to '+gauss_save_dir)
     if not os.path.exists(gauss_save_dir):
