@@ -1,13 +1,13 @@
 from fit_background import *
 
-src = 69
+src = 92
 fit_bg = False
 
-bg_xmean = -30
-bg_ymean = 30
-bg_xsigma = 15
-bg_ysigma = 15
-zoom = 4
+bg_xmean = 0
+bg_ymean = -10
+bg_xsigma = 3
+bg_ysigma = 3
+zoom = 3
 
 band = 'B3'
 
@@ -35,6 +35,7 @@ fit = fit_source(src, B3_img, B3_name, band, fit_bg=fit_bg, bg_stddev_x=bg_xsigm
 #print(fit['fwhm_maj_deconv_B6'], fit['fwhm_maj_deconv_err_B6'])
 #print(fit['RA_B6'], fit['DEC_B6'])
 print(fit)
+print(fit['SNR_B3'])
 #print(fit['ap_flux_B6'])
 #fit params: - default xmean 0, ymean 0, zoom 1
 #B7:
