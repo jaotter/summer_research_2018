@@ -174,7 +174,7 @@ def disk_size_hist(arrs, labels, filename):
     plt.xlim(0,0.35)
     plt.savefig('/home/jotter/nrao/plots/size_plots/'+filename, dpi=500)
 
-def disk_size_hist_3panel(arrs, xlabels, filename, nbins=10):
+def disk_size_hist_3panel(arrs, xlabels, filename, nbins=10, ulim_arrs=None):
     f, (ax1, ax2, ax3) = plt.subplots(3,1, figsize=(12,12), sharex='col')
     ax = [ax1, ax2, ax3]
 
@@ -200,21 +200,29 @@ def disk_size_hist_3panel(arrs, xlabels, filename, nbins=10):
         size_arr = size_arr[np.isnan(size_arr)==False]
         hist, b = np.histogram(size_arr, bins, density=False)
         allhist, b = np.histogram(arrs[a][allind], bins, density=False)
-
-        ax[a].bar(plotpts, hist, widths, edgecolor = 'black', alpha=0.5, label=f'{xlabels[a]} sources')
-        ax[a].bar(plotpts, allhist, widths, edgecolor='black', alpha=0.5, label=f'{xlabels[a]} sources detected in all bands')
+        ax[a].bar(plotpts, hist, widths, edgecolor = 'black', alpha=0.5, label=f'{xlabels[a]} Sources')
+        ax[a].bar(plotpts, allhist, widths, edgecolor='black', alpha=0.5, label=f'{xlabels[a]} Sources Deconvolved in All Bands')
         ax[a].set_xlim(0,0.27)
-        ax[a].set_ylim(0,13)
-        ax[a].set_ylabel('number of disks', fontsize=18)
+        ax[a].set_ylim(0,30)
+        ax[a].set_ylabel('Number of Disks', fontsize=18)
         ax[a].legend(fontsize=16)
         ax[a].yaxis.set_major_locator(plt.MaxNLocator(5))
-        
+
+    if ulim_arrs is not None:
+        for ul in range(len(arrs)):
+            ulim_arr = ulim_arrs[ul]
+            ulim_arr = ulim_arr[np.isnan(ulim_arr)==False]
+            ulim_arr = (((ulim_arr*u.AU)/(400*u.pc)).decompose()*u.radian).to(u.arcsecond).value
+            hist, b = np.histogram(ulim_arr, bins, density=False)
+            ax[ul].bar(plotpts, hist, widths, edgecolor = 'black', alpha=0.35, hatch='/', facecolor='gray', label=f'{xlabels[ul]} Upper Limits')
+            ax[ul].legend(fontsize=16)
+            
     altax = ax1.twiny()
     xlim = 0.27*u.arcsec.to(u.rad)
     xlim *= d
     altax.set_xlim(0, xlim.value)
-    altax.set_xlabel('deconvolved FWHM major (AU)', fontsize=18)
-    ax3.set_xlabel('deconvolved FWHM major (as)', fontsize=18)
+    altax.set_xlabel('Deconvolved FWHM Major (AU)', fontsize=18)
+    ax3.set_xlabel('Deconvolved FWHM Major (as)', fontsize=18)
 
     ax1.set_yticks(ax1.get_yticks()[1:])
     ax2.set_yticks(ax2.get_yticks()[1:])
@@ -307,6 +315,7 @@ def R_hist_eisner(size_arr, label, filename, nbins=10, size_arr2=None, label2=No
     eisner_data = ascii.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='tab')
     eisner_ind = np.where(eisner_data['R_disk'] != '<5')[0]
     eisner_R = [float(x.split()[0])*2 for x in eisner_data['R_disk'][eisner_ind]]
+    print(np.nanmean(eisner_R), 'eisner')
     
     size_arr_full = size_arr
     
@@ -314,6 +323,8 @@ def R_hist_eisner(size_arr, label, filename, nbins=10, size_arr2=None, label2=No
     size_arr = size_arr[np.isnan(size_arr)==False]*u.arcsec
     size_arr = (size_arr.to(u.rad)*d).value
 
+    print(np.nanmean(size_arr), 'size_arr')
+    
     full_arr = np.concatenate((size_arr, eisner_R))
     full_hist, bins = np.histogram(full_arr, density=norm, bins=nbins)
 
@@ -328,12 +339,12 @@ def R_hist_eisner(size_arr, label, filename, nbins=10, size_arr2=None, label2=No
 
 
     Dval, pval = ks_2samp(eisner_R, size_arr)
-    #print(f'{pval} p value of ks test with no upper lims')
+    print(f'{pval} p value of ks test with eisner no upper lims and {label}')
     #print(len(np.where(eisner_data['R_disk'] == '<5')[0]))
     eisner_R_ulim = np.concatenate((eisner_R, np.repeat(5, len(np.where(eisner_data['R_disk'] == '<5')[0]))))
     size_arr_ulim = np.concatenate((size_arr, np.repeat(39.3, len(np.where(np.isnan(size_arr_full)==True)[0]))))
     Dval, pval = ks_2samp(eisner_R_ulim, size_arr_ulim)
-    #print(f'{pval} p value of ks test with upper lims')
+    print(f'{pval} p value of ks test with eisner upper lims and {label} with upper lims')
     
     plt.bar(plotpts, hist, widths, edgecolor = 'black', label=label, alpha=0.5, facecolor='tab:orange')
 
@@ -350,9 +361,15 @@ def R_hist_eisner(size_arr, label, filename, nbins=10, size_arr2=None, label2=No
             hist2, b = np.histogram(size_arr2, density=norm, bins=bins)
             plt.bar(plotpts, hist2, widths, edgecolor = 'black', label=label2, alpha=0.5, facecolor='tab:green')
 
+            Dval, pval = ks_2samp(eisner_R, size_arr2)
+            print(f'{pval} p value of ks test with eisner no upper lims and {label2}')
+    
+            
             size_arr_kde2 = gaussian_kde(size_arr2)
             size_pdf2 = size_arr_kde2.evaluate(size_grid)#*widths[0]*len(size_arr2)
-                
+
+            print(np.nanmean(size_arr2), 'size_arr2')
+            
             #plt.plot(size_grid, size_pdf2,color='tab:orange', label=label2+' KDE')
             
     plt.bar(plotpts, eis_hist, widths, edgecolor='black', label='E18', alpha=0.5, facecolor='tab:blue')
@@ -407,11 +424,12 @@ def size_comp_simple(arrs, errs, labels, filename, src_ids = []):
     #print(f'{len(ind2)} sources in array 2 larger than in array 1, {src_ids[ind2]}')
     #print(f'{len(arrs[0])} total sources')
     plt.errorbar(arrs[0], arrs[1], xerr=3*errs[0], yerr=3*errs[1], linestyle='', marker='.')    
-    plt.errorbar(arrs[0][ind], arrs[1][ind], xerr=3*errs[0][ind], yerr=3*errs[1][ind], linestyle='', marker='.')    
+    plt.errorbar(arrs[0][ind], arrs[1][ind], xerr=3*errs[0][ind], yerr=3*errs[1][ind], linestyle='', marker='.', label=r'different to 3$-\sigma$')    
     plt.xlabel(labels[0])
     plt.ylabel(labels[1])
     plt.xlim(0.0,0.3)
     plt.ylim(0.0,0.3)
+    plt.legend()
     plt.plot(np.arange(0,1,0.1), np.arange(0,1,0.1), color='k')
     #plt.style.use(mpl_style.style1)
     plt.savefig('/home/jotter/nrao/plots/size_plots/'+filename, dpi=400)
@@ -450,12 +468,13 @@ def size_comp_eisner(filename):
     ind = np.concatenate((ind1, ind2))
 
     plt.errorbar(data_R, eisner_R, xerr=3*data_R_err, yerr=3*eisner_R_err, linestyle='', marker='.')
-    plt.errorbar(data_R[ind], eisner_R[ind], xerr=3*data_R_err[ind], yerr=3*eisner_R_err[ind], linestyle='', marker='.')
+    plt.errorbar(data_R[ind], eisner_R[ind], xerr=3*data_R_err[ind], yerr=3*eisner_R_err[ind], linestyle='', marker='.', label=r'different to 3$-\sigma$')
     plt.xlabel('B3 FWHM (AU)')
-    plt.ylabel('Eisner et al 2018 FWHM (AU)')
+    plt.ylabel('E18 FWHM (AU)')
     plt.xlim(0,100)
     plt.ylim(0,100)
     plt.plot(np.arange(0,101,50), np.arange(0,101,50), color='k')
+    plt.legend()
     #plt.style.use(mpl_style.style1)
     plt.savefig('/home/jotter/nrao/plots/size_plots/'+filename, dpi=400)
     
