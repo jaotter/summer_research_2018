@@ -13,22 +13,22 @@ import matplotlib.gridspec as gridspec
 def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, sources='all', vbounds=(0,0.15)):
     
     if sources == 'all':
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_nov20_ulim.fits')
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_feb21_ulim.fits')
     if sources == 'IR':
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_nov20_full.fits')
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_feb21_full.fits')
     if sources == 'nonIR' or sources == 'all_contour':
-        full_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_nov20_ulim.fits')
-        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_nov20_full.fits')
+        full_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_feb21_ulim.fits')
+        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_feb21_full.fits')
 
-        nonIR_src = np.setdiff1d(full_tab['D_ID'], IR_tab['D_ID'])
-        nonIR_ind = [np.where(full_tab['D_ID']==d_id)[0][0] for d_id in nonIR_src]
+        nonIR_src = np.setdiff1d(full_tab['Seq'], IR_tab['Seq'])
+        nonIR_ind = [np.where(full_tab['Seq']==d_id)[0][0] for d_id in nonIR_src]
         tab = full_tab[nonIR_ind]
 
     if sources == 'all_contour':
         tab_omc1 = tab
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_nov20_full.fits')
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_feb21_full.fits')
     
-    b3_fl = fits.open('/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits')
+    b3_fl = fits.open('/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits')
     b3_wcs = WCS(b3_fl[0].header).celestial
     b3_data = b3_fl[0].data.squeeze()
     
