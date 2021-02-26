@@ -437,7 +437,7 @@ def size_comp_simple(arrs, errs, labels, filename, src_ids = []):
 def size_comp_eisner(filename):
     fig = plt.figure()
 
-    data = Table.read('/home/jotter/nrao/tables/eis_r0.5_apr20_match.fits')
+    data = Table.read('/home/jotter/nrao/tables/eis_r0.5_feb21_match.fits')
     
     eisner_data = ascii.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='tab')
     eis_UL_ind = np.where(eisner_data['R_disk'] == '<5')[0]
