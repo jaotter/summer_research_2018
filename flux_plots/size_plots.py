@@ -443,32 +443,83 @@ def size_comp_eisner(filename):
     eis_UL_ind = np.where(eisner_data['R_disk'] == '<5')[0]
     eisner_R_str = eisner_data['R_disk']
     eisner_R_str[eis_UL_ind] = '0.0'
-    eisner_R = [float(x.split()[0])*2 for x in eisner_R_str]
-    eisner_R_err = [float(x.split()[-1])*2 for x in eisner_R_str]
-    
-    data_R = data['fwhm_maj_deconv_B3']*u.arcsec
-    data_R = (data_R.to(u.rad)*(400*u.pc).to(u.au)).value
-    data_R_err = data['fwhm_maj_err_B3']*u.arcsec
-    data_R_err = (data_R_err.to(u.rad)*(400*u.pc).to(u.au)).value
+    eisner_R_data = np.array([float(x.split()[0])*2 for x in eisner_R_str])
+    eisner_R_err_data = np.array([float(x.split()[-1])*2 for x in eisner_R_str])
 
-    deconv_ind = np.where(np.isnan(data['fwhm_maj_deconv_B3']) == False)[0]
-    data_R = data_R[deconv_ind]
-    data_R_err = data_R_err[deconv_ind]
-    
     match_eis_ind = []
-    for ID in data['ID'][deconv_ind]:
+    for ID in data['ID']:
         match_eis_ind.append(np.where(eisner_data['ID'] == ID.strip())[0][0])
-        #print(ID, match_eis_ind[-1])
         
-    eisner_R = np.array(eisner_R)[match_eis_ind]
-    eisner_R_err = np.array(eisner_R_err)[match_eis_ind]
+    eisner_R_full = np.array(eisner_R_data)[match_eis_ind]
+    eisner_R_err_full = np.array(eisner_R_err_data)[match_eis_ind]
+    eis_ulim_ind = np.where(eisner_R_full == 0)[0]
+    eis_meas_ind = np.where(eisner_R_full > 0)[0]
+    eisner_R_full[eis_ulim_ind] = 10
+    #eisner_R = eisner_R_full[eis_meas_ind]
+    #eisner_R_err = eisner_R_err_full[eis_meas_ind]
+    
+    data_R_full = data['fwhm_maj_deconv_B3']*u.arcsec
+    data_R_full = (data_R_full.to(u.rad)*(400*u.pc).to(u.au)).value
+    data_R_err_full = data['fwhm_maj_err_B3']*u.arcsec
+    data_R_err_full = (data_R_err_full.to(u.rad)*(400*u.pc).to(u.au)).value
+    deconv_ind = np.where(np.isnan(data['fwhm_maj_deconv_B3']) == False)[0]
+    #data_R = data_R_full[deconv_ind]
+    #data_R_err = data_R_err_full[deconv_ind]
 
+    #upper limits: 3 cases, only b3, only eisner, both b3 and eisner
+    
+    b3_ulim_ind = np.where(np.isnan(data_R_full)==True)[0]
+    
+    both_ulim_ind = np.intersect1d(b3_ulim_ind, eis_ulim_ind) #both have upper limits
+    both_ulim_b3 = data['upper_lim_B3'][both_ulim_ind]
+    both_ulim_eis = eisner_R_full[both_ulim_ind]
+
+    b3only_ulim_ind = np.setdiff1d(b3_ulim_ind, eis_ulim_ind) #only b3 has upper limit
+    b3only_ulim_b3 = data['upper_lim_B3'][b3only_ulim_ind]
+    b3only_ulim_eis = eisner_R_full[b3only_ulim_ind]
+    b3only_ulim_eis_err = eisner_R_err_full[b3only_ulim_ind]
+
+    eisonly_ulim_ind = np.setdiff1d(eis_ulim_ind, b3_ulim_ind) #only eisner has upper limit
+    eisonly_ulim_eis = np.repeat(10, len(eisonly_ulim_ind))
+    eisonly_ulim_b3 = data_R_full[eisonly_ulim_ind]
+    eisonly_ulim_b3_err = data_R_err_full[eisonly_ulim_ind]
+
+    print('both', both_ulim_ind)
+    print('b3only', b3only_ulim_ind)
+    print('eisonly', eisonly_ulim_ind)
+
+    #where both measure sizes:
+    bothmeas_ind = np.intersect1d(eis_meas_ind, deconv_ind)
+    data_R = data_R_full[bothmeas_ind]
+    data_R_err = data_R_err_full[bothmeas_ind]
+    eisner_R = eisner_R_full[bothmeas_ind]
+    eisner_R_err = eisner_R_err_full[bothmeas_ind]
+    #where diff to 3 sigma
     ind1 = np.where(data_R+3*data_R_err < eisner_R - 3*eisner_R_err)[0]
     ind2 = np.where(data_R-3*data_R_err > eisner_R + 3*eisner_R_err)[0]
     ind = np.concatenate((ind1, ind2))
 
+    #plot both measured
     plt.errorbar(data_R, eisner_R, xerr=3*data_R_err, yerr=3*eisner_R_err, linestyle='', marker='.')
     plt.errorbar(data_R[ind], eisner_R[ind], xerr=3*data_R_err[ind], yerr=3*eisner_R_err[ind], linestyle='', marker='.', label=r'different to 3$-\sigma$')
+
+    #plot both ulim
+    both_ulim_b3_xerr = np.array((both_ulim_b3, np.repeat(0,len(both_ulim_b3))))
+    both_ulim_eis_yerr = np.array((both_ulim_eis, np.repeat(0,len(both_ulim_eis))))
+    #plt.errorbar(both_ulim_b3, both_ulim_eis, xerr=both_ulim_b3_xerr, yerr=both_ulim_eis_yerr, linestyle='', marker='D', color='tab:green')
+    plt.errorbar(both_ulim_b3, both_ulim_eis,  linestyle='', marker='D', color='tab:green', markersize=4)
+
+    #plot b3 ulim
+    b3only_ulim_b3_xerr = np.array((b3only_ulim_b3, np.repeat(0,len(b3only_ulim_ind))))
+    #plt.errorbar(b3only_ulim_b3, b3only_ulim_eis, xerr=b3only_ulim_b3_xerr, yerr=b3only_ulim_eis_err, linestyle='', marker=4, color='tab:green')
+    plt.errorbar(b3only_ulim_b3, b3only_ulim_eis, yerr=b3only_ulim_eis_err, linestyle='', marker=4, color='tab:green')
+
+    #plot eis ulim
+    eisonly_ulim_eis_yerr = np.array((eisonly_ulim_eis, np.repeat(0,len(eisonly_ulim_ind))))
+    #plt.errorbar(eisonly_ulim_b3, eisonly_ulim_eis, xerr=eisonly_ulim_b3_err, yerr=eisonly_ulim_eis_yerr, linestyle='', marker=7, color='tab:green')
+    plt.errorbar(eisonly_ulim_b3, eisonly_ulim_eis, xerr=eisonly_ulim_b3_err, linestyle='', marker=7, color='tab:green')
+
+    
     plt.xlabel('B3 FWHM (AU)')
     plt.ylabel('E18 FWHM (AU)')
     plt.xlim(0,100)

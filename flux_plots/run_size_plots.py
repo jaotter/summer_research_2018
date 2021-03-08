@@ -40,9 +40,9 @@ B3_deconv_OMC1 = B3_deconv_maj[nonIR_ind]
 B3_deconv_ind_OMC1 = np.where(np.isnan(B3_deconv_OMC1) == False)[0]
 
 
-R_hist_eisner(B3_deconv_ONC[B3_deconv_ind_ONC], 'B3 ONC sources', 'size_hist_eisner_all.pdf', norm=False, size_arr2=B3_deconv_OMC1[B3_deconv_ind_OMC1], label2='B3 OMC1 sources')
-R_hist_eisner(B3_deconv_ONC[B3_deconv_ind_ONC], 'B3 ONC sources', 'size_hist_eisner_ONC.pdf', norm=False)
-R_hist_eisner(B3_deconv_OMC1[B3_deconv_ind_OMC1], 'B3 OMC1 sources', 'size_hist_eisner_OMC1.pdf', norm=False)
+#R_hist_eisner(B3_deconv_ONC[B3_deconv_ind_ONC], 'B3 ONC sources', 'size_hist_eisner_all.pdf', norm=False, size_arr2=B3_deconv_OMC1[B3_deconv_ind_OMC1], label2='B3 OMC1 sources')
+#R_hist_eisner(B3_deconv_ONC[B3_deconv_ind_ONC], 'B3 ONC sources', 'size_hist_eisner_ONC.pdf', norm=False)
+#R_hist_eisner(B3_deconv_OMC1[B3_deconv_ind_OMC1], 'B3 OMC1 sources', 'size_hist_eisner_OMC1.pdf', norm=False)
 
 disk_size_hist_3panel([B3_deconv_maj, B6_deconv_maj, B7_deconv_maj], ['B3', 'B6', 'B7'], 'size_hist_3panel_deconv.pdf')
 
