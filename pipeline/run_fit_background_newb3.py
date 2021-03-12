@@ -6,7 +6,7 @@ from astropy.table import Table
 B3_img = '/lustre/cv/observers/cv-12578/orion_disks/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits'
 B3_name = 'B3_huge_bg_cat'
 
-fit_param_tab = Table.read('/lustre/cv/observers/cv-12578/orion_disks/b3_fit_params.csv')
+fit_param_tab = Table.read('/lustre/cv/observers/cv-12578/orion_disks/extrasrc_fit_params.csv')
 catalog = Table.read('/lustre/cv/observers/cv-12578/orion_disks/tables/r0.5_catalog_feb21.fits')
 catalog.rename_column('D_ID', 'Seq')
 
@@ -28,4 +28,6 @@ for fit_row in fit_param_tab:
         catalog[nm][cat_ind] = fit[nm][0]
 
 catalog['pa_B3'] = catalog['pa_B3']%360-90
-catalog.write('/lustre/cv/observers/cv-12578/orion_disks/r0.5_b3_catalog_bgfit_feb21.fits',overwrite=True)
+catalog = catalog[np.where(catalog['Seq'] == 117)]
+print(catalog)
+catalog.write('/lustre/cv/observers/cv-12578/orion_disks/r0.5_b3_src117.fits',overwrite=True)
