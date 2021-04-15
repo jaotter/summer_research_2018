@@ -50,7 +50,7 @@ for ind in range(len(E18_pix[0])):
     ax.add_patch(circ)
 
 #ax.axis([0,len(img),0,len(img)])
-plt.savefig(f'/home/jotter/nrao/plots/E18_comp/E18_B3_overlay.png',dpi=300)
+plt.savefig(f'/home/jotter/nrao/plots/E18_comp/E18_B3_overlay.pdf',dpi=300)
 plt.close()
 
 

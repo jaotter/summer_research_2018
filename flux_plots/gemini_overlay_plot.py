@@ -13,7 +13,7 @@ import numpy as np
 img_path = '/home/jotter/nrao/images/Trapezium_GEMS_mosaic_redblueorange_normed_small_contrast_bright_photoshop.png'
 im = img.imread(img_path)
 
-B3_table = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_feb21_ulim.fits')
+B3_table = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits')
 
 header = fits.Header.fromtextfile('/home/jotter/nrao/images/trapezium_small_photoshop.wcs')
 #header = fits.Header.fromtextfile('/home/jotter/nrao/images/fullimage.wcs')
@@ -34,24 +34,43 @@ ax.imshow(np.flip(np.rot90(im,2,axes=(0,1)),axis=1), origin='lower', transform=a
 
 B3_pix = mywcs.all_world2pix(B3_table['RA_B3']*u.degree, B3_table['DEC_B3']*u.degree, 0)
 
-inset1 = [30, 43, 31, 23, 38, 32, 28, 45, 20, 71, 22, 36]
-inset2 = [34, 39, 41, 76, 79, 29, 80, 75, 35, 42, 49, 50] 
-inset3 = [14, 81, 17, 16, 12, 11, 18, 27, 83, 33] 
-insetb7 = np.concatenate((inset1, inset2, inset3))
-inset4 = [10, 8, 13, 84, 54, 55, 53, 46]
-inset5 = [5, 6, 9, 15, 40, 51, 21, 24, 48, 52, 63, 56, 61, 58, 7, 73, 4, 2, 3, 19, 44, 47, 78, 57, 60, 62, 59, 67, 66, 64, 70]
+b7_sources = np.where(B3_table['SNR_B7'] > 3)[0]
+b6_sources = np.where(B3_table['SNR_B6'] > 3)[0]
+
+b6_sources = np.setdiff1d(b6_sources, b7_sources)
+
+b3_sources = np.setdiff1d(np.arange(len(B3_table)),b6_sources)
+b3_sources = np.setdiff1d(b3_sources,b7_sources)
+
+print(len(b7_sources), len(b6_sources), len(b3_sources))
+
+#inset1 = [30, 43, 31, 23, 38, 32, 28, 45, 20, 71, 22, 36]
+#inset2 = [34, 39, 41, 76, 79, 29, 80, 75, 35, 42, 49, 50] 
+#inset3 = [14, 81, 17, 16, 12, 11, 18, 27, 83, 33] 
+#insetb7 = np.concatenate((inset1, inset2, inset3))
+#inset4 = [10, 8, 13, 84, 54, 55, 53, 46]
+#inset5 = [5, 6, 9, 15, 40, 51, 21, 24, 48, 52, 63, 56, 61, 58, 7, 73, 4, 2, 3, 19, 44, 47, 78, 57, 60, 62, 59, 67, 66, 64, 70]
 
 text_col = 'whitesmoke'
 
+irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_mar21_full.fits')
+IRseq = irtab['Seq'].data
+
 for ind in range(len(B3_pix[0])):
     did = B3_table['Seq'][ind]
-    #if did in insetb7:
+    #if did in b7_sources:
     #    col = 'tab:red'
-    #if did in inset4:
+    #if did in b6_sources:
     #    col = 'tab:pink'
-    #if did in inset5:
+    #if did in b3_sources:
     #    col = 'tab:green'
-    col='tab:red'
+    #col='tab:red'
+
+    if did in IRseq:
+        col = 'tab:pink'
+    else:
+        col = 'tab:green'
+    
     circ = Circle((B3_pix[0][ind], B3_pix[1][ind]), radius=10, fill=False, color=col)
     ax.add_patch(circ)
     #if did == 60 or did == 58 or did == 9 or did == 71 or did == 23 or did == 37 or did == 22 or did == 29 or did == 80 or did == 55:
@@ -112,14 +131,14 @@ ax.add_patch(B7_circ)
 #TR_frame = SkyCoord(ra='5:35:12', dec='-5:21:50', unit=(u.hourangle,u.degree))
 #TR_pix = mywcs.all_world2pix(TR_frame.ra.degree, TR_frame.dec.degree, 0)
 
-ax.set_ylim(0,1350)
+ax.set_ylim(0,1250)
 ax.set_xlim(100,1556)
 #ax.set_ylim(BL_pix[1], TR_pix[1])
 #ax.set_xlim(BL_pix[0], TR_pix[0])
 
 plt.tight_layout()
     
-plt.savefig(f'/home/jotter/nrao/plots/gemini_B3_overlay.pdf',dpi=300,bbox_inches='tight')
+plt.savefig(f'/home/jotter/nrao/plots/gemini_B3_overlay_onc_omc1.pdf',dpi=300,bbox_inches='tight')
 plt.close()
 
 

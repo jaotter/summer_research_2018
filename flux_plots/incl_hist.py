@@ -11,10 +11,16 @@ def f(x): #for 2 sample ks test
     return (1 - np.cos(x))*(x>0)*(x<np.pi/2)+(x>np.pi/2)
 
 
-dataB3 = Table.read('../tables/r0.5_jun20_calc_vals.fits')
+dataB3 = Table.read('../tables/r0.5_mar21_calc_vals.fits')
+#dataB3 = Table.read('../tables/r0.5_jun20_calc_vals.fits')
 
-ind = np.where(np.isnan(dataB3['inclination_B3']) == False)[0]
+#ind = np.where(np.isnan(dataB3['inclination_B3']) == False)[0]
+ind = np.where(dataB3['inclination_B3'] < 1000)[0]
+
+
 incl_bins = np.arange(0,91,10)
+
+
 hist, bins = np.histogram(dataB3['inclination_B3'][ind], bins=incl_bins)
 
 plotpts = []
@@ -46,8 +52,10 @@ print('2 sample KS statistic: %f, p value: %f' % (Dval, pval))
 Dval, pval = kstest(incl_filtered, f) 
 print('1 sample KS statistic: %f, p value: %f' % (Dval, pval))
 
+print(dataB3['inclination_B3'][ind])
+
 #KDE
-cos_grid = np.linspace(0,1,100)
+#cos_grid = np.linspace(0,1,100)
 degree_grid = np.linspace(0,90,100)
 #cos_kde = gaussian_kde(np.cos(dataB3['inclination_B3'][ind]*u.degree))
 degree_kde = gaussian_kde(dataB3['inclination_B3'][ind], bw_method='scott')
@@ -55,7 +63,9 @@ degree_kde = gaussian_kde(dataB3['inclination_B3'][ind], bw_method='scott')
 #norm_cos_pdf = cos_pdf*len(ind)*(1/9)
 #to normalize, multiply by bin width and number of points
 degree_pdf = degree_kde.evaluate(degree_grid)
+print(widths[0])
 norm_degree_pdf = degree_pdf*widths[0]*np.sum(hist)
+print(norm_degree_pdf)
 
 plt.figure()
 plt.bar(plotpts, sin_hist, widths, edgecolor='k', alpha=.5, label=r'$\sin(i)$')

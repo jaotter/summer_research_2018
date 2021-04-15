@@ -12,6 +12,10 @@ def plot_MST_hist(coord_list, labels, filename, colors=['tab:blue', 'tab:orange'
 
     fig = plt.figure(figsize=(10,6))
     dists = []
+
+    means = []
+    errs = []
+
     for i, tab_coord in enumerate(coord_list):
         graph = []
 
@@ -30,7 +34,12 @@ def plot_MST_hist(coord_list, labels, filename, colors=['tab:blue', 'tab:orange'
         #bins = np.arange(0,15.1,1.5)
         bins = np.arange(0,20,1.5)
         print(f'Mean separation: {np.mean(sep_arr)} arcseconds for {labels[i]}')
+        print(f'standard dev on sep: {np.std(sep_arr)} arcseconds for {labels[i]}')
+        print(f'standard error on sep: {np.std(sep_arr)/np.sqrt(len(sep_arr))} arcseconds for {labels[i]}')
 
+        means.append(np.mean(sep_arr))
+        errs.append(np.std(sep_arr)/np.sqrt(len(sep_arr)))
+        
         sep_grid = np.linspace(0,14,100)
         sep_kde = gaussian_kde(sep_arr, bw_method='scott')
         sep_pdf = sep_kde.evaluate(sep_grid)                                                                                                                                                         #to normalize, multiply by bin width and number of points
@@ -42,7 +51,12 @@ def plot_MST_hist(coord_list, labels, filename, colors=['tab:blue', 'tab:orange'
     if KS_test == True:
         Dval, pval = ks_2samp(dists[0], dists[1])
         print(f'{pval} p-value of KS test between first two coord lists')
-        
+
+    discrep = np.abs(means[1] - means[0])
+    errtot = np.sqrt(errs[0]**2 + errs[1]**2)
+
+    print(f't value: {discrep/errtot}')
+    
     plt.legend()
     plt.xlabel('Separation (arcsecond)')
     plt.ylabel('Number')
@@ -51,10 +65,10 @@ def plot_MST_hist(coord_list, labels, filename, colors=['tab:blue', 'tab:orange'
 
 
 
-tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_feb21_ulim.fits')
+tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits')
 tab2 = Table.read('/home/jotter/nrao/tables/eis_coord_table.fits')
 
-IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_feb21_full.fits')
+IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_mar21_full.fits')
 nonIR_src = np.setdiff1d(tab['Seq'], IR_tab['Seq'])
 nonIR_ind = [np.where(tab['Seq']==d_id)[0][0] for d_id in nonIR_src]
 IR_src = IR_tab['Seq']
@@ -74,4 +88,8 @@ plot_MST_hist(coord_list, labels=['Band 3 ONC', 'E18'], filename='/home/jotter/n
 
 coord_list = [tab_coord_nonIR, tab_coord2]
 
-plot_MST_hist(coord_list, labels=['Band 3 OMC1', 'E18'], filename='/home/jotter/nrao/plots/separation_hist_OMC1.pdf')#, colors=['tab:green', 'tab:blue', 'tab:orange'])
+plot_MST_hist(coord_list, labels=['Band 3 OMC1', 'E18'], filename='/home/jotter/nrao/plots/separation_hist_OMC1.pdf', KS_test=True)#, colors=['tab:green', 'tab:blue', 'tab:orange'])
+
+coord_list = [tab_coord_nonIR, tab_coord_IR]
+
+plot_MST_hist(coord_list, labels=['Band 3 OMC1', 'Band 3 ONC'], filename='/home/jotter/nrao/plots/separation_hist_oncomc1.pdf')

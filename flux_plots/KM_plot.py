@@ -1,5 +1,6 @@
 from lifelines import KaplanMeierFitter
 from lifelines.utils import median_survival_times
+from scipy import stats
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.units as u
@@ -57,7 +58,7 @@ def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True, cdf=Fal
     print(f'saved figure at {savepath}')
 
 
-def KM_median(array, upper_lim_flags, left_censor=True, percentile=True):
+def KM_median(array, upper_lim_flags, left_censor=True, return_type='percentile'):
     kmf = KaplanMeierFitter()
 
     if upper_lim_flags is not None:
@@ -70,15 +71,41 @@ def KM_median(array, upper_lim_flags, left_censor=True, percentile=True):
 
     median = median_survival_times(kmf.survival_function_)
 
-    median_ci = median_survival_times(kmf.confidence_interval_).values 
-    
-    upper_perc = kmf.percentile(0.25)
-    lower_perc = kmf.percentile(0.75)
 
-    if percentile == True:
+    if return_type == 'percentile':
+        upper_perc = kmf.percentile(0.25)
+        lower_perc = kmf.percentile(0.75)
+    
         print(f'median and 1st/3rd quartiles: {median}, {lower_perc}, {upper_perc}')
         return median, upper_perc, lower_perc
 
-    else:
+    elif return_type == 'ci':
+        median_ci = median_survival_times(kmf.confidence_interval_).values 
         print(f'median and CI: {median}, {median_ci}')
         return median, median_ci[0][0], median_ci[0][1]
+
+    elif return_type == 'median':
+        return median
+
+
+def bootstrap_ci(num_samples, data, ulim_flag, alpha=0.99):
+
+    bootstrap_vals = []
+    for i in range(num_samples):
+        resample_ind = np.random.randint(0,high=len(data),size=len(data))
+        resamp_data = data[resample_ind]
+        resamp_flag = ulim_flag[resample_ind]
+
+        median = KM_median(resamp_data, resamp_flag, left_censor=True, return_type='median')
+        if median == 0:
+            print('zero median')
+            print(len(np.where(resamp_flag == True)[0]))
+        bootstrap_vals.append(median)
+
+    se = np.std(bootstrap_vals)
+    Zval = stats.norm.ppf(alpha)
+
+    CI_range = se*Zval
+    print(f'CI range: {CI_range}')
+    
+    return CI_range

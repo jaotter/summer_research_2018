@@ -26,16 +26,20 @@ Dec_ind = np.intersect1d(Dec_ind1,Dec_ind2)
 eis_ind = np.intersect1d(RA_ind, Dec_ind)
 '''
 
-eis_fov_srcs = [47,44,21,19,7,4,73,2,5,3,6,8,13,24,48,14,17]
+#eis_fov_srcs = [47,44,21,19,7,4,73,2,5,3,6,8,13,24,48,14,17]
+eis_fov_srcs = [47,44,21,7,4,73,2,5,3,6,8,13,48,17]
+
+
 eis_ind=[]
 for src in eis_fov_srcs:
     eis_ind.append(np.where(data['D_ID'] == src)[0][0])
 eis_ind=np.array(eis_ind)
 
-srcI_ind = np.where(data['D_ID'][eis_ind] == 30)[0]
-BN_ind = np.where(data['D_ID'][eis_ind] == 43)[0]
-eis_ind = np.delete(eis_ind, np.array([srcI_ind, BN_ind]))
-eis_ind = np.delete(eis_ind, [17])
+#srcI_ind = np.where(data['D_ID'][eis_ind] == 30)[0]
+#BN_ind = np.where(data['D_ID'][eis_ind] == 43)[0]
+#eis_ind = np.delete(eis_ind, np.array([srcI_ind, BN_ind]))
+#eis_ind = np.delete(eis_ind, [17])
+
 
 #load in eisner data:
 eisner_data = Table.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='ascii')
@@ -46,6 +50,7 @@ eis_match_tab = Table.read('/home/jotter/nrao/tables/eis_r0.5_jun20_match.fits')
 fov_src_hist, bins = np.histogram(data['fwhm_maj_B3'][eis_ind], density=False)
 matched_hist, b = np.histogram(eis_match_tab['fwhm_maj_B3'], bins, density=False)
 
+print(f'Sources not detected by E18: {np.setdiff1d(data["D_ID"][eis_ind], eis_match_tab["D_ID"])}')
 print('KS test for size:')
 Dval, pval = ks_2samp(data['fwhm_maj_B3'][eis_ind], eis_match_tab['fwhm_maj_B3'])
 print('2 sample KS statistic: %f, p value: %f' % (Dval, pval))
@@ -93,7 +98,7 @@ ax2.legend()
 ax2.set_ylabel('Number')
 ax2.set_xlabel('Band 3 flux (Jy)')
 
-plt.savefig('/home/jotter/nrao/plots/E18_comp/comb_hist_missed_srcs2.pdf', dpi=400)
+plt.savefig('/home/jotter/nrao/plots/E18_comp/comb_hist_missed_srcs_edit.pdf', dpi=400)
 
 
 
@@ -104,4 +109,4 @@ plt.errorbar(eis_match_tab['ap_flux_B3'], eis_match_tab['fwhm_maj_B3'], xerr=eis
 plt.legend()
 plt.xlabel('Band 3 flux (Jy)')
 plt.ylabel('Non-deconovlved FWHM major (as)')
-plt.savefig('/home/jotter/nrao/plots/E18_comp/size_flux_missed_srcs2.pdf', dpi=400)
+plt.savefig('/home/jotter/nrao/plots/E18_comp/size_flux_missed_srcs_edit.pdf', dpi=400)

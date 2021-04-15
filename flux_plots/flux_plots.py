@@ -25,8 +25,6 @@ def dist_flux_plot():
     
     dist = theta1c.separation(b3_coord).to(u.arcsecond)
     dist_pc = dist.to(u.radian)*400*u.pc
-    print(dist)
-    print(b3_coord)
     
     plt.plot(dist_pc, data['fwhm_maj_deconv_B3'], linestyle='', marker='o')
     plt.xlabel('Distance to Theta 1C (pc)')
@@ -40,12 +38,23 @@ def dist_flux_plot():
     fb = Table.read('/home/jotter/nrao/tables/Forbrich_2016.fits')
     fb_coord = SkyCoord(ra=fb['RAJ2000'], dec=fb['DEJ2000'], unit=(u.degree, u.degree))
 
-    dist_fb = theta1c.separation(fb_coord).to(u.arcsecond)
-    dist_fb_pc = dist_fb.to(u.radian)*400*u.pc
-
+    theta1a = SkyCoord('05:35:15.8252169327', '-05:23:14.332546552', unit=(u.hourangle, u.degree))
+    theta1b = SkyCoord('05:35:16.112', '-05:23:06.89', unit=(u.hourangle, u.degree))
+    theta1d = SkyCoord('05:35:17.2574309230', '-05:23:16.567215876', unit=(u.hourangle, u.degree))
     
-    plt.plot(dist_fb_pc, np.log10(fb['Spk']), linestyle='', marker='*', color='tab:orange', label='Forbrich+2016')
-    plt.xlabel('Distance to Theta 1C (pc)')
+    dist_1c = (theta1c.separation(fb_coord).to(u.radian)*400*u.pc).value
+    dist_1a = (theta1a.separation(fb_coord).to(u.radian)*400*u.pc).value
+    dist_1b = (theta1b.separation(fb_coord).to(u.radian)*400*u.pc).value
+    dist_1d = (theta1d.separation(fb_coord).to(u.radian)*400*u.pc).value
+
+    print(dist_1c, dist_1a)
+    
+    dist_fb = []
+    for i in range(len(fb_coord)):
+        dist_fb.append(np.min([dist_1a[i],dist_1b[i],dist_1c[i],dist_1d[i]]))
+    
+    plt.plot(dist_fb, np.log10(fb['Spk']), linestyle='', marker='*', color='tab:orange', label='Forbrich+2016')
+    plt.xlabel('Distance to Trapezium star (pc)')
     plt.ylabel(r'$\log(S_{5GHz})$ mJy')
     #plt.xlim(xlim)
     plt.savefig('/home/jotter/nrao/plots/dist_flux_forbrich_plot_full.png')

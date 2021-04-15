@@ -5,23 +5,27 @@ import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
 
-data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_nov20_ulim.fits')
+data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits')
 
-irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_nov20_full.fits')
-ir_did = irtab['D_ID']
+irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_mar21_full.fits')
+ir_did = irtab['Seq']
 ir_ind = []
 for did in ir_did:
-    ir_ind.append(np.where(data['D_ID'] == did)[0][0])
+    ir_ind.append(np.where(data['Seq'] == did)[0][0])
 
 nonir_ind = np.setdiff1d(np.arange(0,len(data)), ir_ind)
     
-new_srcs = [9,10,22,24,36,37,39,45,55,59,61,71,72,79,81,84]
-
+#new_srcs = [9,10,22,24,36,37,39,45,55,59,61,71,72,79,81,84]
+new_srcs = [8, 10, 32, 33, 50, 53, 63, 70, 74, 75, 79, 115]
 
 new_ind=[]
 for src in new_srcs:
-    new_ind.append(np.where(data['D_ID'] == src)[0][0])
+    new_ind.append(np.where(data['Seq'] == src)[0][0])
 new_ind=np.array(new_ind)
+
+newtab = data[new_ind]
+newtab.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_new_det_mar21.fits', overwrite=True)
+
 
 #srcI_ind = np.where(data['D_ID'][eis_ind] == 30)[0]
 #BN_ind = np.where(data['D_ID'][eis_ind] == 43)[0]
@@ -84,7 +88,7 @@ plt.errorbar(data['ap_flux_B3'][new_ind], data['fwhm_maj_B3'][new_ind], xerr=dat
 plt.legend(loc='upper left')
 plt.loglog()
 plt.xlabel('Band 3 flux (Jy)')
-plt.ylabel('Non-deconovlved FWHM major (as)')
+plt.ylabel('Non-deconovlved FWHM major (arcsecond)')
 plt.savefig('/home/jotter/nrao/plots/size_flux_new_srcs.pdf', dpi=300, bbox_inches='tight')
 
 fig = plt.figure()

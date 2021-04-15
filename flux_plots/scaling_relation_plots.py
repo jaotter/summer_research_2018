@@ -1,21 +1,20 @@
 from astropy.table import Table
 from astropy.io import fits, ascii
 from radio_beam import Beam
-
+from KM_plot import KM_median, bootstrap_ci
 import numpy as np
 import astropy.units as u
 import matplotlib.pyplot as plt
 
 import astropy.constants as constants
 
-from scipy.stats import linregress
+from scipy import stats
 
 band='B3'
 
 #three plots: R and L, R and M, L and M
-data = Table.read('../tables/r0.5_catalog_bgfit_apr20.fits')
-data_inf = Table.read('../tables/r0.5_apr20_calc_vals.fits')
-
+data = Table.read('../tables/r0.5_catalog_bgfit_mar21_ulim.fits')
+data_inf = Table.read('../tables/r0.5_mar21_calc_vals.fits')
 andrews = ascii.read('/home/jotter/nrao/tables/andrews_table.txt', format='tab')
 andrews.rename_column('$\mathrm{log}{R}_{\mathrm{eff}}/\mathrm{au}$', 'R_eff')
 andrews.rename_column('F_nu/mJy', 'Fnu')
@@ -29,11 +28,18 @@ R_eff_andrw_log = []
 R_eff_err_up_andrw = []
 R_eff_err_down_andrw = []
 
+R_eff_andrw_log_ulim = []
+
 Fnu_andrw = []
 Lmm_scaled_andrw_log = []
 Lmm_scaled_err_up_andrw = []
 Lmm_scaled_err_down_andrw = []
 dists_andrw = []
+
+Lmm_scaled_andrw_log_ulim = []
+Lmm_scaled_err_up_andrw_ulim = []
+Lmm_scaled_err_down_andrw_ulim = []
+dists_andrw_ulim = []
 
 for ind in range(len(andrews)):
     if len(andrews['R_eff'][ind]) > 10:
@@ -48,6 +54,12 @@ for ind in range(len(andrews)):
         
         dists_andrw.append(float(andrews_table4['d'][ind][0:3]))
 
+    else:
+        R_eff_andrw_log_ulim.append(float(andrews['R_eff'][ind][4:-1]))
+        Lmm_scaled_andrw_log_ulim.append(float(andrews['L_mm'][ind][0:5]))
+        Lmm_scaled_err_up_andrw_ulim.append(float(andrews['L_mm'][ind][-6:-2]))
+        Lmm_scaled_err_down_andrw_ulim.append(float(andrews['L_mm'][ind][10:15]))
+        
 
 Lmm_scaled_andrw = 10**np.array(Lmm_scaled_andrw_log)*u.Jy
 Lmm_scaled_err_up_andrw = 10**np.array(np.array(Lmm_scaled_andrw_log)+np.array(Lmm_scaled_err_up_andrw))*u.Jy - Lmm_scaled_andrw
@@ -59,6 +71,13 @@ dists_andrw = np.array(dists_andrw)*u.pc
 
 R_eff_err_up_andrw = 10**np.array(np.array(R_eff_andrw_log) + np.array(R_eff_err_up_andrw))*u.au - R_eff_andrw
 R_eff_err_down_andrw = 10**np.array(np.array(R_eff_andrw_log) - np.array(R_eff_err_down_andrw))*u.au - R_eff_andrw
+
+Lmm_scaled_andrw_ulim = 10**np.array(Lmm_scaled_andrw_log_ulim)*u.Jy
+Lmm_scaled_err_up_andrw_ulim = 10**np.array(np.array(Lmm_scaled_andrw_log_ulim)+np.array(Lmm_scaled_err_up_andrw_ulim))*u.Jy - Lmm_scaled_andrw_ulim
+Lmm_scaled_err_down_andrw_ulim = 10**np.array(np.array(Lmm_scaled_andrw_log_ulim)-np.array(Lmm_scaled_err_down_andrw_ulim))*u.Jy - Lmm_scaled_andrw_ulim
+Lmm_scaled_err_andrw_ulim = np.array((Lmm_scaled_err_up_andrw_ulim.value, Lmm_scaled_err_down_andrw_ulim.value))
+R_eff_andrw_ulim = 10**np.array(R_eff_andrw_log_ulim)*u.au
+
 
 andrews_freq = 335*u.GHz
 
@@ -74,14 +93,24 @@ L_mm_andrw = (4*np.pi*(R_andrw**2)*constants.sigma_sb*(T_B_andrw)**4).to(u.L_sun
 fig = plt.figure(figsize=(5,5))
 
 deconv_ind = np.where(np.isnan(data['fwhm_maj_deconv_'+band]) == False)[0]
+nondeconv_ind = np.where(np.isnan(data['fwhm_maj_deconv_'+band])==True)[0]
 
-Rarcsec = data['fwhm_maj_deconv_'+band][deconv_ind]*u.arcsec
-d = (414*u.pc).to(u.au)
+
+Rarcsec = (data['fwhm_maj_deconv_'+band][deconv_ind]/2)*u.arcsec #now dividing by 2 bc a18 is radius
+d = (400*u.pc).to(u.au)
 Rau = (Rarcsec.to(u.rad)*d).value
 Rau_err = (((data['fwhm_maj_err_'+band][deconv_ind])*u.arcsec).to(u.rad)*d).value
 
-scaled_B3flux = data['ap_flux_B3'][deconv_ind]*(414/140)**2
-scaled_B3flux_err = data['ap_flux_err_B3'][deconv_ind]*(414/140)**2
+ulim_ind = np.where(np.isnan(data['upper_lim_'+band]) == False)[0]
+Rau_ulim = data['upper_lim_'+band][ulim_ind]
+
+scaled_B3flux_all = data['ap_flux_B3']*(400/140)**2
+scaled_B3flux_err_all = data['ap_flux_err_B3']*(400/140)**2
+scaled_B3flux = scaled_B3flux_all[deconv_ind]
+scaled_B3flux_err = scaled_B3flux_err_all[deconv_ind]
+scaled_B3flux_ul = scaled_B3flux_all[nondeconv_ind]
+scaled_B3flux_err_ul = scaled_B3flux_err_all[nondeconv_ind]
+
 
 Lmm = data_inf['lower_lum_'+band][deconv_ind]
 
@@ -95,6 +124,9 @@ SIGMA_TO_FWHM = np.sqrt(8*np.log(2))
 
 FWHM_andrw = R_eff_andrw.value*SIGMA_TO_FWHM
 FWHM_err_andrw = R_eff_err_andrw*SIGMA_TO_FWHM
+
+FWHM_andrw_ulim = R_eff_andrw_ulim.value*SIGMA_TO_FWHM
+
 
 plt.figure()
 
@@ -113,56 +145,75 @@ Lmm_eqn9_10 = ((Rau_arr*SIGMA_TO_FWHM)**(2-q)*andrews_freq**2*(10)**(.25)*consta
 
 srcIind = np.where(data['D_ID'][deconv_ind] == 30)[0]
 BNind = np.where(data['D_ID'][deconv_ind] == 43)[0]
+
 #print('source I scaled Lmm: %f' % (scaled_B3flux[srcIind]))
 #print('source BN scaled Lmm: %f' % (scaled_B3flux[BNind]))
 
 #print('source I R: %f' % (Rau[srcIind]))
 #print('source BN R: %f' % (Rau[BNind]))
 
+scaled_B3flux_rem = scaled_B3flux #np.delete(scaled_B3flux, [srcIind[0], BNind[0]])
+Rau_rem = Rau #np.delete(Rau, [srcIind[0], BNind[0]])
+Rau_rem_err = Rau_err #np.delete(Rau_err, [srcIind[0], BNind[0]])
+
 scaled_B3flux_rem = np.delete(scaled_B3flux, [srcIind[0], BNind[0]])
 Rau_rem = np.delete(Rau, [srcIind[0], BNind[0]])
 Rau_rem_err = np.delete(Rau_err, [srcIind[0], BNind[0]])
+scaled_B3flux_err_rem = np.delete(scaled_B3flux_err, [srcIind[0], BNind[0]])
 
-linreg_params_B3 = linregress(np.log10(scaled_B3flux_rem), np.log10(Rau_rem))
-Lmm_arr = np.logspace(-3, 0, 5)
-linreg_line_B3 = np.log10(Lmm_arr)*linreg_params_B3[0] + linreg_params_B3[1]
 
-#plt.plot(Lmm_arr, 10**linreg_line_B3, linestyle='-', marker='', label='Fit to B3 data')
+linreg_params_B3 = stats.linregress(np.log10(scaled_B3flux_rem), np.log10(Rau_rem))
+Lmm_arr = np.logspace(-4, 0, 5)
+linreg_line_B3 = np.log10(Lmm_arr)*linreg_params_B3.slope + linreg_params_B3.intercept
+
+#print(dir(linreg_params_B3), type(linreg_params_B3))
+
+plt.plot(Lmm_arr, 10**linreg_line_B3, linestyle='-', marker='', label='Fit to B3 data')
 print('linreg params for B3 fit', linreg_params_B3)
 
-linreg_params_andrw = linregress(np.log10(Lmm_scaled_andrw.value), np.log10(FWHM_andrw))
+linreg_params_andrw = stats.linregress(np.log10(Lmm_scaled_andrw.value), np.log10(FWHM_andrw))
 linreg_line_andrw = np.log10(Lmm_arr)*linreg_params_andrw[0] + linreg_params_andrw[1]
 
 #plt.plot(Lmm_arr, 10**linreg_line_andrw, linestyle='-', marker='', label='Fit to A18 data')
 print('linreg params for A18 fit', linreg_params_andrw)
 
-linreg_params_all = linregress(np.log10(np.concatenate((Lmm_scaled_andrw.value, scaled_B3flux_rem))), np.log10(np.concatenate((FWHM_andrw, Rau_rem))))
+linreg_params_all = stats.linregress(np.log10(np.concatenate((Lmm_scaled_andrw.value, scaled_B3flux_rem))), np.log10(np.concatenate((FWHM_andrw, Rau_rem))))
 linreg_line_all = np.log10(Lmm_arr)*linreg_params_all[0] + linreg_params_all[1]
 
-print(len(Lmm_scaled_andrw.value) + len(scaled_B3flux_rem))
-
-plt.plot(Lmm_arr, 10**linreg_line_all, linestyle='-', marker='', label='Fit to B3 and A18 data')
+#plt.plot(Lmm_arr, 10**linreg_line_all, linestyle='-', marker='', label='Fit to B3 and A18 data')
 print('linreg params for all fit', linreg_params_all)
 
-plt.errorbar(scaled_B3flux, Rau, yerr=Rau_err, xerr=scaled_B3flux_err, linestyle='', marker='o', label='Band 3 measurements')
-plt.errorbar(Lmm_scaled_andrw.value, FWHM_andrw, yerr=FWHM_err_andrw, xerr=Lmm_scaled_err_andrw, linestyle='', marker='o', label='Andrews et al. 2018')
+plt.errorbar(scaled_B3flux_rem, Rau_rem, yerr=Rau_rem_err, xerr=scaled_B3flux_err_rem, linestyle='', marker='o', label='Band 3 measurements', color='tab:green', alpha=0.75)
+plt.errorbar(scaled_B3flux_ul, Rau_ulim, xerr=scaled_B3flux_err_ul, linestyle='', marker='v', color='tab:green', alpha=0.75, markersize=3)
+plt.errorbar(Lmm_scaled_andrw.value, FWHM_andrw, yerr=FWHM_err_andrw, xerr=Lmm_scaled_err_andrw, linestyle='', marker='s', label='Andrews et al. 2018', color='tab:pink', alpha=0.75)
+plt.errorbar(Lmm_scaled_andrw_ulim.value, FWHM_andrw_ulim, xerr=Lmm_scaled_err_andrw_ulim, linestyle='', marker='v', markersize=3, color='tab:pink', alpha=0.75)
+
 
 #plt.plot(Lmm_eqn9_01, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 0.1 L_\odot$')
 plt.plot(Lmm_eqn9, Rau_arr, linestyle='--', marker='', label='A18 Eqn 9, '+r'$L_* = 1 L_\odot$')
 #plt.plot(Lmm_eqn9_10, Rau_arr, linestyle='-', marker='', label='A18 Eqn 9, '+r'$L_* = 10 L_\odot$')
 plt.legend()
-plt.xlim(0.001, 1)
-plt.ylim(7, 600)
+plt.xlim(0.0002, 1)
+plt.ylim(3, 600)
 plt.xlabel('Scaled luminosity (Jy)')
 plt.ylabel('R (AU)')
 plt.yscale('log')
 plt.xscale('log')
 
-#plt.savefig('/home/jotter/nrao/plots/scaling_rels_scaledflux_allfit.png', dpi=300)
+plt.savefig('/home/jotter/nrao/plots/scaling_rels_scaledflux_onlyB3fit.pdf', dpi=300)
+
+
+print('Lupus')
+tot_andrw = np.concatenate((FWHM_andrw, FWHM_andrw_ulim))
+andrw_flag = np.concatenate((np.repeat(True, len(FWHM_andrw)), np.repeat(False, len(FWHM_andrw_ulim))))
+median = KM_median(tot_andrw, andrw_flag, return_type='median')
+ci = bootstrap_ci(10000, tot_andrw, andrw_flag)
+print(f'{median} +/- {ci}')  
+
 
 fig = plt.figure()
 
-d = 414*u.pc
+d = 400*u.pc
 d = d.to(u.AU)
 
 size_arr = data['fwhm_maj_deconv_B3']
@@ -200,7 +251,7 @@ plt.xlabel('log(Major FWHM / AU)')
 plt.ylabel('Number')
 plt.legend()
 
-plt.savefig('/home/jotter/nrao/plots/R_hist_all.png', dpi=500)
+#plt.savefig('/home/jotter/nrao/plots/R_hist_all.pdf', dpi=500)
 
 
 fig = plt.figure()
@@ -228,4 +279,4 @@ plt.xlabel('log(Scaled Luminosity / Jy)')
 plt.ylabel('Number')
 plt.legend()
 
-plt.savefig('/home/jotter/nrao/plots/L_hist_all.png', dpi=500)
+#plt.savefig('/home/jotter/nrao/plots/L_hist_all.pdf', dpi=500)

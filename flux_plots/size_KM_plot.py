@@ -1,7 +1,7 @@
 from astropy.table import Table
 from lifelines import KaplanMeierFitter
 
-from KM_plot import plot_KM, KM_median
+from KM_plot import plot_KM, KM_median, bootstrap_ci
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.units as u
@@ -31,10 +31,13 @@ B3_fwhm_resolved = B3_fwhm[B3_deconv_ind]
 B3_fwhm_flag_resolved = np.repeat(True, len(B3_fwhm_resolved))
 
 print('B3')
-KM_median(B3_fwhm, B3_fwhm_flag, percentile=True)
+median = KM_median(B3_fwhm, B3_fwhm_flag, return_type='median')
+#ci = bootstrap_ci(100, B3_fwhm, B3_fwhm_flag)
+#print(f'{median} +/- {ci}')
 print('B3 resolved')
-KM_median(B3_fwhm_resolved, B3_fwhm_flag_resolved, percentile=True, left_censor=False)
-
+median = KM_median(B3_fwhm_resolved, B3_fwhm_flag_resolved, return_type='median', left_censor=False)
+#ci = bootstrap_ci(100, B3_fwhm_resolved, B3_fwhm_flag_resolved)
+#print(f'{median} +/- {ci}')
 
 B6ind = np.where(np.isnan(data['ap_flux_B6']) == False)
 B6_fwhm = data['fwhm_maj_deconv_B6'][B6ind]*u.arcsec
@@ -46,15 +49,18 @@ B6_fwhm[B6_ulim_ind] = data['upper_lim_B6'][B6ind][B6_ulim_ind].data
 B6_hwhm_au = B6_fwhm/2
 
 print('B6')
-KM_median(B6_fwhm, B6_fwhm_flag, percentile=True)
+median = KM_median(B6_fwhm, B6_fwhm_flag, return_type='median')
+#ci = bootstrap_ci(100, B6_fwhm, B6_fwhm_flag)
+#print(f'{median} +/- {ci}')
 
 B6_deconv_ind = np.where(np.isnan(data['fwhm_maj_deconv_B6'][B6ind]) == False)[0]
 B6_fwhm_resolved = B6_fwhm[B6_deconv_ind]
 B6_fwhm_flag_resolved = np.repeat(True, len(B6_fwhm_resolved))
 
 print('B6 resolved')
-KM_median(B6_fwhm_resolved, B6_fwhm_flag_resolved, percentile=True, left_censor=False)
-
+median = KM_median(B6_fwhm_resolved, B6_fwhm_flag_resolved, return_type='median', left_censor=False)
+#ci = bootstrap_ci(100, B6_fwhm_resolved, B6_fwhm_flag_resolved)
+#print(f'{median} +/- {ci}')
 
 B7ind = np.where(np.isnan(data['ap_flux_B7']) == False)
 B7_fwhm = data['fwhm_maj_deconv_B7'][B7ind]*u.arcsec
@@ -66,15 +72,18 @@ B7_fwhm[B7_ulim_ind] = data['upper_lim_B7'][B7ind][B7_ulim_ind].data
 B7_hwhm_au = B7_fwhm/2
 
 print('B7')
-KM_median(B7_fwhm, B7_fwhm_flag, percentile=True)
+median = KM_median(B7_fwhm, B7_fwhm_flag, return_type='median')
+#ci = bootstrap_ci(100, B7_fwhm, B7_fwhm_flag)
+#print(f'{median} +/- {ci}')
 
 B7_deconv_ind = np.where(np.isnan(data['fwhm_maj_deconv_B7'][B7ind]) == False)[0]
 B7_fwhm_resolved = B7_fwhm[B7_deconv_ind]
 B7_fwhm_flag_resolved = np.repeat(True, len(B7_fwhm_resolved))
 
 print('B7 resolved')
-KM_median(B7_fwhm_resolved, B7_fwhm_flag_resolved, percentile=True, left_censor=False)
-
+median = KM_median(B7_fwhm_resolved, B7_fwhm_flag_resolved, return_type='median', left_censor=False)
+#ci = bootstrap_ci(100, B7_fwhm_resolved, B7_fwhm_flag_resolved)
+#print(f'{median} +/- {ci}')
 
 IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_mar21_full.fits')
 
@@ -87,11 +96,14 @@ onc_flag = B3_fwhm_flag[IR_ind]
 omc1_flag = B3_fwhm_flag[nonIR_ind]
 
 print('ONC')
-KM_median(onc, onc_flag, percentile=True)
+median = KM_median(onc*2, onc_flag, return_type='median')
+#ci = bootstrap_ci(10000, onc*2, onc_flag)
+#print(f'{median} +/- {ci}')
 
 print('OMC1')
-KM_median(omc1, omc1_flag, percentile=True)
-
+median = KM_median(omc1*2, omc1_flag, return_type='median')
+#ci = bootstrap_ci(10000, omc1*2, omc1_flag)
+#print(f'{median} +/- {ci}')
 
 B6_IR = np.intersect1d(B6ind, IR_ind)
 nonIR_src_B6 = np.setdiff1d(data['Seq'][B6ind], IR_tab['Seq'])
@@ -121,6 +133,15 @@ lupus_dist = lupus_dist[np.where(lupus_fwhm != 0)]
 lupus_fwhm_au = (lupus_fwhm.to(u.radian)*lupus_dist.to(u.AU)).value
 lupus_fwhm_flag = np.repeat(True, len(lupus_fwhm_au))
 
+lupus_hwhm_au = lupus_fwhm_au/2
+
+print('Lupus')
+#median = KM_median(lupus_fwhm_au, lupus_fwhm_flag, return_type='median')
+#ci = bootstrap_ci(10000, lupus_fwhm_au, lupus_fwhm_flag)
+#print(f'{median} +/- {ci}')
+
+
+
 sco_r = []
 with open('/home/jotter/nrao/tables/UpperSco_Barenfeld2017_edit.txt', 'r') as fl:
     for line in fl:
@@ -132,9 +153,15 @@ sco_fwhm_flag = np.repeat(True, len(sco_r)) #np.where(sco_data['f_Mdust'] == '<'
 eis_rdisk_str = eis_data['R_disk'].data
 eis_ulim_ind = np.where(eis_rdisk_str == '<5')
 eis_rdisk_str[eis_ulim_ind] = '5 '
-eis_fwhm = np.array([float(rdisk.split(' ')[0]) for rdisk in eis_rdisk_str])
-eis_fwhm_flag = np.repeat(True, len(eis_fwhm))
-eis_fwhm_flag[eis_ulim_ind] = False
+eis_hwhm = np.array([float(rdisk.split(' ')[0]) for rdisk in eis_rdisk_str])
+eis_hwhm_flag = np.repeat(True, len(eis_hwhm))
+eis_hwhm_flag[eis_ulim_ind] = False
+
+print('E18')
+median = KM_median(eis_hwhm*2, eis_hwhm_flag, return_type='median')
+ci = bootstrap_ci(10000, eis_hwhm*2, eis_hwhm_flag)
+print(f'{median} +/- {ci}')
+
 
 #eis_fwhm = np.delete(eis_fwhm, eis_ulim_ind)
 #eis_fwhm_flag = np.repeat(True, len(eis_fwhm))
@@ -153,6 +180,6 @@ ophi_hwhm_au = ophi_fwhm_au/2
 #ophi_fwhm_flag = np.repeat(True, len(ophi_fwhm_au))
 
 
-#plot_KM([eis_fwhm, lupus_fwhm_au, sco_r, ophi_hwhm_au, onc, omc1], ['E18', 'Lupus', 'Upper Sco', 'Ophiuchus', 'ONC B3', 'OMC1 B3'],
-#        [eis_fwhm_flag, lupus_fwhm_flag, sco_fwhm_flag, ophi_fwhm_flag, onc_flag, omc1_flag], savepath='/home/jotter/nrao/plots/KM_size_plot_mar21_hwhm_omc1_onc.pdf', left_censor=True,
-#        plot_quantity='Rdisk')
+plot_KM([eis_hwhm, lupus_hwhm_au, sco_r, ophi_hwhm_au, onc, omc1], ['E18', 'Lupus', 'Upper Sco', 'Ophiuchus', 'ONC B3', 'OMC1 B3'],
+        [eis_hwhm_flag, lupus_fwhm_flag, sco_fwhm_flag, ophi_fwhm_flag, onc_flag, omc1_flag], savepath='/home/jotter/nrao/plots/KM_size_plot_mar21_hwhm_omc1_onc.pdf', left_censor=True,
+        plot_quantity='Rdisk')

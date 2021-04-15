@@ -12,14 +12,11 @@ header = B3fl[0].header
 wcs = WCS(header).celestial
 img = B3fl[0].data.squeeze()
 
-IR_tab = Table.read('../../tables/A11_MLLA_r0.5_HC2000_LRY2000_matched_FOV.fits')
-
-unmatched_IR_ind = np.where(np.isnan(IR_tab['RA_B3']) == True)[0]
-matched_IR_ind = np.where(np.isnan(IR_tab['RA_B3']) == False)[0]
+IR_unmatch = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_apr20_full.fits')
+IR_match = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_nondetection_apr20_full.fits')
 
 #first for unmatched IR ind -> get B3 upper lim
-IR_um = IR_tab[unmatched_IR_ind]
-um_pix_coords = wcs.all_world2pix(IR_um['RA']*u.degree, IR_um['DEC']*u.degree, 0)
+um_pix_coords = wcs.all_world2pix(IR_unmatch['RA']*u.degree, IR_unmatch['DEC']*u.degree, 0)
 
 img_inds = np.mgrid[0:len(img),0:len(img[0])]
 
@@ -27,13 +24,10 @@ rad_as = 0.4*u.arcsec
 pix_scale = proj_plane_pixel_scales(wcs)
 rad_pix = (rad_as.to(u.degree)/pix_scale[0]).value
 
-
 B3_upper_lim = []
-for ind in range(len(IR_um)):
+for ind in range(len(IR_unmatch)):
     pix_x = int(um_pix_coords[0][ind])
     pix_y = int(um_pix_coords[1][ind])
-    print(pix_x, pix_y)
-    print(IR_um[ind]['MLLA'])
 
     img_cutout = Cutout2D(img, (pix_x,pix_y), 300)
 
@@ -74,7 +68,7 @@ print(len(Kmag_m), len(Kmag_um))
 
 print(Kmag_um)
 plt.errorbar(IR_m['ap_flux_B3'], Kmag_m, xerr=IR_m['ap_flux_err_B3'], yerr=Kmag_m_err, marker='o', linestyle='')
-plt.errorbar(B3_upper_lim, Kmag_um, yerr=Kmag_um_err, marker='>', linestyle='')
+plt.errorbar(B3_upper_lim, Kmag_um, yerr=Kmag_um_err, marker='<', linestyle='')
 
 plt.ylabel('K band magnitude')
 plt.xlabel('Band 3 flux (mJy)')
@@ -109,7 +103,7 @@ HK_color_um_err = HK_color_err[unmatched_IR_ind]
 fig = plt.figure(figsize=(8,8))
 
 plt.errorbar(IR_m['ap_flux_B3'], HK_color_m, xerr=IR_m['ap_flux_err_B3'], yerr=HK_color_m_err, marker='o', linestyle='')
-plt.errorbar(B3_upper_lim, HK_color_um, yerr=HK_color_um_err, marker='>', linestyle='')
+plt.errorbar(B3_upper_lim, HK_color_um, yerr=HK_color_um_err, marker='<', linestyle='')
 
 plt.ylabel('H-K magnitude')
 plt.xlabel('Band 3 flux (mJy)')

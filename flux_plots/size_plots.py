@@ -271,6 +271,7 @@ def disk_size_hist_3panel_IR(arrs_IR, arrs_nonIR, xlabels, filename, nbins=10):
         size_arr_nonIR = size_arr_nonIR[np.isnan(size_arr_nonIR)==False]
         hist_nonIR, b = np.histogram(size_arr_nonIR, bins, density=False)
 
+        print(len(size_arr_IR))
         Dval, pval = ks_2samp(size_arr_IR, size_arr_nonIR)
         print(f'{pval} p value of ks test of ONC/OMC1 size distribution')
         
@@ -363,7 +364,11 @@ def R_hist_eisner(size_arr, label, filename, nbins=10, size_arr2=None, label2=No
 
             Dval, pval = ks_2samp(eisner_R, size_arr2)
             print(f'{pval} p value of ks test with eisner no upper lims and {label2}')
-    
+
+            
+            Dval, pval = ks_2samp(size_arr, size_arr2)
+            print(f'{pval} p value of ks test with {label} no upper lims and {label2}')
+ 
             
             size_arr_kde2 = gaussian_kde(size_arr2)
             size_pdf2 = size_arr_kde2.evaluate(size_grid)#*widths[0]*len(size_arr2)
@@ -437,7 +442,7 @@ def size_comp_simple(arrs, errs, labels, filename, src_ids = []):
 def size_comp_eisner(filename):
     fig = plt.figure()
 
-    data = Table.read('/home/jotter/nrao/tables/eis_r0.5_feb21_match.fits')
+    data = Table.read('/home/jotter/nrao/tables/eis_r0.5_mar21_match.fits')
     
     eisner_data = ascii.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='tab')
     eis_UL_ind = np.where(eisner_data['R_disk'] == '<5')[0]
@@ -484,9 +489,9 @@ def size_comp_eisner(filename):
     eisonly_ulim_b3 = data_R_full[eisonly_ulim_ind]
     eisonly_ulim_b3_err = data_R_err_full[eisonly_ulim_ind]
 
-    print('both', both_ulim_ind)
-    print('b3only', b3only_ulim_ind)
-    print('eisonly', eisonly_ulim_ind)
+    print('both', len(both_ulim_ind))
+    print('b3only', len(b3only_ulim_ind))
+    print('eisonly', len(eisonly_ulim_ind))
 
     #where both measure sizes:
     bothmeas_ind = np.intersect1d(eis_meas_ind, deconv_ind)
@@ -499,15 +504,18 @@ def size_comp_eisner(filename):
     ind2 = np.where(data_R-3*data_R_err > eisner_R + 3*eisner_R_err)[0]
     ind = np.concatenate((ind1, ind2))
 
+    print('num_noulim', len(data_R))
+    print('agree', ind)
+    
     #plot both measured
     plt.errorbar(data_R, eisner_R, xerr=3*data_R_err, yerr=3*eisner_R_err, linestyle='', marker='.')
-    plt.errorbar(data_R[ind], eisner_R[ind], xerr=3*data_R_err[ind], yerr=3*eisner_R_err[ind], linestyle='', marker='.', label=r'different to 3$-\sigma$')
+    plt.errorbar(data_R[ind], eisner_R[ind], xerr=3*data_R_err[ind], yerr=3*eisner_R_err[ind], linestyle='', marker='.', label=r'Different to 3$-\sigma$')
 
     #plot both ulim
     both_ulim_b3_xerr = np.array((both_ulim_b3, np.repeat(0,len(both_ulim_b3))))
     both_ulim_eis_yerr = np.array((both_ulim_eis, np.repeat(0,len(both_ulim_eis))))
     #plt.errorbar(both_ulim_b3, both_ulim_eis, xerr=both_ulim_b3_xerr, yerr=both_ulim_eis_yerr, linestyle='', marker='D', color='tab:green')
-    plt.errorbar(both_ulim_b3, both_ulim_eis,  linestyle='', marker='D', color='tab:green', markersize=4)
+    plt.errorbar(both_ulim_b3, both_ulim_eis,  linestyle='', marker='D', color='tab:green', markersize=4, label = 'Upper Limits')
 
     #plot b3 ulim
     b3only_ulim_b3_xerr = np.array((b3only_ulim_b3, np.repeat(0,len(b3only_ulim_ind))))

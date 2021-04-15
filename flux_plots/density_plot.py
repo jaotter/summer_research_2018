@@ -13,12 +13,12 @@ import matplotlib.gridspec as gridspec
 def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, sources='all', vbounds=(0,0.15)):
     
     if sources == 'all':
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_feb21_ulim.fits')
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits')
     if sources == 'IR':
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_feb21_full.fits')
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_mar21_full.fits')
     if sources == 'nonIR' or sources == 'all_contour':
-        full_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_feb21_ulim.fits')
-        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_feb21_full.fits')
+        full_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits')
+        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_mar21_full.fits')
 
         nonIR_src = np.setdiff1d(full_tab['Seq'], IR_tab['Seq'])
         nonIR_ind = [np.where(full_tab['Seq']==d_id)[0][0] for d_id in nonIR_src]
@@ -26,7 +26,7 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
 
     if sources == 'all_contour':
         tab_omc1 = tab
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_feb21_full.fits')
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_mar21_full.fits')
     
     b3_fl = fits.open('/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits')
     b3_wcs = WCS(b3_fl[0].header).celestial
@@ -168,10 +168,14 @@ all_ax.tick_params(axis='both', direction='in', color='white')
 nonIR_ax.tick_params(axis='y', labelleft=False)
 all_ax.tick_params(axis='y', labelleft=False)
 
+IR_ax.set_ylabel('Dec.')
+IR_ax.set_xlabel('RA')
+nonIR_ax.set_xlabel('RA')
+all_ax.set_xlabel('RA')
 
 plt.subplots_adjust(wspace=0.07, left=0.1, right=0.9)
 cbar_ax = fig.add_axes([0.91, 0.1, 0.018, 0.78]) #add_subplot(gs[3])
 fig.colorbar(im, cax=cbar_ax)
-
+cbar_ax.set_xlabel('"')
 #plt.tight_layout()
 plt.savefig(savepath, bbox_inches='tight')

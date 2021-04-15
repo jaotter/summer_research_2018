@@ -27,7 +27,7 @@ def plot_cutout(img_path, coord, size, savefile):
     plt.imshow(cutout.data, transform=ax.get_transform(wcs), norm=asinh_norm.AsinhNorm())
     plt.colorbar()
     
-    plt.savefig(f'/home/jotter/nrao/plots/IR_cutouts/{savefile}.png',dpi=400)
+    plt.savefig(f'/home/jotter/nrao/plots/IR_cutouts/{savefile}',dpi=400)
     plt.close()
 
 
@@ -36,9 +36,8 @@ IR = Table.read('/home/jotter/nrao/tables/A11_MLLA_r0.5_HC2000_LRY2000_matched_F
 
 um_ind = np.where(np.isnan(IR['RA_B3']) == True)
 
+um_ind = np.where(IR['MLLA'] == 603)
 IR_um = IR[um_ind]
-
-IR_um = IR_um[23::]
 
 um_coords = SkyCoord(ra=IR_um['RAJ2000_1'], dec=IR_um['DEJ2000_1'], unit=u.degree)
 print(IR_um['MLLA'].data)
@@ -46,7 +45,7 @@ print(IR_um['MLLA'].data)
 for ind, coord in enumerate(um_coords):
     srcname = IR_um['MLLA'][ind]
     print(srcname)
-    plot_cutout(img, coord, 2*u.arcsec, f'src_{srcname}MLLA_cutout.png')
+    plot_cutout(img, coord, 1*u.arcsec, f'src_{srcname}MLLA_cutout_small.png')
 
 #src1ind = np.where(IR['MLLA'] == 506)[0]
 #src2ind = np.where(IR['MLLA'] == 628)[0]
