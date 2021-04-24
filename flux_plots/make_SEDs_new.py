@@ -13,7 +13,7 @@ import fnmatch
 from astropy.coordinates import Angle, SkyCoord
 
 def get_ind(names): #returns indices where sources are detected in all bands
-    data = fits.getdata('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_apr20.fits')
+    data = fits.getdata('tables/r0.5_catalog_bgfit_apr20.fits')
     flux_inds = [np.where(np.isnan(data['ap_flux_'+n]) == False)[0] for n in names]
     #fit_ind =  np.where(data['good_fit_flag'] == True)[0]
     ind1 = reduce(np.intersect1d, flux_inds)
@@ -25,12 +25,12 @@ def get_ind(names): #returns indices where sources are detected in all bands
 def plot_SEDs(names):
     freqs = {'B3':98*u.GHz, 'B6':223.5*u.GHz, 'B7':339.7672758867*u.GHz}
     #freqs = {'B3':98*u.GHz, 'B6':223.5*u.GHz, 'B7_hr':339.7672758867*u.GHz}
-    data = fits.getdata('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_apr20.fits')
+    data = fits.getdata('tables/r0.5_catalog_bgfit_apr20.fits')
     ind = get_ind(names)
 
     alpha = [1.5,2,2.5]
 
-    imgs = ['/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits', '/home/jotter/nrao/images/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits', '/home/jotter/nrao/images/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits']
+    imgs = ['images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits', 'images/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits', 'images/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits']
     freq_x = np.array([freqs[n].value for n in names])
     for i in ind:
         #fluxes = [data['gauss_amp_'+n][i] for n in names]
@@ -53,9 +53,9 @@ def plot_SEDs(names):
 
         plt.xscale('log')
         plt.yscale('log')
-        plt.ylabel('aperture flux (Jy)')
+        plt.ylabel('Aperture flux (Jy)')
         #plt.ylabel('gaussian amplitude (Jy)')
-        plt.xlabel('frequency (GHz)')
+        plt.xlabel('Frequency (GHz)')
         plt.legend()
 
         locs_x = [0.3, 0.5, 0.7]
@@ -79,6 +79,6 @@ def plot_SEDs(names):
             plt.title(names[j])
             a.tick_params(labelleft=False, labelbottom=False)
 
-        plt.savefig('/home/jotter/nrao/plots/SEDs/SED_'+str(data['D_ID'][i])+'_apflux_bgfit_apr20.png', dpi=300)
+        plt.savefig('plots/SEDs/SED_'+str(data['D_ID'][i])+'_apflux_bgfit_apr20.png', dpi=300)
         plt.close()
 plot_SEDs(['B3', 'B6', 'B7'])
