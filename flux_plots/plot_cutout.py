@@ -27,12 +27,12 @@ def plot_cutout(img_path, coord, size, savefile):
     plt.imshow(cutout.data, transform=ax.get_transform(wcs), norm=asinh_norm.AsinhNorm())
     plt.colorbar()
     
-    plt.savefig(f'/home/jotter/nrao/plots/IR_cutouts/{savefile}',dpi=400)
+    plt.savefig(f'plots/IR_cutouts/{savefile}',dpi=400)
     plt.close()
 
 
-img = '/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
-IR = Table.read('/home/jotter/nrao/tables/A11_MLLA_r0.5_HC2000_LRY2000_matched_FOV.fits')
+img = 'images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
+IR = Table.read('tables/A11_MLLA_r0.5_HC2000_LRY2000_matched_FOV.fits')
 
 um_ind = np.where(np.isnan(IR['RA_B3']) == True)
 
