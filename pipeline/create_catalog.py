@@ -10,6 +10,7 @@ from astropy.nddata import Cutout2D
 from astropy.wcs import WCS
 import scipy.special as special
 
+from scipy.stats import median_abs_deviation
 import numpy as np
 import os
 
@@ -17,10 +18,6 @@ import os
 #columns (where n is the image name)
 #srcID, fwhm_maj_n, fwhm_maj_err_n, fwhm_min_n, fwhm_min_err_n, fwhm_maj_deconv_n, fwhm_maj_deconv_err_n, fwhm_min_deconv_n, fwhm_min_deconv_err_n, aspect_ratio_deconv, aspect_ratio_deconv_err, pa_n, pa_err_n, ap_flux_n, ap_flux_err_n, RA_n, RA_err_n, DEC_n, DEC_err_n
 
-def rms(array):
-        sq_arr = np.square(array)
-        avg = np.nanmean(sq_arr)
-        return np.sqrt(avg)
 
 def mask(reg, cutout):#masks everything except the region                                                                                                                                     
     n = cutout.shape[0]
@@ -159,7 +156,7 @@ def single_img_catalog(B3_img, B3_name, B6_img, B6_name, B7_img, B7_name, cat_na
 
                 # Calculate the SNR and aperture flux sums
                 pixels_in_annulus = cutout.data[annulus_mask.astype('bool')]
-                bg_rms = rms(pixels_in_annulus)
+                bg_rms = median_abs_deviation(pixels_in_annulus)
                 print(img_table['D_ID'][row])
                 print('BG RMS: %f' % (bg_rms))
                 ap_bg_rms = bg_rms/np.sqrt(npix/ppbeam) #rms/sqrt(npix/ppbeam) - rms error per beam
@@ -299,7 +296,7 @@ def huge_B3_catalog(B3_img, cat_name):
 
         # Calculate the SNR and aperture flux sums
         pixels_in_annulus = cutout.data[annulus_mask.astype('bool')]
-        bg_rms = rms(pixels_in_annulus)
+        bg_rms = median_abs_deviation(pixels_in_annulus)
         #print(img_table['D_ID'][row])
         #print('BG RMS: %f' % (bg_rms))
         ap_bg_rms = bg_rms/np.sqrt(npix/ppbeam) #rms/sqrt(npix/ppbeam) - rms error per beam
@@ -452,7 +449,7 @@ def imgs_catalog(B3_imgs, B3_names, B6_imgs, B6_names, B7_imgs, B7_names, short_
 
                     # Calculate the SNR and aperture flux sums
                     pixels_in_annulus = cutout.data[annulus_mask.astype('bool')] #pixels within annulus
-                    bg_rms = rms(pixels_in_annulus)
+                    bg_rms = median_abs_deviation(pixels_in_annulus)
                     ap_bg_rms = bg_rms/np.sqrt(npix/ppbeam) #rms/sqrt(npix/ppbeam) - rms error per beam
                     bg_median = np.median(pixels_in_annulus)
 

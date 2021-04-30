@@ -10,6 +10,7 @@ from astropy.table import Table, join, Column
 from astropy.nddata import Cutout2D
 from astropy.wcs import WCS
 
+from scipy.stats import median_abs_deviation
 import scipy.special as special
 import numpy as np
 import os
@@ -17,11 +18,6 @@ import os
 #this file fits a source and background with two gaussians
 #columns (where n is the image name)
 #srcID, fwhm_maj_n, fwhm_maj_err_n, fwhm_min_n, fwhm_min_err_n, fwhm_maj_deconv_n, fwhm_maj_deconv_err_n, fwhm_min_deconv_n, fwhm_min_deconv_err_n, aspect_ratio_deconv, aspect_ratio_deconv_err, pa_n, pa_err_n, ap_flux_n, ap_flux_err_n, RA_n, RA_err_n, DEC_n, DEC_err_n
-
-def rms(array):
-        sq_arr = np.square(array)
-        avg = np.nanmean(sq_arr)
-        return np.sqrt(avg)
 
 def mask(reg, cutout):#masks everything except the region                                                                                                                                     
     n = cutout.shape[0]
@@ -191,7 +187,7 @@ def fit_source(srcID, img, img_name, band, fit_bg=False, bg_stddev_x=30, bg_stdd
 
             # Calculate the SNR and aperture flux sums
             pixels_in_annulus = cutout.data[annulus_mask.astype('bool')] #pixels within annulus
-            bg_rms = rms(pixels_in_annulus)
+            bg_rms = median_abs_deviation(pixels_in_annulus)
             ap_bg_rms = bg_rms/np.sqrt(npix/ppbeam) #rms/sqrt(npix/ppbeam) - rms error per beam
             bg_median = np.median(pixels_in_annulus)
 
@@ -201,7 +197,9 @@ def fit_source(srcID, img, img_name, band, fit_bg=False, bg_stddev_x=30, bg_stdd
             ap_flux_bgcorrect = aperture_flux - pix_bg
             ap_flux_correct = ap_flux_bgcorrect + ap_flux_bgcorrect*(1 - special.erf(2*np.sqrt(np.log(2)))) #flux correction for summing within 2*fwhm
 
-            print(f'Background: {pix_bg}, flux: {img_table["gauss_amp_"+band][row]}')
+            print(f'Background: {pix_bg}, Gauss amp: {img_table["gauss_amp_"+band][row]}')
+            print(f'peak pixel: {np.nanmax(cutout_mask[ap_mask.data==1])}')
+
             
             ap_flux_err_arr.append(ap_bg_rms)
             ap_flux_arr.append(ap_flux_correct)
