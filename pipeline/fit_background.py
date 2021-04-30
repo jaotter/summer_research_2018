@@ -49,7 +49,7 @@ def fit_source(srcID, img, img_name, band, fit_bg=False, bg_stddev_x=30, bg_stdd
     
     #ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/dendro_ref_catalog_edited.fits'
     #ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/ref_catalog_feb21.fits'
-    ref_data_name = '/lustre/cv/observers/cv-12578/orion_disks/tables/ref_catalog_src117.fits'
+    ref_data_name = '/lustre/cv/observers/cv-12578/orion_disks/tables/ref_catalog_may21.fits'
     ref_data = Table.read(ref_data_name)
     
     fl = fits.open(img)
@@ -70,7 +70,7 @@ def fit_source(srcID, img, img_name, band, fit_bg=False, bg_stddev_x=30, bg_stdd
     #now get ready to fit gaussians
     #start by setting up save directory for images
     #gauss_save_dir = '/home/jotter/nrao/gauss_diags_feb21/fitbg/'+img_name+'/'
-    gauss_save_dir = f'/lustre/cv/observers/cv-12578/orion_disks/gauss_diags_feb21/{img_name}/'
+    gauss_save_dir = f'/lustre/cv/observers/cv-12578/orion_disks/gauss_diags_may21/{img_name}/'
     
     print('saving plots to '+gauss_save_dir)
     if not os.path.exists(gauss_save_dir):
