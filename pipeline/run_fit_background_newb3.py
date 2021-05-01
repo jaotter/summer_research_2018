@@ -7,7 +7,7 @@ B3_img = '/lustre/cv/observers/cv-12578/orion_disks/Orion_SourceI_B3_continuum_r
 B3_name = 'B3_huge_bg_cat'
 
 fit_param_tab = Table.read('/lustre/cv/observers/cv-12578/orion_disks/b3_fit_params_may21.csv')
-catalog = Table.read('/lustre/cv/observers/cv-12578/orion_disks/tables/r0.5_catalog_feb21.fits')
+catalog = Table.read('/lustre/cv/observers/cv-12578/orion_disks/tables/r0.5_catalog_feb21_extrasrc.fits')
 catalog.rename_column('D_ID', 'Seq')
 
 for fit_row in fit_param_tab:
