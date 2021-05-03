@@ -1,25 +1,25 @@
 from fit_background import *
 
-src = 71
+src = 123
 fit_bg = False
 
-bg_xmean = -40
-bg_ymean = 40
-bg_xsigma = 35
-bg_ysigma = 35
-zoom = 7
+bg_xmean = -20
+bg_ymean = 20
+bg_xsigma = 10
+bg_ysigma = 10
+zoom = 5
 
-band = 'B6'
+band = 'B3'
 
-#B3_img = '/lustre/cv/observers/cv-12578/orion_disks/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits'
-#B3_name = 'B3_huge_bg'
+B3_img = '/lustre/cv/observers/cv-12578/orion_disks/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits'
+B3_name = 'B3_huge_bg'
 
 
 #B6_img = '/home/jotter/nrao/images/B6_convolved_r0.5.clean1mJy.150mplus.huge.image.tt0.pbcor.fits'
-B6_img = '/home/jotter/nrao/images/Orion_SourceI_B6_continuum_r0.5.clean1mJy.150mplus.huge.image.tt0.pbcor.fits'
+#B6_img = '/home/jotter/nrao/images/Orion_SourceI_B6_continuum_r0.5.clean1mJy.150mplus.huge.image.tt0.pbcor.fits'
 
 
-B6_name = 'B6_single'
+#B6_name = 'B6_single'
 #B7_img = '/home/jotter/nrao/images/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
 #B7_name = 'B7_single'
 
@@ -31,13 +31,14 @@ B6_name = 'B6_single'
 #for src in srcs:
 #    fit = fit_source(src, B3_img, B3_name, band, fit_bg=fit_bg, bg_stddev_x=bg_xsigma, bg_stddev_y=bg_ysigma, bg_mean_x=bg_xmean, bg_mean_y=bg_ymean, zoom=3, max_offset_in_beams=5)
 
-fit = fit_source(src, B6_img, B6_name, band, fit_bg=fit_bg, bg_stddev_x=bg_xsigma, bg_stddev_y=bg_ysigma, bg_mean_x=bg_xmean, bg_mean_y=bg_ymean, zoom=zoom, max_offset_in_beams=50)
+fit = fit_source(src, B3_img, B3_name, band, fit_bg=fit_bg, bg_stddev_x=bg_xsigma, bg_stddev_y=bg_ysigma, bg_mean_x=bg_xmean, bg_mean_y=bg_ymean, zoom=zoom, max_offset_in_beams=50)
 
 
 #print(fit['fwhm_maj_deconv_B6'], fit['fwhm_maj_deconv_err_B6'])
 #print(fit['RA_B6'], fit['DEC_B6'])
 print(fit)
 print(fit['SNR_'+band])
+print(fit['fwhm_maj_err_'+band])
 #print(fit['ap_flux_B6'])
 #fit params: - default xmean 0, ymean 0, zoom 1
 #B7:
