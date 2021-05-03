@@ -10,7 +10,7 @@ import astropy.units as u
 
 FWHM_TO_SIGMA = 1/np.sqrt(8*np.log(2))
 
-data =  Table.read('../tables/r0.5_catalog_bgfit_feb21_ulim.fits')
+data =  Table.read('../tables/r0.5_catalog_bgfit_mar21_ulim.fits')
 
 
 #calculate quantities for each band
@@ -47,28 +47,37 @@ mass_err_arrs = []
 inclination_arrs = []
 inclination_err_arrs = []
 
+sys_err = 0.20 #20% systematic error
+
+b3flux = data['ap_flux_B3'].data
+b3flux_err = np.sqrt(data['ap_flux_err_B3'].data**2 + (sys_err*b3flux)**2)
+b6flux = data['ap_flux_B6'].data
+b6flux_err = np.sqrt(data['ap_flux_err_B6'].data**2 + (sys_err*b6flux)**2)
+b7flux = data['ap_flux_B7'].data
+b7flux_err = np.sqrt(data['ap_flux_err_B7'].data**2 + (sys_err*b7flux)**2)
+
 #calculated quantities not requiring loops
 A = np.log10(freqs[1]) - np.log10(freqs[0])
-alpha_B3B6 = (np.log10(data['ap_flux_B6'])-np.log10(data['ap_flux_B3']))/A
-alpha_B3B6_err = np.sqrt((data['ap_flux_err_B6']/(A*np.log(10)*data['ap_flux_B6']))**2 + (data['ap_flux_err_B3']/(A*np.log(10)*data['ap_flux_B3']))**2)
-alpha_B3B6_err2 = (1/(A*np.log(10)))*np.sqrt((data['ap_flux_err_B6']/data['ap_flux_B6'])**2 + (data['ap_flux_err_B3']/data['ap_flux_B3'])**2)
+alpha_B3B6 = (np.log10(b6flux)-np.log10(b3flux))/A
+alpha_B3B6_err = np.sqrt((b6flux_err/(A*np.log(10)*b6flux))**2 + (b3flux_err/(A*np.log(10)*b3flux))**2)
+alpha_B3B6_err2 = (1/(A*np.log(10)))*np.sqrt((b6flux_err/b6flux)**2 + (b3flux_err/b3flux)**2)
 
 print(alpha_B3B6_err)
 print(alpha_B3B6_err2)
 
 B = np.log10(freqs[2]) - np.log10(freqs[1])
-alpha_B6B7 = (np.log10(data['ap_flux_B7'])-np.log10(data['ap_flux_B6']))/B
-alpha_B6B7_err = np.sqrt((data['ap_flux_err_B6']/(B*np.log(10)*data['ap_flux_B6']))**2 + (data['ap_flux_err_B7']/(B*np.log(10)*data['ap_flux_B7']))**2)
+alpha_B6B7 = (np.log10(b7flux)-np.log10(b6flux))/B
+alpha_B6B7_err = np.sqrt((b6flux_err/(B*np.log(10)*b6flux))**2 + (b7flux_err/(B*np.log(10)*b7flux))**2)
 #alpha_B3B6_err = (1/np.log(10))*np.sqrt((data['ap_flux_err_B6']/data['ap_flux_B6'])**2 + (data['ap_flux_err_B3']/data['ap_flux_B3'])**2)
     
 for b in range(len(bands)):
     band = bands[b]
-    inclination = np.arccos(data['fwhm_min_deconv_'+band]/data['fwhm_maj_deconv_'+band])
-    inclination_arrs.append(inclination*360/(2*np.pi))
+    inclination = np.arccos(data['fwhm_min_deconv_'+band]/data['fwhm_maj_deconv_'+band])*u.radian
+    inclination_arrs.append(inclination.to(u.degree))
     inclination_err = np.sqrt((data['fwhm_min_deconv_err_'+band]**2/(data['fwhm_maj_deconv_'+band]**2- data['fwhm_min_deconv_'+band]**2)) +
                               ((data['fwhm_maj_deconv_err_'+band]**2)*(data['fwhm_min_deconv_'+band]**2) /
-                               (data['fwhm_maj_deconv_'+band]**2 * (data['fwhm_maj_deconv_'+band]**2 - data['fwhm_min_deconv_'+band]**2))))
-    inclination_err_arrs.append(inclination_err*360/(2*np.pi))
+                               (data['fwhm_maj_deconv_'+band]**2 * (data['fwhm_maj_deconv_'+band]**2 - data['fwhm_min_deconv_'+band]**2))))*u.radian
+    inclination_err_arrs.append(inclination_err.to(u.degree))
 
     fl = fits.open(imgs[b])
     fl_nonconv = fits.open(nonconv_imgs[b])
@@ -126,4 +135,4 @@ tab = Table([data['Seq'].data, int_flux_arrs[0], int_flux_err_arrs[0], int_flux_
              dtype=['i4','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8',
                     'f8','f8','f8','f8','f8','f8','f8','f8','f8'])    
 
-tab.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_feb21_calc_vals.fits', format='fits', overwrite=True)
+tab.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_mar21_calc_vals.fits', format='fits', overwrite=True)

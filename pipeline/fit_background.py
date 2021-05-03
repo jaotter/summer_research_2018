@@ -48,8 +48,8 @@ def fit_source(srcID, img, img_name, band, fit_bg=False, bg_stddev_x=30, bg_stdd
 
     
     #ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/dendro_ref_catalog_edited.fits'
-    #ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/ref_catalog_feb21.fits'
-    ref_data_name = '/lustre/cv/observers/cv-12578/orion_disks/tables/ref_catalog_may21.fits'
+    ref_data_name = '/home/jotter/nrao/summer_research_2018/tables/ref_catalog_may21.fits'
+    #ref_data_name = '/lustre/cv/observers/cv-12578/orion_disks/tables/ref_catalog_may21.fits'
     ref_data = Table.read(ref_data_name)
     
     fl = fits.open(img)
@@ -69,8 +69,8 @@ def fit_source(srcID, img, img_name, band, fit_bg=False, bg_stddev_x=30, bg_stdd
         
     #now get ready to fit gaussians
     #start by setting up save directory for images
-    #gauss_save_dir = '/home/jotter/nrao/gauss_diags_feb21/fitbg/'+img_name+'/'
-    gauss_save_dir = f'/lustre/cv/observers/cv-12578/orion_disks/gauss_diags_may21/{img_name}/'
+    gauss_save_dir = '/home/jotter/nrao/gauss_diags_may21/fitbg/'+img_name+'/'
+    #gauss_save_dir = f'/lustre/cv/observers/cv-12578/orion_disks/gauss_diags_may21/{img_name}/'
     
     print('saving plots to '+gauss_save_dir)
     if not os.path.exists(gauss_save_dir):
@@ -78,17 +78,17 @@ def fit_source(srcID, img, img_name, band, fit_bg=False, bg_stddev_x=30, bg_stdd
     #now make region
     rad = Angle(1, 'arcsecond') #radius used in region list
     #src_ind = np.where(ref_data['D_ID']==srcID)[0]
-    src_ind = np.where(ref_data['Seq_B3']==srcID)[0]
+    src_ind = np.where(ref_data['B3_Seq']==srcID)[0]
 
     ra = ref_data['RA_B3'][src_ind].data[0]
     dec = ref_data['DEC_B3'][src_ind].data[0]
     center_reg = SkyCoord(ra, dec, unit='deg', frame='icrs')
-    reg = regions.CircleSkyRegion(center=center_reg, radius=1*u.arcsecond, meta={'text':str(ref_data['Seq_B3'][src_ind].data[0])+'_xstddev_'+str(bg_stddev_x)+'_ystddev_'+str(bg_stddev_y)})
+    reg = regions.CircleSkyRegion(center=center_reg, radius=1*u.arcsecond, meta={'text':str(ref_data['B3_Seq'][src_ind].data[0])+'_xstddev_'+str(bg_stddev_x)+'_ystddev_'+str(bg_stddev_y)})
         
     region_list = []
     #valid_inds = np.where(np.isnan(ref_data[band+'_detect']) == False)[0]
     for ind in range(len(ref_data)):#valid_inds:
-        if ref_data['Seq_B3'][ind] == srcID:
+        if ref_data['B3_Seq'][ind] == srcID:
             continue
         ra_i = ref_data['RA_B3'][ind]
         dec_i = ref_data['DEC_B3'][ind]
@@ -129,7 +129,7 @@ def fit_source(srcID, img, img_name, band, fit_bg=False, bg_stddev_x=30, bg_stdd
     snr_arr = []
     
     for row in range(len(img_table)): #now loop through sources in reference data and make measurements
-        ref_ind = np.where(ref_data['Seq_B3'] == img_table['Seq'][row])[0]
+        ref_ind = np.where(ref_data['B3_Seq'] == img_table['Seq'][row])[0]
         if True==True:#len(ref_ind > 0):
 
             measured_source_size = radio_beam.Beam(major=img_table['fwhm_maj_'+band][row]*u.arcsec, minor=img_table['fwhm_min_'+band][row]*u.arcsec, pa=(img_table['pa_'+band][row]-90)*u.deg)

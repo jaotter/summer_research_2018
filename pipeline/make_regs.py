@@ -20,7 +20,46 @@ def write_reg_file(ra, dec, filename, name='', IDs=None):
             fh.write('circle({x_cen}, {y_cen}, {radius}) #text={{{ID}}}\n'.format(x_cen=ra[ind], y_cen=dec[ind], radius=rad, ID=ID_str))
     
 
-data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_apr20.fits')
-reg_file = '/home/jotter/nrao/images/regions/r0.5_catalog_apr20.reg'
+#data = Table.read('/home/jotter/nrao/tables/HC2000.fit')
+#reg_file = '/home/jotter/nrao/images/regions/HC2000_IR.reg'
+#print(data.info)
+#data = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_feb21_full.fits')
+#reg_file = '/home/jotter/nrao/images/regions/IR_matches_feb21.reg'
 
-write_reg_file(data['RA_B3'], data['DEC_B3'], reg_file, name='r0.5', IDs=data['D_ID'])
+#data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_new_det_mar21.fits')
+#reg_file = '/home/jotter/nrao/images/regions/r0.5_new_det_mar21.reg'
+
+data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits')
+#reg_file = '/home/jotter/nrao/images/regions/r0.5_catalog_mar21.reg'
+reg_file = '/home/jotter/nrao/images/regions/r0.5_catalog_b6only_mar21.reg'
+ind = np.where(np.isnan(data['RA_B6']) == False)[0]
+
+#data = Table.read('/home/jotter/nrao/tables/MLLA_02_IR.fit')
+#reg_file = '/home/jotter/nrao/images/regions/MLLA_full.reg'
+
+#data = Table.read('/home/jotter/nrao/tables/COUP_srclist.fits')
+#reg_file = '/home/jotter/nrao/images/regions/COUP_full.reg'
+
+#data = Table.read('/home/jotter/nrao/tables/robberto2010.fits')
+#reg_file = '/home/jotter/nrao/images/regions/robberto2010.reg'
+
+#coord = SkyCoord(ra=data['RAh'], dec=data['DEdeg'], unit=(u.hourangle,u.degree))
+
+#write_reg_file(coord.ra.deg, coord.dec.deg, reg_file, name='R10', IDs=data['ID'])
+
+#data = Table.read('/home/jotter/nrao/tables/eis_coord_table.fits')
+#reg_file = '/home/jotter/nrao/images/regions/E18.reg'
+
+
+#data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits')
+#lowsnr = np.where(data['SNR_B3'] < 5)
+#nob6 = np.where(np.isnan(data['SNR_B6']) == True)
+#nob7 = np.where(np.isnan(data['SNR_B6']) == True)
+#nob6b7 = np.intersect1d(nob6, nob7)
+#b3_lowsnr = np.intersect1d(lowsnr, nob6b7)
+#reg_file = '/home/jotter/nrao/images/regions/b3_lowsnr.reg'
+
+#data = Table.read('/home/jotter/nrao/tables/r0.5_b3_catalog_full_may21.fits')
+#reg_file = '/home/jotter/nrao/images/regions/b3_full_b3seq_may21.reg'
+
+write_reg_file(data['RA_B3'][ind], data['DEC_B3'][ind], reg_file, name='Seq', IDs=data['Seq'])

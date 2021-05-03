@@ -18,111 +18,33 @@ def DEC_to_deg(DD, MM, SS):
 
 FWHM_TO_SIGMA = 1/np.sqrt(8*np.log(2))
 
-data =  Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_sep20_ulim.fits')
+data =  Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_nov20_ulim.fits')
 
-calc_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_jun20_calc_vals.fits')
+calc_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_nov20_calc_vals.fits')
 
-EisnerID = Column(np.array(np.repeat('none', len(data)), dtype='S10'), name='Eisner_ID')
+irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_nov20_full.fits')
 
-table_meas_misc = Table((data['D_ID'], EisnerID, data['RA_B3'], data['RA_err_B3'], data['DEC_B3'],
-                         data['DEC_err_B3'], calc_tab['alpha_B3B6'], calc_tab['alpha_B3B6_err'],
-                         calc_tab['alpha_B6B7'], calc_tab['alpha_B6B7_err']))
-                         
-table_meas_B3 = Table((data['D_ID'], EisnerID, data['ap_flux_B3'], data['ap_flux_err_B3'], data['gauss_amp_B3'],
-                       data['gauss_amp_err_B3'], calc_tab['int_flux_B3'],
-                       calc_tab['int_flux_err_B3'], data['fwhm_maj_B3'],
-                       data['fwhm_maj_err_B3'], data['fwhm_min_B3'],
-                       data['fwhm_min_err_B3'], data['pa_B3'], data['pa_err_B3'],
-                       data['fwhm_maj_deconv_B3'], data['fwhm_min_deconv_B3'], data['pa_deconv_B3'], 
-                       calc_tab['inclination_B3'], calc_tab['inclination_err_B3'], data['upper_lim_B3']))
-
-table_meas_B6 = Table((data['D_ID'], data['ap_flux_B6'],
-                       data['ap_flux_err_B6'], data['gauss_amp_B6'], data['gauss_amp_err_B6'],
-                       calc_tab['int_flux_B6'], calc_tab['int_flux_err_B6'],
-                       data['fwhm_maj_B6'], data['fwhm_maj_err_B6'], data['fwhm_min_B6'],
-                       data['fwhm_min_err_B6'], data['pa_B6'], data['pa_err_B6'],
-                       data['fwhm_maj_deconv_B6'], data['fwhm_min_deconv_B6'], data['pa_deconv_B6'], 
-                       calc_tab['inclination_B6'], calc_tab['inclination_err_B6'], data['upper_lim_B6']))
-
-
-table_meas_B7 = Table((data['D_ID'], data['ap_flux_B7'], data['ap_flux_err_B7'],
-                       data['gauss_amp_B7'], data['gauss_amp_err_B7'],
-                       calc_tab['int_flux_B7'], calc_tab['int_flux_err_B7'], data['fwhm_maj_B7'],
-                       data['fwhm_maj_err_B7'], data['fwhm_min_B7'],
-                       data['fwhm_min_err_B7'], data['pa_B7'], data['pa_err_B7'],
-                       data['fwhm_maj_deconv_B7'], data['fwhm_min_deconv_B7'], data['pa_deconv_B7'],
-                       calc_tab['inclination_B7'], calc_tab['inclination_err_B7'], data['upper_lim_B7']))
-
-
-
-table_inf = Table((data['D_ID'], calc_tab['lower_lum_B3'], calc_tab['lower_lum_B6'], calc_tab['lower_lum_B7'],
-                calc_tab['dust_mass_B3'], calc_tab['dust_mass_err_B3'], calc_tab['dust_mass_B6'],
-                calc_tab['dust_mass_err_B6'], calc_tab['dust_mass_B7'], calc_tab['dust_mass_err_B7']))
-
-
-eisner_tab = ascii.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='tab', delimiter='\t')
-eisner_tab.remove_column('remove')
-
-eisner_ra = []
-eisner_dec = []
-for row in eisner_tab:
-    eisner_ra.append(RA_to_deg(float(row['alpha'][0:2]), float(row['alpha'][2:4]), float(row['alpha'][4:])))
-    eisner_dec.append(DEC_to_deg(float(row['delta'][0:3]), float(row['delta'][3:5]), float(row['delta'][5:])))
-
-   
-coord_tab = SkyCoord(ra=table_meas_misc['RA_B3']*u.degree, dec=table_meas_misc['DEC_B3']*u.degree)
-
-eisner_coord = SkyCoord(ra=eisner_ra*u.degree, dec=eisner_dec*u.degree)
-
-idx, d2d, d3d = eisner_coord.match_to_catalog_sky(coord_tab)
-#idx is list of indices of table_meas with locations corresponding to eisner_tab
-matches = np.where(d2d.value < 0.5*(1/3600))[0] #matches within 0.1 arcsec
-for mat in matches:
-    table_meas_misc[idx[mat]]['Eisner_ID'] = eisner_tab[mat]['ID']    
-
-table_meas_B3['Eisner_ID'] = table_meas_misc['Eisner_ID']
-
-eis_coord_tab = Table((eisner_tab['ID'], eisner_ra, eisner_dec),names=('ID', 'RA', 'DEC'))
-eis_coord_tab.write('/home/jotter/nrao/tables/eis_coord_table.fits', format='fits', overwrite=True)
-
-#tables with table_meas_BX have all sources
-B3ind = np.where(np.isnan(table_meas_B3['ap_flux_B3']) == False)[0]
-B6ind = np.where(np.isnan(table_meas_B6['ap_flux_B6']) == False)[0]
-B7ind = np.where(np.isnan(table_meas_B7['ap_flux_B7']) == False)[0]
-allband_ind = np.intersect1d(B6ind, B7ind)
-
-only_B6ind = np.setdiff1d(B6ind, B7ind)
-only_B3ind = np.setdiff1d(B3ind, B6ind)
-
-meas_B7 = table_meas_B7
-meas_B6 = table_meas_B6
-meas_B3 = table_meas_B3
-meas_misc = table_meas_misc
-
-#meas_misc.write('/home/jotter/nrao/tables/table_meas_misc.fits', overwrite=True)
-#meas_B3.write('/home/jotter/nrao/tables/table_meas_B3.fits', overwrite=True)
-
-D_ID = np.array(meas_misc['D_ID'], dtype="<U20")
-D_ID_b6b7 = np.array(meas_misc['D_ID'], dtype="<U20") #include marks for b6 and b7 nonconv srcs
-D_ID_b6 = np.array(meas_misc['D_ID'], dtype="<U20") #only include b6 nonconv srcs
-D_ID_b7 = np.array(meas_misc['D_ID'], dtype="<U20") #only include b7 nonconv srcs
 
 B6nonconv = [16,34,71,80,83]
 B6nonconv_ind = [np.where(D_ID_b6==str(b6))[0][0] for b6 in B6nonconv]
 B7nonconv = [16,18,33,34,50,71,76,80,81,83]
 B7nonconv_ind = [np.where(D_ID_b7==str(b7))[0][0] for b7 in B7nonconv]
 
+D_ID = data['D_ID']
 
 for b6ind in B6nonconv_ind:
-    D_ID_b6[b6ind] = f'${D_ID_b6[b6ind]}^*$'
-    D_ID_b6b7[b6ind] = f'${D_ID[b6ind]}^*$'
+    D_ID[b6ind] = f'${D_ID_b6[b6ind]}^*$'
 for b7ind in B7nonconv_ind:
-    D_ID_b7[b7ind] = f'${D_ID_b7[b7ind]}^\dagger$'
-    D_ID_b6b7[b7ind] = f'${D_ID[b7ind]}^\dagger$'
+    D_ID[b7ind] = f'${D_ID_b7[b7ind]}^\dagger$'
 for b6b7 in np.intersect1d(B6nonconv_ind, B7nonconv_ind):
-    D_ID_b6b7[b6b7] = f'${D_ID[b6b7]}^{{*\dagger}}$'
+    D_ID[b6b7] = f'${D_ID[b6b7]}^{{*\dagger}}$'
 
+MLLA = np.repeat('-', len(data), dtype='S4')
+for mlla_row in irtab:
+    data_ind = np.where(data['D_ID'] == mlla_row['D_ID'])[0]
+    MLLA[data_ind] = mlla_row['MLLA']+mlla_row[
 
+    
 #now clean up tables to put into latex
 
 radec_err = []

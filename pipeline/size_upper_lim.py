@@ -30,7 +30,7 @@ def size_ulim(band, radii_au, n_rep=10):
     radii_au = sorted(radii_au)[::-1]
     radii_as = ((radii_au*u.AU).to(u.pc)/(400*u.pc)*u.rad).to(u.arcsecond).value
     
-    B3file = '/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
+    B3file = '/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits'
     B6file = '/home/jotter/nrao/images/Orion_SourceI_B6_continuum_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'#B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
 
     B7file = '/home/jotter/nrao/images/Orion_SourceI_B7_continuum_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'#B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
@@ -182,11 +182,12 @@ def table_fit(table_path, band, n_rep=10, plot=True):
         plot_snrs = np.linspace(np.min(snrs), np.max(snrs), 30)
         plt.figure()
         plt.hist2d(snrs, upper_lims, cmap='Blues')
-        plt.plot(plot_snrs, f(plot_snrs, params[0], params[1]), color='tab:orange')
-        plt.xlabel('SNR')
+        plt.plot(plot_snrs, f(plot_snrs, params[0], params[1]), color='tab:orange', label=f'$R = {np.round(params[0],1)}\sigma^{{{np.round(params[1],1)}}}$')
+        plt.xlabel('S/N')
         #plt.ylim(0,20)
-        plt.ylabel('Greatest deconvolvable radius (AU)')
+        plt.ylabel('Smallest deconvolvable FWHM (AU)')
         plt.colorbar()
+        plt.legend()
         plt.savefig(f'/home/jotter/nrao/plots/size_lims/SNR_radius_hist2d_{band}_{n_rep}_2.png', bbox_inches='tight')
         plt.close()
 
@@ -196,48 +197,56 @@ def table_fit(table_path, band, n_rep=10, plot=True):
 
 def add_upper_lims(params, band, tab=None):
     if tab is None:
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20.fits')
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21.fits')
     band_ind = np.where(np.isnan(tab[f'SNR_{band}']) == False)[0]
 
     nondeconv_ind = np.where(np.isnan(tab[f'fwhm_maj_deconv_{band}']) == True)[0]
     nd_band_ind = np.intersect1d(band_ind, nondeconv_ind)
     
     upper_lim_arr = np.repeat(np.nan, len(tab))
+
+    print(band)
     
     for ind in nd_band_ind:
         snr = tab[f'SNR_{band}'][ind]
         ulim = f(snr, params[0], params[1])
         upper_lim_arr[ind] = ulim
+
         
-    tab.add_column(upper_lim_arr*u.AU, name=f'upper_lim_{band}')
+    if f'upper_lim_{band}' in tab.columns:
+        tab[f'upper_lim_{band}'] = upper_lim_arr*u.AU
+    else:
+        tab.add_column(upper_lim_arr*u.AU, name=f'upper_lim_{band}')
 
     return tab
         
-radii_au = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30,35]
-radii_au_B6 = [2,3.5,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30]
-radii_au_B7 = [2,3.5,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30]
+#radii_au = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30,35]
+#radii_au_B6 = [2,3.5,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30]
+#radii_au_B7 = [2,3.5,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30]
 
 #radii_au = [1,5,10,15,20]
-params_B3, params_cov = size_ulim('B3', radii_au, n_rep=20)
-params_B6, params_cov = size_ulim('B6', radii_au_B6, n_rep=20)
-params_B7, params_cov = size_ulim('B7', radii_au_B7, n_rep=20)
+#params_B3, params_cov = size_ulim('B3', radii_au, n_rep=20)
+#params_B6, params_cov = size_ulim('B6', radii_au_B6, n_rep=20)
+#params_B7, params_cov = size_ulim('B7', radii_au_B7, n_rep=20)
 
-print('B3 params', params_B3)
-print('B6 params', params_B6)
-print('B7 params', params_B7)
-
-#params_B3 = [13.23785536, -0.29474047]
-#tab_b3ulim = add_upper_lims(params_B3, 'B3')
-#params_B6 = [13.61374216, -0.30177011] 
-#tab_b3b6ulim = add_upper_lims(params_B6, 'B6', tab=tab_b3ulim)
-#params_B7 = [13.1351405, -0.28267385] 
-#tab_ulim = add_upper_lims(params_B7, 'B7', tab=tab_b3b6ulim)
-
-#tab_ulim.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20_ulim.fits')
+#print('B3 params', params_B3)
+#print('B6 params', params_B6)
+#print('B7 params', params_B7)
 
 #print('B3')
-#table_fit('/home/jotter/nrao/plots/size_lims/size_lim_table_n=10_B3.fits', 'B3', plot=False)
+#params_B3, params_cov = table_fit('/home/jotter/nrao/plots/size_lims/size_lim_table_n=20_B3.fits', 'B3', plot=True, n_rep=20)
 #print('B6')
-#table_fit('/home/jotter/nrao/plots/size_lims/size_lim_table_n=10.fits', 'B6')
+#params_B6, params_cov = table_fit('/home/jotter/nrao/plots/size_lims/size_lim_table_n=20_B6.fits', 'B6', plot=True, n_rep=20)
 #print('B7')
-#table_fit('/home/jotter/nrao/plots/size_lims/size_lim_table_n=10_B7.fits', 'B7', plot=False)
+#params_B7, params_cov = table_fit('/home/jotter/nrao/plots/size_lims/size_lim_table_n=20_B7.fits', 'B7', plot=True, n_rep=20)
+
+
+params_B3 = [48, -0.5]
+tab_b3ulim = add_upper_lims(params_B3, 'B3')
+#params_B6 = [26.09342253, -0.57997014]
+#tab_b3b6ulim = add_upper_lims(params_B6, 'B6', tab=tab_b3ulim)
+#params_B7 = [18.32718856, -0.73984847] 
+#tab_ulim = add_upper_lims(params_B7, 'B7', tab=tab_b3b6ulim)
+
+tab_b3ulim.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits', overwrite=True)
+
