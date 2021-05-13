@@ -10,23 +10,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, sources='all', vbounds=(0,0.15)):
+def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, sources='all', vbounds=(0,0.15), plot_pb=False):
     
     if sources == 'all':
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits')
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
     if sources == 'IR':
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_mar21_full.fits')
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
     if sources == 'nonIR' or sources == 'all_contour':
-        full_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits')
-        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_mar21_full.fits')
+        full_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
+        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
 
-        nonIR_src = np.setdiff1d(full_tab['Seq'], IR_tab['Seq'])
-        nonIR_ind = [np.where(full_tab['Seq']==d_id)[0][0] for d_id in nonIR_src]
+        nonIR_src = np.setdiff1d(full_tab['ID'], IR_tab['ID'])
+        nonIR_ind = [np.where(full_tab['ID']==d_id)[0][0] for d_id in nonIR_src]
         tab = full_tab[nonIR_ind]
 
     if sources == 'all_contour':
         tab_omc1 = tab
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_mar21_full.fits')
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
     
     b3_fl = fits.open('/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits')
     b3_wcs = WCS(b3_fl[0].header).celestial
@@ -108,6 +108,23 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
 
+    if plot_pb == True:
+        B3_coord = SkyCoord(ra=83.8104625, dec=-5.37515556, unit=u.degree)
+        B3_coord_pix = new_wcs.all_world2pix(B3_coord.ra, B3_coord.dec, 0)
+        B3_radius = 60*u.arcsecond/2
+        B3_coord_R = SkyCoord(ra=B3_coord.ra, dec=B3_coord.dec+B3_radius)
+        B3_R_pix = new_wcs.all_world2pix(B3_coord_R.ra, B3_coord_R.dec,0)
+        B3_radius_pix = B3_coord_pix[1] - B3_R_pix[1]
+        B3_circ = Circle((B3_coord_pix[0], B3_coord_pix[1]), radius=B3_radius_pix, transform=ax.transData, color='blue', linewidth=1, fill=False, linestyle='--')
+        ax.add_patch(B3_circ)
+        
+        B3_fov = 137.6*u.arcsecond/2
+        B3_coord_R = SkyCoord(ra=B3_coord.ra, dec=B3_coord.dec+B3_fov)
+        B3_R_pix = new_wcs.all_world2pix(B3_coord_R.ra, B3_coord_R.dec,0)
+        B3_radius_pix = B3_coord_pix[1] - B3_R_pix[1]
+        B3_circ = Circle((B3_coord_pix[0], B3_coord_pix[1]), radius=B3_radius_pix, transform=ax.transData, color='blue', linewidth=1, fill=False, linestyle='-')
+        ax.add_patch(B3_circ)
+        
     if sources != 'all_contour':
         ax.scatter(src_map_coords[1], src_map_coords[0], marker='*')
     elif sources == 'all_contour':
@@ -156,8 +173,8 @@ IR_ax = fig.add_subplot(gs[0], projection=new_wcs)
 nonIR_ax = fig.add_subplot(gs[1], projection=new_wcs)
 all_ax = fig.add_subplot(gs[2], projection=new_wcs)
 
-IR_ax, im = make_density_map(npix,nth_neighbor,savepath=None,sources='IR',pos=111, ax_input=IR_ax)
-nonIR_ax, im = make_density_map(npix,nth_neighbor,savepath=None,sources='nonIR',pos=122, ax_input=nonIR_ax)
+IR_ax, im = make_density_map(npix,nth_neighbor,savepath=None,sources='IR',pos=111, ax_input=IR_ax, plot_pb=True)
+nonIR_ax, im = make_density_map(npix,nth_neighbor,savepath=None,sources='nonIR',pos=122, ax_input=nonIR_ax, plot_pb=True)
 all_ax, im = make_density_map(npix,nth_neighbor,savepath=None,sources='all_contour', pos=133, ax_input=all_ax)
 
 
@@ -176,6 +193,6 @@ all_ax.set_xlabel('RA')
 plt.subplots_adjust(wspace=0.07, left=0.1, right=0.9)
 cbar_ax = fig.add_axes([0.91, 0.1, 0.018, 0.78]) #add_subplot(gs[3])
 fig.colorbar(im, cax=cbar_ax)
-cbar_ax.set_xlabel('"')
+cbar_ax.set_xlabel('arcsec')
 #plt.tight_layout()
 plt.savefig(savepath, bbox_inches='tight')
