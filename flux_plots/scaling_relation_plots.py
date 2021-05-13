@@ -13,8 +13,8 @@ from scipy import stats
 band='B3'
 
 #three plots: R and L, R and M, L and M
-data = Table.read('../tables/r0.5_catalog_bgfit_mar21_ulim.fits')
-data_inf = Table.read('../tables/r0.5_mar21_calc_vals.fits')
+data = Table.read('../tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
+data_inf = Table.read('../tables/r0.5_may21_calc_vals_mask.fits')
 andrews = ascii.read('/home/jotter/nrao/tables/andrews_table.txt', format='tab')
 andrews.rename_column('$\mathrm{log}{R}_{\mathrm{eff}}/\mathrm{au}$', 'R_eff')
 andrews.rename_column('F_nu/mJy', 'Fnu')

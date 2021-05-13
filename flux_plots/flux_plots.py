@@ -60,7 +60,7 @@ def dist_flux_plot():
     plt.savefig('/home/jotter/nrao/plots/dist_flux_forbrich_plot_full.png')
 
     
-dist_flux_plot()
+#dist_flux_plot()
 
 def get_ind(names): #returns indices where sources are detected in all bands with good gaussian fits
     data = fits.getdata('/users/jotter/summer_research_2018/tables/r0.5_catalog_conv_bgfitted.fits')
@@ -73,28 +73,28 @@ def get_ind(names): #returns indices where sources are detected in all bands wit
     return ind
 
 def flux_hist(sources='all', exclude_BN=False, KS_test=False):
-    data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20.fits')
+    data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
     eis = Table.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='ascii')
         
     if sources == 'ONC':
-        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_apr20_full_edit.fits')
-        IR_src = IR_tab['D_ID']
-        IR_ind = [np.where(data['D_ID']==d_id)[0][0] for d_id in IR_src]
+        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
+        IR_src = IR_tab['ID']
+        IR_ind = [np.where(data['ID']==d_id)[0][0] for d_id in IR_src]
         data = data[IR_ind]
 
     if sources == 'OMC1':
-        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_apr20_full_edit.fits')
-        nonIR_src = np.setdiff1d(data['D_ID'], IR_tab['D_ID'])
-        nonIR_ind = [np.where(data['D_ID']==d_id)[0][0] for d_id in nonIR_src]
+        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
+        nonIR_src = np.setdiff1d(data['ID'], IR_tab['ID'])
+        nonIR_ind = [np.where(data['ID']==d_id)[0][0] for d_id in nonIR_src]
         data = data[nonIR_ind]
 
     if KS_test == True:
-        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_apr20_full_edit.fits')
-        nonIR_src = np.setdiff1d(data['D_ID'], IR_tab['D_ID'])
+        IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
+        nonIR_src = np.setdiff1d(data['ID'], IR_tab['ID'])
         print(nonIR_src)
-        nonIR_ind = [np.where(data['D_ID']==d_id)[0][0] for d_id in nonIR_src]
+        nonIR_ind = [np.where(data['ID']==d_id)[0][0] for d_id in nonIR_src]
         IR_src = IR_tab['D_ID']
-        IR_ind = [np.where(data['D_ID']==d_id)[0][0] for d_id in IR_src]
+        IR_ind = [np.where(data['ID']==d_id)[0][0] for d_id in IR_src]
 
         B7flux = np.log10(data['ap_flux_B7']*1000)
         
@@ -112,8 +112,8 @@ def flux_hist(sources='all', exclude_BN=False, KS_test=False):
     
         
     if exclude_BN == True:
-        BN_id = 43
-        BN_ind = np.where(data['D_ID'] == 43)[0]
+        BN_id = 39
+        BN_ind = np.where(data['ID'] == 39)[0]
         data.remove_rows([BN_ind[0]])
 
         
@@ -154,12 +154,12 @@ def flux_hist(sources='all', exclude_BN=False, KS_test=False):
     Dval, pval = ks_2samp(B7flux, eisflux)
     print(f'{pval} p value for ks test of b7/eisner')
     
-    plt.bar(plotpts, B7hist, widths, alpha=0.5, edgecolor='black', label=f'Band 7 {sources} sources')
+    plt.bar(plotpts, B7hist, widths, alpha=0.5, edgecolor='black', label=f'Band 7 {sources}')
     plt.bar(plotpts, eishist, widths, alpha=0.5, edgecolor='black', label='E18')
     plt.legend()
     plt.ylabel('number')
     plt.xlabel(r'$\log(F_{\nu=350 GHz} (mJy))$')
-    plt.savefig(f'/home/jotter/nrao/plots/E18_comp/flux_hist_eis_B7_{sources}.pdf', dpi=400)
+    plt.savefig(f'/home/jotter/nrao/plots/E18_comp/flux_hist_eis_B7_{sources}.pdf', dpi=400, bbox_inches='tight')
     plt.close()
     
 def plot_alpha(names, imgs, only_deconv=False, flux_type='aperture'): 
@@ -464,6 +464,6 @@ def image_fluxes(srcID, flux_type='ap'):
     plt.show()
     
 
-#flux_hist(sources='OMC1')
-#flux_hist(sources='ONC')
+flux_hist(sources='OMC1')
+flux_hist(sources='ONC')
 #flux_hist(sources='all')

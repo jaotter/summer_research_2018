@@ -39,13 +39,24 @@ def plot_MST_hist(coord_list, labels, filename, colors=['tab:blue', 'tab:orange'
 
         means.append(np.mean(sep_arr))
         errs.append(np.std(sep_arr)/np.sqrt(len(sep_arr)))
+
+        sep_au = np.mean(sep_arr) * 400
+        sep_err_au = np.std(sep_arr)/np.sqrt(len(sep_arr)) * 400
+        sep_3d = sep_au * 1.3
+        sep_3d_err = sep_err_au * 1.3
+
+        src_density = 3 / (4*np.pi*((sep_3d*u.AU).to(u.pc))**3)
+        src_density_err = 1 / (4*np.pi*((sep_3d*u.AU).to(u.pc))**4) * (sep_3d_err*u.AU).to(u.pc)
+
+        print(f'Source density: {src_density} pm {src_density_err} pc^-3')
         
-        sep_grid = np.linspace(0,14,100)
+        
+        sep_grid = np.linspace(0,20,100)
         sep_kde = gaussian_kde(sep_arr, bw_method='scott')
         sep_pdf = sep_kde.evaluate(sep_grid)                                                                                                                                                         #to normalize, multiply by bin width and number of points
         sep_est = sep_pdf*len(sep_arr)*(bins[1]-bins[0])
 
-        plt.hist(sep_arr, bins=bins, label=labels[i], alpha=0.5, color=colors[i], edgecolor='black')
+        plt.hist(sep_arr, bins=bins, label=labels[i], alpha=0.4, color=colors[i], edgecolor='black')
         plt.plot(sep_grid, sep_est, label=labels[i]+' KDE', color=colors[i])
 
     if KS_test == True:
@@ -60,19 +71,23 @@ def plot_MST_hist(coord_list, labels, filename, colors=['tab:blue', 'tab:orange'
     plt.legend()
     plt.xlabel('Separation (arcsecond)')
     plt.ylabel('Number')
-    plt.savefig(filename)
+    plt.savefig(filename, bbox_inches='tight')
 
 
 
 
-tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits')
+tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
 tab2 = Table.read('/home/jotter/nrao/tables/eis_coord_table.fits')
 
-IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_mar21_full.fits')
-nonIR_src = np.setdiff1d(tab['Seq'], IR_tab['Seq'])
-nonIR_ind = [np.where(tab['Seq']==d_id)[0][0] for d_id in nonIR_src]
-IR_src = IR_tab['Seq']
-IR_ind = [np.where(tab['Seq']==d_id)[0][0] for d_id in IR_src]
+IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
+nonIR_src = np.setdiff1d(tab['ID'], IR_tab['ID'])
+nonIR_ind = [np.where(tab['ID']==d_id)[0][0] for d_id in nonIR_src]
+
+#nonIR_ind = nonIR_ind[:-1] #to remove source 124 from OMC1 sample (outlier)
+#print(nonIR_ind)
+
+IR_src = IR_tab['ID']
+IR_ind = [np.where(tab['ID']==d_id)[0][0] for d_id in IR_src]
 
 tab_coord = SkyCoord(ra=tab['RA_B3'], dec=tab['DEC_B3'], unit=u.degree)
 tab_coord_IR = SkyCoord(ra=tab['RA_B3'][IR_ind], dec=tab['DEC_B3'][IR_ind], unit=u.degree)
@@ -83,13 +98,13 @@ tab_coord2 = SkyCoord(ra=tab2['RA'], dec=tab2['DEC'], unit=u.degree)
 
 coord_list = [tab_coord_IR, tab_coord2]
 
-plot_MST_hist(coord_list, labels=['Band 3 ONC', 'E18'], filename='/home/jotter/nrao/plots/separation_hist_ONC.pdf', KS_test=True)
+plot_MST_hist(coord_list, labels=['Band 3 ONC', 'E18'], filename='/home/jotter/nrao/plots/separation_hist_ONC.pdf', KS_test=True, colors=['tab:blue', 'tab:green'])
 #plot_MST_hist(coord_list, labels=['Band 3 OMC1', 'Band 3 ONC', 'E18'], filename='/home/jotter/nrao/plots/separation_hist_all.pdf', colors=['tab:green', 'tab:blue', 'tab:orange'])
 
 coord_list = [tab_coord_nonIR, tab_coord2]
 
-plot_MST_hist(coord_list, labels=['Band 3 OMC1', 'E18'], filename='/home/jotter/nrao/plots/separation_hist_OMC1.pdf', KS_test=True)#, colors=['tab:green', 'tab:blue', 'tab:orange'])
+plot_MST_hist(coord_list, labels=['Band 3 OMC1', 'E18'], filename='/home/jotter/nrao/plots/separation_hist_OMC1.pdf', KS_test=True, colors=['tab:orange','tab:green'])
 
-coord_list = [tab_coord_nonIR, tab_coord_IR]
+#coord_list = [tab_coord_nonIR, tab_coord_IR]
 
-plot_MST_hist(coord_list, labels=['Band 3 OMC1', 'Band 3 ONC'], filename='/home/jotter/nrao/plots/separation_hist_oncomc1.pdf')
+#plot_MST_hist(coord_list, labels=['Band 3 OMC1', 'Band 3 ONC'], filename='/home/jotter/nrao/plots/separation_hist_oncomc1.pdf')

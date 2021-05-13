@@ -10,9 +10,14 @@ from astropy.coordinates import Angle, SkyCoord
 
 def get_ind(table): #returns indices where sources are detected in all bands
     names = ['B3', 'B6', 'B7']
+    b3_ind = np.where(np.isnan(table['ap_flux_B3']) == False)[0]
+    b6_ind = np.where(np.isnan(table['ap_flux_B6']) == False)[0]
+    b7_ind = np.where(np.isnan(table['ap_flux_B7']) == False)[0]
+
+
     flux_inds = [np.where(np.isnan(table['ap_flux_'+n]) == False)[0] for n in names]
     ind = reduce(np.intersect1d, flux_inds)
-    
+    ind = np.setdiff1d(ind, [14])
     return ind
 
 
@@ -20,7 +25,7 @@ def plot_SED(ax, srctab):
     freqs = np.array([98, 223.5, 339.7672758867]) #*u.GHz
     alpha = [1.5,2,2.5]
 
-    print(f'creating SED for source {srctab["Seq"]}')
+    print(f'creating SED for source {srctab["ID"]}')
     
     fluxes = [srctab['ap_flux_B3']*1000, srctab['ap_flux_B6']*1000, srctab['ap_flux_B7']*1000]
     flux_errs = [srctab['ap_flux_err_B3']*1000, srctab['ap_flux_err_B6']*1000, srctab['ap_flux_err_B7']*1000]
@@ -36,7 +41,7 @@ def plot_SED(ax, srctab):
         F1 = F2*(freqs/nu2)**alpha[j]
         ax.plot(freqs, F1, linestyle='-', label=r'$\alpha = $'+str(alpha[j]))
 
-    ax.text(0.1,0.82,srctab['Seq'],transform=ax.transAxes,weight='bold')
+    ax.text(0.1,0.82,srctab['ID'],transform=ax.transAxes,weight='bold')
     ax.set_xscale('log')
     ax.set_yscale('log')
     #ax.legend()
@@ -46,6 +51,10 @@ def create_multi_plot(tab_path, ncols=5):
     tab = Table.read(tab_path)
     ind = get_ind(tab)
 
+    ulim_b6_ind = np.where(np.isnan(tab['B6_flux_ulim'])==False)[0]
+    ulim_b7_ind = np.where(np.isnan(tab['B6_flux_ulim'])==False)[0]
+    
+    
     cols = ncols
     rows = len(ind)/ncols
     if rows > int(rows):
@@ -75,5 +84,5 @@ def create_multi_plot(tab_path, ncols=5):
     plt.savefig('/home/jotter/nrao/plots/multi_SED_plot_syserr.pdf', bbox_inches='tight')
 
     
-create_multi_plot('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits')
+create_multi_plot('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
 

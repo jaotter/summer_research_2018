@@ -13,7 +13,7 @@ import numpy as np
 img_path = '/home/jotter/nrao/images/Trapezium_GEMS_mosaic_redblueorange_normed_small_contrast_bright_photoshop.png'
 im = img.imread(img_path)
 
-B3_table = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits')
+B3_table = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim.fits')
 
 header = fits.Header.fromtextfile('/home/jotter/nrao/images/trapezium_small_photoshop.wcs')
 #header = fits.Header.fromtextfile('/home/jotter/nrao/images/fullimage.wcs')
@@ -53,23 +53,23 @@ print(len(b7_sources), len(b6_sources), len(b3_sources))
 
 text_col = 'whitesmoke'
 
-irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_mar21_full.fits')
-IRseq = irtab['Seq'].data
+irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full.fits')
+IRseq = irtab['ID'].data
 
 for ind in range(len(B3_pix[0])):
-    did = B3_table['Seq'][ind]
-    #if did in b7_sources:
-    #    col = 'tab:red'
-    #if did in b6_sources:
-    #    col = 'tab:pink'
-    #if did in b3_sources:
-    #    col = 'tab:green'
+    did = B3_table['ID'][ind]
+    if did in b7_sources:
+        col = 'tab:red'
+    if did in b6_sources:
+        col = 'tab:pink'
+    if did in b3_sources:
+        col = 'tab:green'
     #col='tab:red'
 
-    if did in IRseq:
-        col = 'tab:pink'
-    else:
-        col = 'tab:green'
+    #if did in IRseq:
+    #    col = 'tab:pink'
+    #else:
+    #    col = 'tab:green'
     
     circ = Circle((B3_pix[0][ind], B3_pix[1][ind]), radius=10, fill=False, color=col)
     ax.add_patch(circ)
@@ -100,22 +100,19 @@ B3_radius_pix = B3_coord_pix[1] - B3_R_pix[1]
 B3_circ = Circle((B3_coord_pix[0], B3_coord_pix[1]), radius=B3_radius_pix, transform=ax.transData, color='blue', linewidth=1, fill=False, linestyle='--')
 ax.add_patch(B3_circ)
 
-B6_coord = SkyCoord(ra=83.81446244, dec=-5.37913764, unit=u.degree)
-B6_coord_pix = mywcs.all_world2pix(B6_coord.ra, B6_coord.dec, 0)
-B6_length = 28.672*u.arcsec
-B6_coord_BR = SkyCoord(ra=B6_coord.ra, dec=B6_coord.dec+B6_length)
-B6_BR_pix = mywcs.all_world2pix(B6_coord_BR.ra, B6_coord_BR.dec,0)
-B6_width = B6_BR_pix[1] - B6_coord_pix[1]
-B6_coord_TL = SkyCoord(ra=B6_coord.ra+B6_length, dec=B6_coord.dec)
-B6_TL_pix = mywcs.all_world2pix(B6_coord_TL.ra, B6_coord_TL.dec,0)
-B6_height = B6_coord_pix[0] - B6_TL_pix[0]
+B6_coord = SkyCoord(ra=83.8104625, dec=-5.37515556, unit=u.degree)
+B6_coord_pix = mywcs.all_world2pix(B3_coord.ra, B3_coord.dec, 0)
+B6_radius = 28.6*u.arcsecond
+B6_coord_R = SkyCoord(ra=B3_coord.ra, dec=B3_coord.dec+B3_radius)
+B6_R_pix = mywcs.all_world2pix(B3_coord_R.ra, B3_coord_R.dec,0)
+B6_radius_pix = B3_coord_pix[1] - B3_R_pix[1]
 
-B6_rect = Rectangle((B6_coord_pix[0], B6_coord_pix[1]), width=B6_width, height=B6_height, transform=ax.transData, color='blue', linewidth=1, fill=False, linestyle='--')
-ax.add_patch(B6_rect)
+B6_circ = Circle((B6_coord_pix[0], B6_coord_pix[1]), radius=B6_radius_pix, transform=ax.transData, color='blue', linewidth=1, fill=False, linestyle='--')
+ax.add_patch(B6_circ)
 
 B7_coord = SkyCoord(83.8104626, -5.37515542, unit=u.degree)
 B7_coord_pix = mywcs.all_world2pix(B7_coord.ra, B7_coord.dec, 0)
-B7_radius = 12.9*u.arcsec
+B7_radius = 12.7*u.arcsec
 B7_coord_R = SkyCoord(ra=B7_coord.ra, dec=B7_coord.dec+B7_radius)
 B7_R_pix = mywcs.all_world2pix(B7_coord_R.ra, B7_coord_R.dec,0)
 B7_radius_pix = B7_coord_pix[1] - B7_R_pix[1]
@@ -138,7 +135,7 @@ ax.set_xlim(100,1556)
 
 plt.tight_layout()
     
-plt.savefig(f'/home/jotter/nrao/plots/gemini_B3_overlay_onc_omc1.pdf',dpi=300,bbox_inches='tight')
+plt.savefig(f'/home/jotter/nrao/plots/gemini_B3_overlay.pdf',dpi=300,bbox_inches='tight')
 plt.close()
 
 
