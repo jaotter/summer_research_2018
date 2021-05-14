@@ -4,7 +4,7 @@ from astropy.wcs import WCS
 from astropy.nddata import Cutout2D
 from astropy.io import fits
 from scipy.stats import median_abs_deviation
-
+from latex_info import rounded
 import radio_beam
 import regions
 import numpy as np
@@ -42,7 +42,7 @@ def measure_rms(coord, data, img_wcs, annulus_radius=0.1*u.arcsecond):
     return bg_rms
 
 def nondet_table():
-    IRtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full.fits')
+    IRtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
     MLLA = Table.read('/home/jotter/nrao/tables/MLLA_02_IR.fit')
 
     b3_rad = 137.6*u.arcsecond / 2
@@ -112,7 +112,7 @@ def mlla_nondet():
     ulim_fluxes = np.array(ulim_fluxes)*1000*u.mJy #in mJy
     MLLA_nondet['B3_flux_ulim'] = ulim_fluxes
     MLLA_nondet.write('/home/jotter/nrao/summer_research_2018/tables/IR_nondet_may21_full_ulim.fits', overwrite=True)
-
+    
 
 def b3_nondet(srcs_ID, band):
     if band == 'B6':
@@ -120,7 +120,7 @@ def b3_nondet(srcs_ID, band):
     if band == 'B7':
         img_path = '/home/jotter/nrao/images/Orion_SourceI_B7_continuum_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
         
-    tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim.fits')
+    tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
 
     fl = fits.open(img_path)
     header = fl[0].header
@@ -135,17 +135,44 @@ def b3_nondet(srcs_ID, band):
     for coord in coord_all:
         bg_rms = measure_rms(coord, data, img_wcs)
         ulim_fluxes.append(3*bg_rms)
-
+    print(ulim_fluxes)
     ulim_fluxes = np.array(ulim_fluxes)*1000*u.mJy #in mJy
     band_ulim_flux = np.repeat(np.nan, len(tab))
     band_ulim_flux[srcs_ID] = ulim_fluxes
     tab[f'{band}_flux_ulim'] = band_ulim_flux
-    tab.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim.fits', overwrite=True)
+    tab.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits', overwrite=True)
 
+
+def paper_table():
+    tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_nondet_may21_full_ulim_hc2000.fits')
+
+    #MLLA = Column(np.array(np.repeat('-', len(data)), dtype='S10'), name='MLLA')
+    MLLA_col = []
+    b3_ulim = []
+    altid = []
+    for ir_row in tab:
+        if ir_row['m_MLLA'] == ' ':
+            mlla = str(ir_row['MLLA'])
+        else:
+            mlla = str(ir_row['MLLA']) + str(ir_row['m_MLLA']).lower()
+        MLLA_col.append(mlla)
+        b3_ulim_val, val = rounded(ir_row['B3_flux_ulim'], ir_row['B3_flux_ulim']/10, extra=0)
+        b3_ulim.append(b3_ulim_val)
+        if len(ir_row['AltID']) > 1:
+            altid.append(ir_row['AltID'])
+        else:
+            altid.append('')
+        
+    paper_tab = Table((MLLA_col, altid,  b3_ulim), names=('MLLA', 'Alternate ID', '3mm Flux Upper Limit'), units=(None, None, u.mJy))
     
+    print(paper_tab)
+    paper_tab.write('/home/jotter/nrao/tables/latex_tables/final_tables/table2_full.fits', overwrite=True)
+    paper_tab.write('/home/jotter/nrao/tables/latex_tables/table2_full.txt', format='latex', overwrite=True)
+                      
 #nondet_table()
 #mlla_nondet()
-b6_nondet_srcs = [14, 19, 37, 38, 43, 53, 56, 58]
+#paper_table()
+b6_nondet_srcs = [3, 14, 19, 37, 38, 43, 53, 56, 58]
 b7_nondet_srcs = [37, 38]
 
 b3_nondet(b6_nondet_srcs, 'B6')

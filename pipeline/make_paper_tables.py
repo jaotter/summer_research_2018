@@ -18,15 +18,15 @@ def DEC_to_deg(DD, MM, SS):
 
 FWHM_TO_SIGMA = 1/np.sqrt(8*np.log(2))
 
-data =  Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits')
+data =  Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
 
-calc_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_mar21_calc_vals.fits')
+calc_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_may21_calc_vals_mask.fits')
 
-irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_mar21_full.fits')
+irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
 
 MLLA = Column(np.array(np.repeat('-', len(data)), dtype='S10'), name='MLLA')
 
-match = Table.read('/home/jotter/nrao/summer_research_2018/tables/COUP_Forbrich16_r0.5_apr21_final.fits')
+match = Table.read('/home/jotter/nrao/summer_research_2018/tables/COUP_Forbrich16_r0.5_may21_full.fits')
 
 for ir_row in irtab:
    
@@ -34,16 +34,14 @@ for ir_row in irtab:
         mlla = str(ir_row['MLLA'])
     else:
         mlla = str(ir_row['MLLA']) + str(ir_row['m_MLLA']).lower()
-    ind = np.where(data['Seq'] == ir_row['Seq'])[0]
+    ind = np.where(data['ID'] == ir_row['ID'])[0]
     MLLA[ind] = mlla
 
-print(MLLA)
-
-table_meas_misc = Table((data['Seq'], MLLA, match['Seq_2'], match['COUP_2'], data['RA_B3'], data['RA_err_B3'], data['DEC_B3'],
+table_meas_misc = Table((data['ID'], MLLA, match['Seq'], match['COUP_1'], data['RA_B3'], data['RA_err_B3'], data['DEC_B3'],
                          data['DEC_err_B3'], calc_tab['alpha_B3B6'], calc_tab['alpha_B3B6_err'],
                          calc_tab['alpha_B6B7'], calc_tab['alpha_B6B7_err']))
                          
-table_meas_B3 = Table((data['Seq'], MLLA, data['ap_flux_B3'], data['ap_flux_err_B3'], data['gauss_amp_B3'],
+table_meas_B3 = Table((data['ID'], data['ap_flux_B3'], data['ap_flux_err_B3'], data['gauss_amp_B3'],
                        data['gauss_amp_err_B3'], calc_tab['int_flux_B3'],
                        calc_tab['int_flux_err_B3'], data['fwhm_maj_B3'],
                        data['fwhm_maj_err_B3'], data['fwhm_min_B3'],
@@ -51,26 +49,28 @@ table_meas_B3 = Table((data['Seq'], MLLA, data['ap_flux_B3'], data['ap_flux_err_
                        data['fwhm_maj_deconv_B3'], data['fwhm_min_deconv_B3'], data['pa_deconv_B3'], 
                        calc_tab['inclination_B3'], calc_tab['inclination_err_B3'], data['upper_lim_B3'], calc_tab['dust_mass_B3']))
 
-table_meas_B6 = Table((data['Seq'], data['ap_flux_B6'],
+table_meas_B6 = Table((data['ID'], data['ap_flux_B6'],
                        data['ap_flux_err_B6'], data['gauss_amp_B6'], data['gauss_amp_err_B6'],
                        calc_tab['int_flux_B6'], calc_tab['int_flux_err_B6'],
                        data['fwhm_maj_B6'], data['fwhm_maj_err_B6'], data['fwhm_min_B6'],
                        data['fwhm_min_err_B6'], data['pa_B6'], data['pa_err_B6'],
                        data['fwhm_maj_deconv_B6'], data['fwhm_min_deconv_B6'], data['pa_deconv_B6'], 
-                       calc_tab['inclination_B6'], calc_tab['inclination_err_B6'], data['upper_lim_B6'], calc_tab['dust_mass_B6']))
+                       calc_tab['inclination_B6'], calc_tab['inclination_err_B6'], data['upper_lim_B6'], calc_tab['dust_mass_B6'],
+                       data['B6_flux_ulim'], calc_tab['dust_mass_ulim_B6']))
 
 
-table_meas_B7 = Table((data['Seq'], data['ap_flux_B7'], data['ap_flux_err_B7'],
+table_meas_B7 = Table((data['ID'], data['ap_flux_B7'], data['ap_flux_err_B7'],
                        data['gauss_amp_B7'], data['gauss_amp_err_B7'],
                        calc_tab['int_flux_B7'], calc_tab['int_flux_err_B7'], data['fwhm_maj_B7'],
                        data['fwhm_maj_err_B7'], data['fwhm_min_B7'],
                        data['fwhm_min_err_B7'], data['pa_B7'], data['pa_err_B7'],
                        data['fwhm_maj_deconv_B7'], data['fwhm_min_deconv_B7'], data['pa_deconv_B7'],
-                       calc_tab['inclination_B7'], calc_tab['inclination_err_B7'], data['upper_lim_B7'], calc_tab['dust_mass_B7']))
+                       calc_tab['inclination_B7'], calc_tab['inclination_err_B7'], data['upper_lim_B7'], calc_tab['dust_mass_B7'],
+                       data['B7_flux_ulim'], calc_tab['dust_mass_ulim_B7']))
 
 
 
-table_inf = Table((data['Seq'], calc_tab['lower_lum_B3'], calc_tab['lower_lum_B6'], calc_tab['lower_lum_B7'],
+table_inf = Table((data['ID'], calc_tab['lower_lum_B3'], calc_tab['lower_lum_B6'], calc_tab['lower_lum_B7'],
                 calc_tab['dust_mass_B3'], calc_tab['dust_mass_err_B3'], calc_tab['dust_mass_B6'],
                 calc_tab['dust_mass_err_B6'], calc_tab['dust_mass_B7'], calc_tab['dust_mass_err_B7']))
 
@@ -92,32 +92,34 @@ meas_misc = table_meas_misc
 #meas_misc.write('/home/jotter/nrao/tables/table_meas_misc.fits', overwrite=True)
 #meas_B3.write('/home/jotter/nrao/tables/table_meas_B3.fits', overwrite=True)
 
-D_ID = np.array(meas_misc['Seq'], dtype="<U20")
-D_ID_b6b7 = np.array(meas_misc['Seq'], dtype="<U20") #include marks for b6 and b7 nonconv srcs
-D_ID_b6 = np.array(meas_misc['Seq'], dtype="<U20") #only include b6 nonconv srcs
-D_ID_b7 = np.array(meas_misc['Seq'], dtype="<U20") #only include b7 nonconv srcs
+D_ID = np.array(meas_misc['ID'], dtype="<U20")
+D_ID_b6b7 = np.array(meas_misc['ID'], dtype="<U20") #include marks for b6 and b7 nonconv srcs
+D_ID_b6 = np.array(meas_misc['ID'], dtype="<U20") #only include b6 nonconv srcs
+D_ID_b7 = np.array(meas_misc['ID'], dtype="<U20") #only include b7 nonconv srcs
 
-B6nonconv = [14,30,62,67,69] #updated - these are Seq
+#B6nonconv = [14,30,62,67,69] #updated - these are Seq
+B6nonconv = [30,36,45,56,63,68,70,71] #ID values, updated may21
 B6nonconv_ind = [np.where(D_ID_b6==str(b6))[0][0] for b6 in B6nonconv]
-B7nonconv = [14,16,29,30,45,62,65,67,68,69] # updated to Seq [16,18,33,34,50,71,76,80,81,83] 
+#B7nonconv = [14,16,29,30,45,62,65,67,68,69] # updated to Seq [16,18,33,34,50,71,76,80,81,83]
+B7nonconv = [14,16,29,30,45,63,66,68,69,70] #ID values 
 B7nonconv_ind = [np.where(D_ID_b7==str(b7))[0][0] for b7 in B7nonconv]
 
 
 for b6ind in B6nonconv_ind:
-    D_ID_b6[b6ind] = f'${D_ID_b6[b6ind]}^*$'
-    D_ID_b6b7[b6ind] = f'${D_ID[b6ind]}^*$'
+    D_ID_b6[b6ind] = f'${D_ID_b6[b6ind]}^b$'
+    D_ID_b6b7[b6ind] = f'${D_ID[b6ind]}^b$'
 for b7ind in B7nonconv_ind:
-    D_ID_b7[b7ind] = f'${D_ID_b7[b7ind]}^\dagger$'
-    D_ID_b6b7[b7ind] = f'${D_ID[b7ind]}^\dagger$'
+    D_ID_b7[b7ind] = f'${D_ID_b7[b7ind]}^c$'
+    D_ID_b6b7[b7ind] = f'${D_ID[b7ind]}^c$'
 for b6b7 in np.intersect1d(B6nonconv_ind, B7nonconv_ind):
-    D_ID_b6b7[b6b7] = f'${D_ID[b6b7]}^{{*\dagger}}$'
+    D_ID_b6b7[b6b7] = f'${D_ID[b6b7]}^{{bc}}$'
 
 D_ID_full = D_ID_b6b7
 new_srcs = [8,10,32,33,50,53,63,70,74,75,79,115]#updated to new sources [9,10,22,24,36,37,39,45,55,59,61,71,72,79,81,84]
 for new in new_srcs:
     new_ind = np.where(D_ID == str(new))[0]
     D_ID_full[new_ind] = f'${D_ID_full[new_ind[0]]}^a$'
-    
+
 
 #now clean up tables to put into latex
 
@@ -157,7 +159,7 @@ for crd_str in coords_str:
     coords_str_rnd.append(f'{split[0]}:{split[1]}:{ra_as} {other_str}:{split[3]}:{dec_as}')
 
 #make this table cover all sources
-tablemisc_latex = Table((D_ID_full, meas_misc['MLLA'], meas_misc['Seq'], meas_misc['COUP_2'],
+tablemisc_latex = Table((D_ID_full, meas_misc['MLLA'], meas_misc['Seq'], meas_misc['COUP_1'],
                          coords_str_rnd, radec_err,  alphaB3B6, alphaB6B7),
                       names=('Source ID', 'MLLA', 'Forbrich2016', 'COUP', 'Coordinates', '$\\alpha, \\delta$ error',
                              '$\\alpha_{B3\\to B6}$', '$\\alpha_{B6\\to B7}$'))
@@ -179,9 +181,9 @@ tablemisc_latex_B3only.remove_column('$\\alpha_{B6\\to B7}$')
 tablemisc_latex.write('/home/jotter/nrao/tables/latex_tables/tablemisc_latex.txt', format='latex', overwrite=True)
 tablemisc_latex.write('/home/jotter/nrao/tables/latex_tables/final_tables/table3_full.fits', format='fits', overwrite=True)
 
-trunc_length = 4
+trunc_length = 6
 tablemisc_latex_trunc = tablemisc_latex[:trunc_length]
-#tablemisc_latex_trunc.write('/home/jotter/nrao/tables/latex_tables/tablemisc_latex_trunc.txt', format='latex', overwrite=True)
+tablemisc_latex_trunc.write('/home/jotter/nrao/tables/latex_tables/tablemisc_latex_trunc.txt', format='latex', overwrite=True)
 
 
 apfluxB3 = []
@@ -229,8 +231,15 @@ for row in range(len(meas_B3)):
         padeconvB3.append(str(pad_rnd)+'$\pm$'+str(pad_err_rnd)) #units degrees
         inclB3_rnd, inclB3_err_rnd = rounded(meas_B3['inclination_B3'][row], meas_B3['inclination_err_B3'][row], extra=0)
         inclB3.append(strip_trailing_zeros(str(inclB3_rnd))+'$\pm$'+strip_trailing_zeros(str(inclB3_err_rnd)))
-        
-tableB3_latex = Table((meas_B3['Seq'], apfluxB3, gaussampB3, fwhmmajB3, fwhmminB3, paB3,
+
+
+poorfit_B3 = [113,114,124,125]
+B3_ID = np.array([f'{b3id}' for b3id in meas_B3['ID']])
+for pf in poorfit_B3:
+   B3_ID[pf] = B3_ID[pf]+'$^*$'
+
+
+tableB3_latex = Table((B3_ID, apfluxB3, gaussampB3, fwhmmajB3, fwhmminB3, paB3,
                        fwhmmajdeconvB3, fwhmmindeconvB3, padeconvB3, inclB3, DM_B3),
                       names=('ID', '$F_{\\text{ap}}$','$A_{gaussian}$',
                              '$\\text{FWHM}_{\\text{maj}}$', '$\\text{FWHM}_{\\text{min}}$',
@@ -249,7 +258,7 @@ tableB3_latex.write('/home/jotter/nrao/tables/latex_tables/tableB3_latex_all.txt
 tableB3_latex.write('/home/jotter/nrao/tables/latex_tables/final_tables/table4_full.fits', format='fits', overwrite=True)
 
 
-trunc_length = 4
+trunc_length = 6
 tableB3_latex_trunc = tableB3_latex[:trunc_length]
 tableB3_latex_trunc.write('/home/jotter/nrao/tables/latex_tables/tableB3_latex_all_trunc.txt', format='latex', overwrite=True)
 
@@ -266,10 +275,8 @@ inclB6 =[]
 DM_B6 = []
 
 
-for row in range(len(meas_B6)):
-    if np.isnan(meas_B6['ap_flux_B6'][row]) == False:
-        apflux_rnd, apflux_err_rnd = rounded(meas_B6['ap_flux_B6'][row]*1000, meas_B6['ap_flux_err_B6'][row]*1000, extra=0)
-        apfluxB6.append(str(apflux_rnd)+'$\pm$'+str(apflux_err_rnd)) #units mJy
+for row in range(len(meas_B3)):
+    if np.isnan(meas_B6['fwhm_maj_B6'][row]) == False:
         gaussamp_rnd, gaussamp_err_rnd = rounded(meas_B6['gauss_amp_B6'][row]*1000, meas_B6['gauss_amp_err_B6'][row]*1000, extra=0)
         gaussampB6.append(str(gaussamp_rnd)+'$\pm$'+str(gaussamp_err_rnd)) #units mJy/beam(?)
         fwhmmaj_rnd, fwhmmaj_err_rnd = rounded(meas_B6['fwhm_maj_B6'][row], meas_B6['fwhm_maj_err_B6'][row], extra=0)
@@ -278,16 +285,30 @@ for row in range(len(meas_B6)):
         fwhmminB6.append(str(fwhmmin_rnd)+'$\pm$'+str(fwhmmin_err_rnd)) #units arcseconds
         pa_rnd, pa_err_rnd = rounded(meas_B6['pa_B6'][row], meas_B6['pa_err_B6'][row], extra=0)
         paB6.append(str(pa_rnd)+'$\pm$'+str(pa_err_rnd)) #units degrees
+
+        apflux_rnd, apflux_err_rnd = rounded(meas_B6['ap_flux_B6'][row]*1000, meas_B6['ap_flux_err_B6'][row]*1000, extra=0)
+        apfluxB6.append(str(apflux_rnd)+'$\pm$'+str(apflux_err_rnd)) #units mJy
         DM_B6_rnd, DM_B6_err_rnd = rounded(table_inf['dust_mass_B6'][row], table_inf['dust_mass_err_B6'][row], extra=0)
         DM_B6.append(strip_trailing_zeros(str(DM_B6_rnd))+'$\pm$'+strip_trailing_zeros(str(DM_B6_err_rnd)))
+        
     else:
-        apfluxB6.append('-')
         gaussampB6.append('-')
         fwhmmajB6.append('-')
         fwhmminB6.append('-')
         paB6.append('-')
-        DM_B6.append('-')
-        
+
+        if np.isnan(meas_B6['B6_flux_ulim'][row]) == False:
+            apflux_ulim_rnd, small = rounded(meas_B6['B6_flux_ulim'][row]*1000,meas_B6['B6_flux_ulim'][row]*10, extra=0)
+            apfluxB6.append(f'<{apflux_ulim_rnd}')
+            DM_ulim_rnd, small = rounded(meas_B6['dust_mass_ulim_B6'][row], meas_B6['dust_mass_ulim_B6'][row]/100, extra=0)
+            DM_B6.append(f'<{DM_ulim_rnd}')
+
+            
+        else:
+            apfluxB6.append('-')
+            DM_B6.append('-')
+
+            
     if np.isnan(meas_B6['fwhm_maj_deconv_B6'][row]) == True:
         inclB6.append('-')
         fwhmmindeconvB6.append('-')
@@ -318,20 +339,18 @@ tableB6_latex = Table((D_ID_b6, apfluxB6, gaussampB6, fwhmmajB6, fwhmminB6, paB6
                              '$\\text{FWHM}_{\\text{min, deconv}}$', '$\\theta_{\\text{deconv}}$',
                              '$i$', '$M_{dust, B6}$'))
 
-print(len(meas_B6), len(tableB6_latex))
 
-
-
-tableB6_latex_allband = tableB6_latex[B7ind]
-tableB6_latex_B3B6 = tableB6_latex[only_B6ind]
+#tableB6_latex_allband = tableB6_latex[B7ind]
+#tableB6_latex_B3B6 = tableB6_latex[only_B6ind]
 #tableB6_latex_allband.write('/home/jotter/nrao/tables/latex_tables/tableB6_latex_allband.txt', format='latex', overwrite=True)
 #tableB6_latex_B3B6.write('/home/jotter/nrao/tables/latex_tables/tableB6_latex_B3B6.txt', format='latex', overwrite=True)
-tableB6_latex_all = tableB6_latex[B6ind]
+ind_b6 = np.where(tableB6_latex['$F_{\\text{ap}}$'] != '-')
+tableB6_latex_all = tableB6_latex[ind_b6]
 tableB6_latex_all.write('/home/jotter/nrao/tables/latex_tables/tableB6_latex_all.txt', format='latex', overwrite=True)
 tableB6_latex_all.write('/home/jotter/nrao/tables/latex_tables/final_tables/table5_full.fits', format='fits', overwrite=True)
 
 
-trunc_length = 4
+trunc_length = 6
 tableB6_latex_all_trunc = tableB6_latex_all[:trunc_length]
 tableB6_latex_all_trunc.write('/home/jotter/nrao/tables/latex_tables/tableB6_latex_all_trunc.txt', format='latex', overwrite=True)
 
@@ -349,8 +368,6 @@ DM_B7 = []
 
 for row in range(len(meas_B7)):
     if np.isnan(meas_B7['ap_flux_B7'][row]) == False:
-        apflux_rnd, apflux_err_rnd = rounded(meas_B7['ap_flux_B7'][row]*1000, meas_B7['ap_flux_err_B7'][row]*1000, extra=0)
-        apfluxB7.append(str(apflux_rnd)+'$\pm$'+str(apflux_err_rnd)) #units mJy
         gaussamp_rnd, gaussamp_err_rnd = rounded(meas_B7['gauss_amp_B7'][row]*1000, meas_B7['gauss_amp_err_B7'][row]*1000, extra=0)
         gaussampB7.append(str(gaussamp_rnd)+'$\pm$'+str(gaussamp_err_rnd)) #units mJy/beam(?)
         fwhmmaj_rnd, fwhmmaj_err_rnd = rounded(meas_B7['fwhm_maj_B7'][row], meas_B7['fwhm_maj_err_B7'][row], extra=0)
@@ -359,17 +376,28 @@ for row in range(len(meas_B7)):
         fwhmminB7.append(str(fwhmmin_rnd)+'$\pm$'+str(fwhmmin_err_rnd)) #units arcseconds
         pa_rnd, pa_err_rnd = rounded(meas_B7['pa_B7'][row], meas_B7['pa_err_B7'][row], extra=0)
         paB7.append(str(pa_rnd)+'$\pm$'+str(pa_err_rnd)) #units degrees
+        apflux_rnd, apflux_err_rnd = rounded(meas_B7['ap_flux_B7'][row]*1000, meas_B7['ap_flux_err_B7'][row]*1000, extra=0)
+        apfluxB7.append(str(apflux_rnd)+'$\pm$'+str(apflux_err_rnd)) #units mJy
         DM_B7_rnd, DM_B7_err_rnd = rounded(table_inf['dust_mass_B7'][row], table_inf['dust_mass_err_B7'][row], extra=0)
         DM_B7.append(strip_trailing_zeros(str(DM_B7_rnd))+'$\pm$'+strip_trailing_zeros(str(DM_B7_err_rnd)))
 
     else:
-        apfluxB7.append('-')
         gaussampB7.append('-')
         fwhmmajB7.append('-')
         fwhmminB7.append('-')
         paB7.append('-')
-        DM_B7.append('-')
         
+        if np.isnan(meas_B7['B7_flux_ulim'][row]) == False:
+            apflux_ulim_rnd, small = rounded(meas_B7['B7_flux_ulim'][row]*1000,meas_B7['B7_flux_ulim'][row]*10, extra=0)
+            apfluxB7.append(f'<{apflux_ulim_rnd}')
+            DM_ulim_rnd, small = rounded(meas_B7['dust_mass_ulim_B7'][row], meas_B7['dust_mass_ulim_B7'][row]/100, extra=0)
+            DM_B7.append(f'<{DM_ulim_rnd}')
+
+        else:
+            apfluxB7.append('-')
+            DM_B7.append('-')
+
+            
     if np.isnan(meas_B7['fwhm_maj_deconv_B7'][row]) == True:
         inclB7.append('-')
         fwhmmindeconvB7.append('-')
@@ -401,11 +429,12 @@ tableB7_latex = Table((D_ID_b7, apfluxB7, gaussampB7, fwhmmajB7, fwhmminB7, paB7
                              '$i$','$M_{dust, B7}$'))
 
 
-tableB7_latex_allband = tableB7_latex[B7ind]
+ind_b7 = np.where(tableB7_latex['$F_{\\text{ap}}$'] != '-')
+tableB7_latex_allband = tableB7_latex[ind_b7]
 tableB7_latex_allband.write('/home/jotter/nrao/tables/latex_tables/tableB7_latex_allband.txt', format='latex', overwrite=True)
 tableB7_latex_allband.write('/home/jotter/nrao/tables/latex_tables/final_tables/table6_full.fits', format='fits', overwrite=True)
 
 
-trunc_length = 4
+trunc_length = 6
 tableB7_latex_allband_trunc = tableB7_latex_allband[:trunc_length]
 tableB7_latex_allband_trunc.write('/home/jotter/nrao/tables/latex_tables/tableB7_latex_allband_trunc.txt', format='latex', overwrite=True)

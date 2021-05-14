@@ -31,7 +31,7 @@ def size_ulim(band, radii_au, n_rep=10):
     radii_as = ((radii_au*u.AU).to(u.pc)/(400*u.pc)*u.rad).to(u.arcsecond).value
     
     B3file = '/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits'
-    B6file = '/home/jotter/nrao/images/Orion_SourceI_B6_continuum_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'#B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
+    B6file = '/home/jotter/nrao/images/Orion_SourceI_B6_continuum_r0.5.clean1mJy.150mplus.huge.image.tt0.pbcor.fits'#B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
 
     B7file = '/home/jotter/nrao/images/Orion_SourceI_B7_continuum_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'#B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
 
@@ -197,7 +197,7 @@ def table_fit(table_path, band, n_rep=10, plot=True):
 
 def add_upper_lims(params, band, tab=None):
     if tab is None:
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21.fits')
+        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21.fits')
     band_ind = np.where(np.isnan(tab[f'SNR_{band}']) == False)[0]
 
     nondeconv_ind = np.where(np.isnan(tab[f'fwhm_maj_deconv_{band}']) == True)[0]
@@ -242,11 +242,11 @@ def add_upper_lims(params, band, tab=None):
 
 
 params_B3 = [48, -0.5]
-tab_b3ulim = add_upper_lims(params_B3, 'B3')
-#params_B6 = [26.09342253, -0.57997014]
-#tab_b3b6ulim = add_upper_lims(params_B6, 'B6', tab=tab_b3ulim)
-#params_B7 = [18.32718856, -0.73984847] 
-#tab_ulim = add_upper_lims(params_B7, 'B7', tab=tab_b3b6ulim)
+tab_b3ulim = add_upper_lims(params_B3, 'B3', tab=Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits'))
+params_B6 = [26.09342253, -0.57997014]
+tab_b3b6ulim = add_upper_lims(params_B6, 'B6', tab=tab_b3ulim)
+params_B7 = [18.32718856, -0.73984847] 
+tab_ulim = add_upper_lims(params_B7, 'B7', tab=tab_b3b6ulim)
 
-tab_b3ulim.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits', overwrite=True)
+tab_ulim.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits', overwrite=True)
 
