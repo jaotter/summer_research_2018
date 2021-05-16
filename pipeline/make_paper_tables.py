@@ -137,7 +137,7 @@ for row in range(len(meas_misc)):
             alphaB3B6.append('-')
         else:
             alphaB3B6_ulim_rnd, err_rnd = rounded(meas_misc['alpha_ulim_B3B6'][row], np.abs(meas_misc['alpha_ulim_B3B6'][row]/10), extra=0)
-            alphaB3B6.append('<'+str(alphaB3B6_ulim_rnd))
+            alphaB3B6.append('$<$'+str(alphaB3B6_ulim_rnd))
     else:
         alphaB3B6_rnd, alphaB3B6_err_rnd = rounded(meas_misc['alpha_B3B6'][row], meas_misc['alpha_B3B6_err'][row], extra=0)
         alphaB3B6.append(str(alphaB3B6_rnd)+'$\pm$'+str(alphaB3B6_err_rnd))
@@ -309,9 +309,9 @@ for row in range(len(meas_B3)):
 
         if np.isnan(meas_B6['B6_flux_ulim'][row]) == False:
             apflux_ulim_rnd, small = rounded(meas_B6['B6_flux_ulim'][row]*1000,meas_B6['B6_flux_ulim'][row]*10, extra=0)
-            apfluxB6.append(f'<{apflux_ulim_rnd}')
+            apfluxB6.append(f'$<${apflux_ulim_rnd}')
             DM_ulim_rnd, small = rounded(meas_B6['dust_mass_ulim_B6'][row], meas_B6['dust_mass_ulim_B6'][row]/100, extra=0)
-            DM_B6.append(f'<{DM_ulim_rnd}')
+            DM_B6.append(f'$<${DM_ulim_rnd}')
 
             
         else:
@@ -399,9 +399,9 @@ for row in range(len(meas_B7)):
         
         if np.isnan(meas_B7['B7_flux_ulim'][row]) == False:
             apflux_ulim_rnd, small = rounded(meas_B7['B7_flux_ulim'][row]*1000,meas_B7['B7_flux_ulim'][row]*10, extra=0)
-            apfluxB7.append(f'<{apflux_ulim_rnd}')
+            apfluxB7.append(f'$<${apflux_ulim_rnd}')
             DM_ulim_rnd, small = rounded(meas_B7['dust_mass_ulim_B7'][row], meas_B7['dust_mass_ulim_B7'][row]/100, extra=0)
-            DM_B7.append(f'<{DM_ulim_rnd}')
+            DM_B7.append(f'$<${DM_ulim_rnd}')
 
         else:
             apfluxB7.append('-')
