@@ -20,7 +20,7 @@ FWHM_TO_SIGMA = 1/np.sqrt(8*np.log(2))
 
 data =  Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
 
-calc_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_may21_calc_vals_mask.fits')
+calc_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_may21_calc_vals_mask_alpha_ulim.fits')
 
 irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
 
@@ -39,7 +39,7 @@ for ir_row in irtab:
 
 table_meas_misc = Table((data['ID'], MLLA, match['Seq'], match['COUP_1'], data['RA_B3'], data['RA_err_B3'], data['DEC_B3'],
                          data['DEC_err_B3'], calc_tab['alpha_B3B6'], calc_tab['alpha_B3B6_err'],
-                         calc_tab['alpha_B6B7'], calc_tab['alpha_B6B7_err']))
+                         calc_tab['alpha_B6B7'], calc_tab['alpha_B6B7_err'], calc_tab['alpha_fit'], calc_tab['alpha_fit_err'], calc_tab['alpha_ulim_B3B6']))
                          
 table_meas_B3 = Table((data['ID'], data['ap_flux_B3'], data['ap_flux_err_B3'], data['gauss_amp_B3'],
                        data['gauss_amp_err_B3'], calc_tab['int_flux_B3'],
@@ -126,13 +126,18 @@ for new in new_srcs:
 radec_err = []
 alphaB3B6 = []
 alphaB6B7 = []
+alphafit = []
 
 for row in range(len(meas_misc)):
     ra_err_rnd = round_to_n((meas_misc['RA_err_B3'][row]*u.degree).to(u.arcsecond).value, 1)
     dec_err_rnd = round_to_n((meas_misc['DEC_err_B3'][row]*u.degree).to(u.arcsecond).value, 1)
     radec_err.append('$\pm '+str(ra_err_rnd)+'$, $\pm'+str(dec_err_rnd)+'$')
     if np.isnan(meas_misc['alpha_B3B6'][row]) == True:
-        alphaB3B6.append('-')
+        if np.isnan(meas_misc['alpha_ulim_B3B6'][row]) == True:
+            alphaB3B6.append('-')
+        else:
+            alphaB3B6_ulim_rnd, err_rnd = rounded(meas_misc['alpha_ulim_B3B6'][row], np.abs(meas_misc['alpha_ulim_B3B6'][row]/10), extra=0)
+            alphaB3B6.append('<'+str(alphaB3B6_ulim_rnd))
     else:
         alphaB3B6_rnd, alphaB3B6_err_rnd = rounded(meas_misc['alpha_B3B6'][row], meas_misc['alpha_B3B6_err'][row], extra=0)
         alphaB3B6.append(str(alphaB3B6_rnd)+'$\pm$'+str(alphaB3B6_err_rnd))
@@ -141,7 +146,12 @@ for row in range(len(meas_misc)):
     else:
         alphaB6B7_rnd, alphaB6B7_err_rnd = rounded(meas_misc['alpha_B6B7'][row], meas_misc['alpha_B6B7_err'][row], extra=0)
         alphaB6B7.append(str(alphaB6B7_rnd)+'$\pm$'+str(alphaB6B7_err_rnd))
-
+    if np.isnan(meas_misc['alpha_fit'][row]) == True:
+        alphafit.append('-')
+    else:
+        alphafit_rnd, alphafit_err_rnd = rounded(meas_misc['alpha_fit'][row], meas_misc['alpha_fit_err'][row], extra=0)
+        alphafit.append(str(alphafit_rnd)+'$\pm$'+str(alphafit_err_rnd))
+                              
 coords = SkyCoord(ra=meas_misc['RA_B3']*u.deg, dec=meas_misc['DEC_B3']*u.deg)
 coords_str = coords.to_string('hmsdms', sep=':')
 
@@ -160,9 +170,9 @@ for crd_str in coords_str:
 
 #make this table cover all sources
 tablemisc_latex = Table((D_ID_full, meas_misc['MLLA'], meas_misc['Seq'], meas_misc['COUP_1'],
-                         coords_str_rnd, radec_err,  alphaB3B6, alphaB6B7),
+                         coords_str_rnd, radec_err,  alphaB3B6, alphaB6B7, alphafit),
                       names=('Source ID', 'MLLA', 'Forbrich2016', 'COUP', 'Coordinates', '$\\alpha, \\delta$ error',
-                             '$\\alpha_{B3\\to B6}$', '$\\alpha_{B6\\to B7}$'))
+                             '$\\alpha_{B3\\to B6}$', '$\\alpha_{B6\\to B7}$', '$\\alpha$'))
 
 
 nonB3only_ind = np.delete(np.arange(len(tablemisc_latex)), only_B3ind)
