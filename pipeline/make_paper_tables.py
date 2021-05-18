@@ -39,7 +39,8 @@ for ir_row in irtab:
 
 table_meas_misc = Table((data['ID'], MLLA, match['Seq'], match['COUP_1'], data['RA_B3'], data['RA_err_B3'], data['DEC_B3'],
                          data['DEC_err_B3'], calc_tab['alpha_B3B6'], calc_tab['alpha_B3B6_err'],
-                         calc_tab['alpha_B6B7'], calc_tab['alpha_B6B7_err'], calc_tab['alpha_fit'], calc_tab['alpha_fit_err'], calc_tab['alpha_ulim_B3B6']))
+                         calc_tab['alpha_B6B7'], calc_tab['alpha_B6B7_err'], calc_tab['alpha_fit'], calc_tab['alpha_fit_err'], calc_tab['alpha_ulim_B3B6'],
+                         calc_tab['alpha_B3eis'], calc_tab['alpha_B3eis_err']))
                          
 table_meas_B3 = Table((data['ID'], data['ap_flux_B3'], data['ap_flux_err_B3'], data['gauss_amp_B3'],
                        data['gauss_amp_err_B3'], calc_tab['int_flux_B3'],
@@ -104,22 +105,25 @@ B6nonconv_ind = [np.where(D_ID_b6==str(b6))[0][0] for b6 in B6nonconv]
 B7nonconv = [14,16,29,30,45,63,66,68,69,70] #ID values 
 B7nonconv_ind = [np.where(D_ID_b7==str(b7))[0][0] for b7 in B7nonconv]
 
-
 for b6ind in B6nonconv_ind:
-    D_ID_b6[b6ind] = f'${D_ID_b6[b6ind]}^b$'
-    D_ID_b6b7[b6ind] = f'${D_ID[b6ind]}^b$'
+    D_ID_b6[b6ind] = f'{D_ID_b6[b6ind]}$^b$'
+    D_ID_b6b7[b6ind] = f'{D_ID[b6ind]}$^b$'
 for b7ind in B7nonconv_ind:
-    D_ID_b7[b7ind] = f'${D_ID_b7[b7ind]}^c$'
-    D_ID_b6b7[b7ind] = f'${D_ID[b7ind]}^c$'
+    D_ID_b7[b7ind] = f'{D_ID_b7[b7ind]}$^c$'
+    D_ID_b6b7[b7ind] = f'{D_ID[b7ind]}$^c$'
 for b6b7 in np.intersect1d(B6nonconv_ind, B7nonconv_ind):
-    D_ID_b6b7[b6b7] = f'${D_ID[b6b7]}^{{bc}}$'
+    D_ID_b6b7[b6b7] = f'{D_ID[b6b7]}$^{{bc}}$' 
 
 D_ID_full = D_ID_b6b7
 new_srcs = [8,10,32,33,50,53,63,70,74,75,79,115]#updated to new sources [9,10,22,24,36,37,39,45,55,59,61,71,72,79,81,84]
 for new in new_srcs:
     new_ind = np.where(D_ID == str(new))[0]
-    D_ID_full[new_ind] = f'${D_ID_full[new_ind[0]]}^a$'
+    D_ID_full[new_ind] = f'{D_ID_full[new_ind[0]]}$^a$'
 
+
+eisb7_ind = np.where(np.isnan(calc_tab['alpha_B3eis']) == False)[0]
+for eis in eisb7_ind:
+    D_ID_full[eis] = f'{D_ID_full[eis]}$^d$'
 
 #now clean up tables to put into latex
 
@@ -147,7 +151,13 @@ for row in range(len(meas_misc)):
         alphaB6B7_rnd, alphaB6B7_err_rnd = rounded(meas_misc['alpha_B6B7'][row], meas_misc['alpha_B6B7_err'][row], extra=0)
         alphaB6B7.append(str(alphaB6B7_rnd)+'$\pm$'+str(alphaB6B7_err_rnd))
     if np.isnan(meas_misc['alpha_fit'][row]) == True:
-        alphafit.append('-')
+        if np.isnan(meas_misc['alpha_B3eis'][row]) == False:
+            b3eis_rnd, b3eis_err_rnd = rounded(meas_misc['alpha_B3eis'][row], meas_misc['alpha_B3eis_err'][row], extra=0)
+            alphafit.append(str(b3eis_rnd)+'$\pm$'+str(b3eis_err_rnd))
+        elif alphaB3B6[-1] != '-':
+            alphafit.append(alphaB3B6[-1])
+        elif np.isnan(meas_misc['alpha_B3eis'][row]) == True and alphaB3B6[-1] == '-':
+            alphafit.append('-')
     else:
         alphafit_rnd, alphafit_err_rnd = rounded(meas_misc['alpha_fit'][row], meas_misc['alpha_fit_err'][row], extra=0)
         alphafit.append(str(alphafit_rnd)+'$\pm$'+str(alphafit_err_rnd))
@@ -172,7 +182,7 @@ for crd_str in coords_str:
 tablemisc_latex = Table((D_ID_full, meas_misc['MLLA'], meas_misc['Seq'], meas_misc['COUP_1'],
                          coords_str_rnd, radec_err,  alphaB3B6, alphaB6B7, alphafit),
                       names=('Source ID', 'MLLA', 'Forbrich2016', 'COUP', 'Coordinates', '$\\alpha, \\delta$ error',
-                             '$\\alpha_{B3\\to B6}$', '$\\alpha_{B6\\to B7}$', '$\\alpha$'))
+                             '$\\alpha_{B3\\to B6}$', '$\\alpha_{B6\\to B7}$', '$\\alpha^{(1)}$'))
 
 
 nonB3only_ind = np.delete(np.arange(len(tablemisc_latex)), only_B3ind)
