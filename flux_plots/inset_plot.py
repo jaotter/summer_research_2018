@@ -46,9 +46,11 @@ def inset_plot_3band(page_num):
         srcind = srcind[12:24]
     if page_num == 3:
         srcind = srcind[24:]
-        
+
     tab = tab[srcind]
 
+    new_srcs = [8, 10, 32, 33, 50, 54, 64, 71, 75, 76, 80, 118, 119, 123, 124]
+    
     fig = plt.figure(figsize=(8,9))
     outer_gs = GridSpec(6, 2, figure=fig, wspace=0.05, hspace=0.01)
 
@@ -63,6 +65,8 @@ def inset_plot_3band(page_num):
             #ax0 = fig.add_subplot(outer_gs[gs_row, gs_col])
 
             wavelength = ['3mm', '1.3mm', '0.85mm']
+            if ind >= len(srcind):
+                continue
             
             for i in range(3):
                 img = data_list[i]
@@ -76,7 +80,10 @@ def inset_plot_3band(page_num):
                 cutout = Cutout2D(img, coord_pix, size, mywcs, mode='partial')
                 ax.imshow(cutout.data, origin='lower', cmap='viridis', transform=ax.get_transform(mywcs))
                 if i == 0:
-                    ax.text(10,100,tab['ID'][ind],color='white')
+                    bbox_params = {'visible':False}
+                    if tab['ID'][ind] in new_srcs:
+                        bbox_params = {'edgecolor':'red','fill':None,'boxstyle':'round'}
+                    ax.text(10,100,tab['ID'][ind],color='white', bbox=bbox_params)
                     ax.tick_params(axis='x', which='both', direction='in', color='black', labelbottom=False)
                     ax.tick_params(axis='y', which='both', direction='in', color='black', labelleft=False)
 
@@ -90,7 +97,7 @@ def inset_plot_3band(page_num):
                 
                 if gs_row == 0 and gs_col == 0:
                     spacings = [70,60,50]
-                    ax.text(spacings[i],100,wavelength[i],color='white')
+                    ax.text(spacings[i],100,wavelength[i],color='white', fontsize=8)
                     ax.tick_params(axis='both', which='both', direction='in', color='black')
 
                     beam = beam_list[i]
@@ -110,9 +117,7 @@ def inset_plot_3band(page_num):
                         ax.add_patch(r)
                         ax.text(75, 15, '50 AU', fontsize=8)
     
-
-                    
-                    #add beam
+                        #highlight newly added sources?
                     #add axes labels
                     
                     
@@ -121,3 +126,5 @@ def inset_plot_3band(page_num):
     plt.savefig(f'/home/jotter/nrao/plots/insets/b7_page{page_num}.pdf', bbox_inches='tight')
 
 inset_plot_3band(1)
+inset_plot_3band(2)
+inset_plot_3band(3)
