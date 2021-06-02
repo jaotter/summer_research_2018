@@ -10,21 +10,21 @@ FWHM_TO_SIGMA = 1/np.sqrt(8*np.log(2))
 
 #data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_nonconv_apflux_final.fits')
 
-data_conv = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20.fits')
+data_conv = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim.fits')
 
 
 
-#band='B3'
+band='B3'
 #band = 'B6'
-band = 'B7'
+#band = 'B7'
 
-#img_path_conv = '/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
-#img_path_conv = '/home/jotter/nrao/images/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
-img_path_conv = '/home/jotter/nrao/images/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
+img_path_conv = '/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits'
+#img_path_conv = '/home/jotter/nrao/images/B6_convolved_r0.5.clean1mJy.150mplus.huge.image.tt0.pbcor.fits'
+#img_path_conv = '/home/jotter/nrao/images/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
 
-#img_path = '/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.deepmask.image.tt0.pbcor.fits'
-#img_path = '/home/jotter/nrao/images/Orion_SourceI_B6_continuum_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
-img_path = '/home/jotter/nrao/images/Orion_SourceI_B7_continuum_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
+img_path = '/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits'
+#img_path = '/home/jotter/nrao/images/Orion_SourceI_B6_continuum_r0.5.clean1mJy.150mplus.huge.image.tt0.pbcor.fits'
+#img_path = '/home/jotter/nrao/images/Orion_SourceI_B7_continuum_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
 
 
 fl = fits.open(img_path)
@@ -74,7 +74,8 @@ ap_flux_conv_err = data_conv['ap_flux_err_'+band]
 #flux_ind_conv = np.delete(flux_ind_conv, np.where(flux_ind_conv==13)[0])
 
 #plt.scatter(int_flux[full_ind], int_flux_conv[full_ind])
-plt.errorbar(int_flux_conv[flux_ind_conv], ap_flux_conv[flux_ind_conv], yerr=ap_flux_conv_err[flux_ind_conv], marker='.', linestyle='')
+plt.errorbar(int_flux_conv[flux_ind_conv], ap_flux_conv[flux_ind_conv], yerr=3*ap_flux_conv_err[flux_ind_conv], marker='.', linestyle='')
+
 #plt.scatter(int_flux[deconv_ind], ap_flux[deconv_ind])
 
 print(np.mean((int_flux_conv[flux_ind_conv] - ap_flux_conv[flux_ind_conv])/ap_flux_conv[flux_ind_conv]), 'mean')
@@ -86,7 +87,7 @@ plt.xlabel('integrated flux (convolved) '+band+' (Jy)')
 plt.ylabel('aperture flux (convolved)' +band+' (Jy)')
 plt.ylim(-0.001, 0.05)
 plt.xlim(-0.001, 0.05)
-plt.savefig('/home/jotter/nrao/plots/'+band+'_int_ap_flux_comp_conv_zoom.png')
+plt.savefig('/home/jotter/nrao/plots/'+band+'_int_ap_flux_comp_conv.png')
 plt.clf()
 
 linear = np.polyfit(ap_flux_conv[flux_ind_conv], int_ap_diff/ap_flux_conv[flux_ind_conv], deg=1)
@@ -94,9 +95,12 @@ print(linear)
 
 plt.plot(np.linspace(-1,1,10), linear[0]*np.linspace(-1,1,10)+linear[1])
 plt.plot(ap_flux_conv[flux_ind_conv], int_ap_diff/ap_flux_conv[flux_ind_conv], marker='.', linestyle='')
-plt.xlabel('(F_int - F_ap) / F_ap '+band+' (Jy)')
-plt.ylabel('F_ap' +band+' (Jy)')
+plt.ylabel('(F_int - F_ap) / F_ap '+band+' (Jy)')
+plt.xlabel('F_ap' +band+' (Jy)')
 plt.axhline(0)
 plt.ylim(-0.5, 1)
 plt.xlim(-0.001, 0.1)
 plt.savefig('/home/jotter/nrao/plots/'+band+'_int_ap_perc_diff.png')
+
+print(len(np.where(int_ap_diff/ap_flux_conv[flux_ind_conv] < 0.1)[0]))
+print(len(flux_ind_conv))

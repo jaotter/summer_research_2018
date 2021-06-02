@@ -115,5 +115,9 @@ taurus_mdust_flag[np.where(taurus_data['l_F450'] == '<')] = False
 #plot_KM([eis_mdust, lupus_mdust, sco_mdust, ophi_mdust, B3_mdust_onc, taurus_mdust], ['E18', 'Lupus', 'Upper Sco', 'Ophiucus', 'ONC B3', 'Taurus'],
 #        [eis_mdust_flag, lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, B3_mdust_flag_onc, taurus_mdust_flag], savepath='/home/jotter/nrao/plots/KM_dust_mass_aug20_onc_noulim.pdf', left_censor=True, cdf=False)
 
-plot_KM([eis_mdust, lupus_mdust, sco_mdust, ophi_mdust, B3_mdust_onc, taurus_mdust], ['E18', 'Lupus', 'Upper Sco', 'Ophiucus', 'ONC B3', 'Taurus'],
-        [eis_mdust_flag, lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, B3_mdust_flag_onc, taurus_mdust_flag], savepath='/home/jotter/nrao/plots/KM_dust_mass_may21_onc.pdf', left_censor=True, cdf=False, plot_quantity='Mdust')
+onc_combined = np.concatenate((B3_mdust_onc, eis_mdust))
+onc_combined_flag = np.concatenate((B3_mdust_flag_onc, eis_mdust_flag))
+
+
+plot_KM([lupus_mdust, sco_mdust, ophi_mdust, B3_mdust_onc, taurus_mdust], ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC (B3)', 'Taurus'],
+        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, B3_mdust_flag_onc, taurus_mdust_flag], savepath='/home/jotter/nrao/plots/KM_dust_mass_may21_onc.pdf', left_censor=True, cdf=False, plot_quantity='Mdust')

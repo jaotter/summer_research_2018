@@ -181,7 +181,7 @@ median, lower, upper = KM_median(eis_hwhm*2, eis_hwhm_flag, return_type='percent
 print(f'{median} - {lower} + {upper}')
 
 print('ONC combined')
-onc_combined = np.concatenate((onc, eis_hwhm))*2
+onc_combined = np.concatenate((onc, eis_hwhm))
 onc_combined_flag = np.concatenate((onc_flag, eis_hwhm_flag))
 #median = KM_median(onc_combined, onc_combined_flag, return_type='median')
 #ci = bootstrap_ci(1000, onc_combined, onc_combined_flag)
@@ -206,7 +206,6 @@ ophi_hwhm_au = ophi_fwhm_au/2
 #ophi_fwhm_au = np.delete(ophi_fwhm_au, ulim_ophi_ind)
 #ophi_fwhm_flag = np.repeat(True, len(ophi_fwhm_au))
 
-
-#plot_KM([eis_hwhm, lupus_hwhm_au, sco_r, ophi_hwhm_au, onc, omc1], ['E18', 'Lupus', 'Upper Sco', 'Ophiuchus', 'ONC B3', 'OMC1 B3'],
-#        [eis_hwhm_flag, lupus_fwhm_flag, sco_fwhm_flag, ophi_fwhm_flag, onc_flag, omc1_flag], savepath='/home/jotter/nrao/plots/KM_size_plot_may21_hwhm_omc1_onc.pdf', left_censor=True,
-#        plot_quantity='Rdisk')
+plot_KM([lupus_hwhm_au, sco_r, ophi_hwhm_au, onc_combined, omc1], ['Lupus', 'Upper Sco', 'Ophiuchus', 'ONC', 'OMC1 B3'],
+        [lupus_fwhm_flag, sco_fwhm_flag, ophi_fwhm_flag, onc_combined_flag, omc1_flag], savepath='/home/jotter/nrao/plots/KM_size_plot_may21_hwhm_omc1_onc_combined.pdf', left_censor=True,
+        plot_quantity='Rdisk')

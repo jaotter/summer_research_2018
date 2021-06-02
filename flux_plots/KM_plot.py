@@ -45,7 +45,7 @@ def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True, cdf=Fal
     
     
     if plot_quantity == 'Mdust':
-        ax.set_xlim(0.03, 1000)   
+        ax.set_xlim(0.03, 2000)   
         ax.set_xlabel(r'$M_{dust}$ ($M_{\oplus}$)', fontsize=18)
         ax.set_ylabel(r'$P \geq M_{dust}$', fontsize=18)
 

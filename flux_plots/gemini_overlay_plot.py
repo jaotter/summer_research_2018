@@ -53,23 +53,23 @@ print(len(b7_sources), len(b6_sources), len(b3_sources))
 
 text_col = 'whitesmoke'
 
-irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full.fits')
+irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
 IRseq = irtab['ID'].data
 
 for ind in range(len(B3_pix[0])):
     did = B3_table['ID'][ind]
-    if did in b7_sources:
-        col = 'tab:red'
-    if did in b6_sources:
-        col = 'tab:pink'
-    if did in b3_sources:
-        col = 'tab:green'
+    #if did in b7_sources:
+    #    col = 'tab:red'
+    #if did in b6_sources:
+    #    col = 'tab:pink'
+    #if did in b3_sources:
+    #    col = 'tab:green'
     #col='tab:red'
 
-    #if did in IRseq:
-    #    col = 'tab:pink'
-    #else:
-    #    col = 'tab:green'
+    if did in IRseq:
+        col = 'tab:pink'
+    else:
+        col = 'tab:green'
     
     circ = Circle((B3_pix[0][ind], B3_pix[1][ind]), radius=10, fill=False, color=col)
     ax.add_patch(circ)
@@ -101,11 +101,11 @@ B3_circ = Circle((B3_coord_pix[0], B3_coord_pix[1]), radius=B3_radius_pix, trans
 ax.add_patch(B3_circ)
 
 B6_coord = SkyCoord(ra=83.8104625, dec=-5.37515556, unit=u.degree)
-B6_coord_pix = mywcs.all_world2pix(B3_coord.ra, B3_coord.dec, 0)
+B6_coord_pix = mywcs.all_world2pix(B6_coord.ra, B6_coord.dec, 0)
 B6_radius = 28.6*u.arcsecond
-B6_coord_R = SkyCoord(ra=B3_coord.ra, dec=B3_coord.dec+B3_radius)
-B6_R_pix = mywcs.all_world2pix(B3_coord_R.ra, B3_coord_R.dec,0)
-B6_radius_pix = B3_coord_pix[1] - B3_R_pix[1]
+B6_coord_R = SkyCoord(ra=B6_coord.ra, dec=B6_coord.dec+B6_radius)
+B6_R_pix = mywcs.all_world2pix(B6_coord_R.ra, B6_coord_R.dec,0)
+B6_radius_pix = B6_coord_pix[1] - B6_R_pix[1]
 
 B6_circ = Circle((B6_coord_pix[0], B6_coord_pix[1]), radius=B6_radius_pix, transform=ax.transData, color='blue', linewidth=1, fill=False, linestyle='--')
 ax.add_patch(B6_circ)
@@ -135,7 +135,7 @@ ax.set_xlim(100,1556)
 
 plt.tight_layout()
     
-plt.savefig(f'/home/jotter/nrao/plots/gemini_B3_overlay.pdf',dpi=300,bbox_inches='tight')
+plt.savefig(f'/home/jotter/nrao/plots/gemini_B3_overlay_onc.pdf',dpi=300,bbox_inches='tight')
 plt.close()
 
 

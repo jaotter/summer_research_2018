@@ -10,8 +10,6 @@ import astropy.units as u
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-
 def inset_plot_3band(page_num):
     #create inset plot for sources detected in 3 bands
     tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
@@ -39,7 +37,11 @@ def inset_plot_3band(page_num):
     data_list = [b3_data, b6_data, b7_data]
     beam_list = [b3beam, b6beam, b7beam]
     
-    srcind = np.where(np.isnan(tab['ap_flux_B7']) == False)[0] #34 sources detected in B7
+    srcind = np.where(np.isnan(tab['ap_flux_B7']) == False)[0] #36 sources detected in B7
+    nondet = [14, 37, 38]
+    nondet_bands = np.array([[1], [1,2], [1,2]], dtype='object')
+    srcind = np.sort(np.concatenate((srcind, [37,38])))
+    
     if page_num == 1:
         srcind = srcind[:12]
     if page_num == 2:
@@ -91,7 +93,12 @@ def inset_plot_3band(page_num):
                 ax.set_xlabel('')
                 ax.set_ylabel('')
 
-                
+                if tab['ID'][ind] in nondet:
+                    nondet_band_inds = nondet_bands[np.where(tab['ID'][ind] == nondet)[0]]
+                    for band_ind in nondet_band_inds[0]:
+                        if i == band_ind:
+                            ax.text(70,10,'S/N<3',color='white', fontsize=8)
+                    
                 if gs_row == 0 and gs_col == 0:
                     spacings = [70,60,50]
                     ax.text(spacings[i],100,wavelength[i],color='white', fontsize=8)
@@ -105,7 +112,6 @@ def inset_plot_3band(page_num):
                     ax.add_patch(r)
 
                     scalebar_deg = ((50/400) * u.arcsecond).to(u.degree)
-                    #scalebar_1kpc_pix = float(scalebar_100AU_arcsec/(0.5*u.arcsec) * 1.*u.kpc)
                     
                     if i == 2:
                         rect_cent = mywcs.pixel_to_world(115,5)
@@ -114,14 +120,10 @@ def inset_plot_3band(page_num):
                         ax.add_patch(r)
                         ax.text(75, 15, '50 AU', fontsize=8)
     
-                        #highlight newly added sources?
-                    #add axes labels
-                    
-                    
+                                        
             ind += 1
 
     plt.savefig(f'/home/jotter/nrao/plots/insets/b7_page{page_num}.pdf', bbox_inches='tight')
-
 
 
 def inset_plot_2band(page_num):
@@ -148,23 +150,19 @@ def inset_plot_2band(page_num):
     b7_srcind = np.where(np.isnan(tab['ap_flux_B7']) == False)[0] #34 sources detected in B7
     b6_srcind = np.where(np.isnan(tab['ap_flux_B6']) == False)[0]
     srcind = np.setdiff1d(b6_srcind, b7_srcind) #16 sources in b6 and not b7
-
-    #if page_num == 1:
-    #    srcind = srcind[:12]
-    #if page_num == 2:
-    #    srcind = srcind[12:24]
-    #if page_num == 3:
-    #    srcind = srcind[24:]
+    nondet = [3,19,43,53,58]
+    srcind = np.sort(np.concatenate((srcind, nondet))) #22 sources total
+    print(len(srcind))
 
     tab = tab[srcind]
 
     new_srcs = [8, 10, 32, 33, 50, 54, 64, 71, 75, 76, 80, 118, 119, 123, 124]
     
-    fig = plt.figure(figsize=(8,9))
-    outer_gs = GridSpec(6, 3, figure=fig, wspace=0.05, hspace=0.01)
+    fig = plt.figure(figsize=(8,10))
+    outer_gs = GridSpec(7, 3, figure=fig, wspace=0.05, hspace=0.01)
 
     ind = 0
-    for gs_row in range(6):
+    for gs_row in range(7):
         for gs_col in range(3):
 
             #now create inner gridspec for 3 bands
@@ -199,6 +197,11 @@ def inset_plot_2band(page_num):
                 ax.set_xlabel('')
                 ax.set_ylabel('')
 
+
+                if tab['ID'][ind] in nondet:
+                    if i == 1:
+                        ax.text(70,10,'S/N<3',color='white', fontsize=8)
+                
                 
                 if gs_row == 0 and gs_col == 0:
                     spacings = [70,60,50]
@@ -216,11 +219,11 @@ def inset_plot_2band(page_num):
                     #scalebar_1kpc_pix = float(scalebar_100AU_arcsec/(0.5*u.arcsec) * 1.*u.kpc)
                     
                     if i == 1:
-                        rect_cent = mywcs.pixel_to_world(115,5)
+                        rect_cent = mywcs.pixel_to_world(115,25)
                         r = Rectangle((rect_cent.ra.value, rect_cent.dec.value), scalebar_deg.value, scalebar_deg.value/5,
                                       edgecolor='black', facecolor='gray', transform=ax.get_transform('icrs'))
                         ax.add_patch(r)
-                        ax.text(75, 15, '50 AU', fontsize=8)
+                        ax.text(75, 35, '50 AU', fontsize=8)
     
                         #highlight newly added sources?
                     #add axes labels
@@ -247,23 +250,26 @@ def inset_plot_1band(page_num):
     b6_srcind = np.where(np.isnan(tab['ap_flux_B6']) == False)[0]
     b3b6_srcind = np.setdiff1d(np.arange(len(tab)), b6_srcind)
     srcind = np.setdiff1d(b3b6_srcind, b7_srcind)
+    prev_nondet = [3,19,37,38,43,53,58]
+    srcind = np.setdiff1d(srcind, prev_nondet)
+    
     print(len(srcind))
     
     if page_num == 1:
-        srcind = srcind[:42]
+        srcind = srcind[:36]
     if page_num == 2:
-        srcind = srcind[42:]
+        srcind = srcind[36:]
 
         
     tab = tab[srcind]
 
     new_srcs = [8, 10, 32, 33, 50, 54, 64, 71, 75, 76, 80, 118, 119, 123, 124]
     
-    fig = plt.figure(figsize=(8,10))
-    outer_gs = GridSpec(7, 6, figure=fig, wspace=0.05, hspace=0.01)
+    fig = plt.figure(figsize=(8,9))
+    outer_gs = GridSpec(7, 6, figure=fig, wspace=0.05, hspace=0.05)
 
     ind = 0
-    for gs_row in range(7):
+    for gs_row in range(6):
         for gs_col in range(6):
 
             #now create inner gridspec for 3 bands
@@ -321,10 +327,10 @@ def inset_plot_1band(page_num):
 
 
 
-inset_plot_1band(1)
-inset_plot_1band(2)
+#inset_plot_1band(1)
+#inset_plot_1band(2)
 
-#inset_plot_2band(1)
+inset_plot_2band(1)
     
 #inset_plot_3band(1)
 #inset_plot_3band(2)

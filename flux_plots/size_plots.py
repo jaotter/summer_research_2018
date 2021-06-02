@@ -202,11 +202,11 @@ def disk_size_hist_3panel(arrs, xlabels, filename, nbins=10, ulim_arrs=None):
         allhist, b = np.histogram(arrs[a][allind], bins, density=False)
         ax[a].bar(plotpts, hist, widths, edgecolor = 'black', alpha=0.5, label=f'{xlabels[a]} Sources')
         ax[a].bar(plotpts, allhist, widths, edgecolor='black', alpha=0.5, label=f'{xlabels[a]} Sources Deconvolved in All Bands')
-        ax[a].set_xlim(0,0.27)
-        ax[a].set_ylim(0,30)
+        ax[a].set_xlim(0,0.25)
+        ax[a].set_ylim(0,35)
         ax[a].set_ylabel('Number of Disks', fontsize=18)
         ax[a].legend(fontsize=16)
-        ax[a].yaxis.set_major_locator(plt.MaxNLocator(5))
+        #ax[a].yaxis.set_major_locator(plt.MaxNLocator(5))
 
     if ulim_arrs is not None:
         for ul in range(len(arrs)):
@@ -218,7 +218,7 @@ def disk_size_hist_3panel(arrs, xlabels, filename, nbins=10, ulim_arrs=None):
             ax[ul].legend(fontsize=16)
             
     altax = ax1.twiny()
-    xlim = 0.27*u.arcsec.to(u.rad)
+    xlim = 0.25*u.arcsec.to(u.rad)
     xlim *= d
     altax.set_xlim(0, xlim.value)
     altax.set_xlabel('Deconvolved FWHM Major (AU)', fontsize=18)
