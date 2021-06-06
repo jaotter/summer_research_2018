@@ -34,6 +34,7 @@ def plot_MST_hist(coord_list, labels, filename, colors=['tab:blue', 'tab:orange'
         #bins = np.arange(0,15.1,1.5)
         bins = np.arange(0,20,1.5)
         print(f'Mean separation: {np.mean(sep_arr)} arcseconds for {labels[i]}')
+        print(f'Median separation: {np.median(sep_arr)} arcseconds for {labels[i]}')
         print(f'standard dev on sep: {np.std(sep_arr)} arcseconds for {labels[i]}')
         print(f'standard error on sep: {np.std(sep_arr)/np.sqrt(len(sep_arr))} arcseconds for {labels[i]}')
 
@@ -41,14 +42,18 @@ def plot_MST_hist(coord_list, labels, filename, colors=['tab:blue', 'tab:orange'
         errs.append(np.std(sep_arr)/np.sqrt(len(sep_arr)))
 
         sep_au = np.mean(sep_arr) * 400
+        sep_au_med = np.median(sep_arr) * 400
         sep_err_au = np.std(sep_arr)/np.sqrt(len(sep_arr)) * 400
         sep_3d = sep_au * 1.3
+        sep_3d_med = sep_au_med * 1.3
         sep_3d_err = sep_err_au * 1.3
-
+        
         src_density = 3 / (4*np.pi*((sep_3d*u.AU).to(u.pc))**3)
-        src_density_err = 1 / (4*np.pi*((sep_3d*u.AU).to(u.pc))**4) * (sep_3d_err*u.AU).to(u.pc)
+        src_density_med = 3 / (4*np.pi*((sep_3d_med*u.AU).to(u.pc))**3)
+        src_density_err = 9 / (4*np.pi*((sep_3d*u.AU).to(u.pc))**4) * (sep_3d_err*u.AU).to(u.pc)
 
         print(f'Source density: {src_density} pm {src_density_err} pc^-3')
+        print(f'Source density (median): {src_density_med} pm {src_density_err} pc^-3')
         
         
         sep_grid = np.linspace(0,20,100)

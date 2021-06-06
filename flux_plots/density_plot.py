@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, sources='all', vbounds=(0,0.15), plot_pb=False):
+def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, sources='all', vbounds=(0,100), plot_pb=False):
     
     if sources == 'all':
         tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
@@ -35,6 +35,8 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
     b3_xmax = len(b3_data)
     b3_ymax = len(b3_data[0])
 
+    orig_npix = b3_fl[0].header['NAXIS1']
+    
     #creating new wcs for density map
     zero_coord = b3_wcs.all_pix2world(0,0,0)
     
@@ -73,6 +75,7 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
         print('WARNING: X/Y PIXEL SCALES DIFFERENT, DISTANCES WILL BE WRONG')
 
     pixel_scale = (pixel_scales[0]*u.degree).to(u.arcsecond)
+    pixel_scale = (orig_npix / npix) * pixel_scale
     nth_dists = (nth_dists_pix * pixel_scale).value
     
     density_map = np.reshape(nth_dists, (npix,npix))
