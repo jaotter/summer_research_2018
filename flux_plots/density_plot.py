@@ -16,9 +16,10 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
 <<<<<<< HEAD
         tab = Table.read('tables/r0.5_catalog_bgfit_mar21_ulim.fits')
     if sources == 'IR':
-        tab = Table.read('tables/IR_matches_MLLA_mar21_full.fits')
+        tab = Table.read('tables/IR_matches_MLLA_nov20_full.fits')
     if sources == 'nonIR' or sources == 'all_contour':
         full_tab = Table.read('tables/r0.5_catalog_bgfit_mar21_ulim.fits')
+<<<<<<< Updated upstream
         IR_tab = Table.read('tables/IR_matches_MLLA_mar21_full.fits')
 =======
         tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
@@ -28,6 +29,9 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
         full_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
         IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
 >>>>>>> 5d35a2dd0696300afeb52b914bd12e9936965856
+=======
+        IR_tab = Table.read('tables/IR_matches_MLLA_nov20_full.fits')
+>>>>>>> Stashed changes
 
         nonIR_src = np.setdiff1d(full_tab['ID'], IR_tab['ID'])
         nonIR_ind = [np.where(full_tab['ID']==d_id)[0][0] for d_id in nonIR_src]
@@ -35,11 +39,15 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
 
     if sources == 'all_contour':
         tab_omc1 = tab
+<<<<<<< Updated upstream
 <<<<<<< HEAD
         tab = Table.read('tables/IR_matches_MLLA_mar21_full.fits')
 =======
         tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
 >>>>>>> 5d35a2dd0696300afeb52b914bd12e9936965856
+=======
+        tab = Table.read('tables/IR_matches_MLLA_nov20_full.fits')
+>>>>>>> Stashed changes
     
     b3_fl = fits.open('images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits')
     b3_wcs = WCS(b3_fl[0].header).celestial
