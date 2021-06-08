@@ -53,7 +53,7 @@ def plot_SED(ax, srcid, fluxes, flux_errs, ulims, e18_b7=False):
 
     if len(fluxind) > 1:
         popt, pcov = curve_fit(f, np.log10(freqs[fluxind]), fluxes[fluxind], sigma=flux_errs[fluxind])
-        ax.plot(freqs, np.log10(freqs)*popt[0] + popt[1], linestyle='-', color='k')
+        ax.plot(freqs, np.log10(freqs)*popt[0] + popt[1], linestyle='-', color='k', alpha=0.5)
         perr = np.sqrt(np.diag(pcov))
 
         if srcid == 14 or srcid == 3 or srcid == 19:
@@ -79,7 +79,7 @@ def plot_SED(ax, srcid, fluxes, flux_errs, ulims, e18_b7=False):
         F2 = fluxes[0]
         nu2 = freqs[0]
     F1 = np.log10(np.power(10,F2)*(freqs/nu2)**alpha)
-    ax.plot(freqs, F1, linestyle='--', color='tab:red')    
+    ax.plot(freqs, F1, linestyle='--', color='tab:red', alpha=0.5)    
     ax.text(0.1,0.82,srcid,transform=ax.transAxes,weight='bold')
 
     ax.set_xscale('log')
