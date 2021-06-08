@@ -133,7 +133,7 @@ def reject_sources(name, catname, datname, min_snr=5, max_size=None, max_size_ID
 	catalog['bg_median_'+name] = bg_arr2
 	plot_grid(cutout_images, masks, reject, snr_vals, catalog['_idx_'+name])
 	plt.show(block=False)
-	line_remove = input('enter id values for missed sources to exclude from the catalog, seperated by whitespace: ')
+	line_remove = input('enter id values for sources to exclude from the catalog, seperated by whitespace: ')
 	man_input_rem = np.array(line_remove.split(), dtype='int')
 	id_ind_true = np.where(np.in1d(catalog['_idx_'+name],man_input_rem) == True)
 	reject[id_ind_true] = True

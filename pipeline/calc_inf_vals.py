@@ -10,21 +10,21 @@ import astropy.units as u
 
 FWHM_TO_SIGMA = 1/np.sqrt(8*np.log(2))
 
-data =  Table.read('../tables/r0.5_catalog_bgfit_feb21_ulim.fits')
+data =  Table.read('../tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
 
 
 #calculate quantities for each band
 bands = ['B3', 'B6', 'B7']
-imgs = ['/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits', '/home/jotter/nrao/images/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits', '/home/jotter/nrao/images/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits']
-nonconv_imgs = ['/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits', '/home/jotter/nrao/images/Orion_SourceI_B6_continuum_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits', '/home/jotter/nrao/images/Orion_SourceI_B7_continuum_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits']
+imgs = ['/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits', '/home/jotter/nrao/images/B6_convolved_r0.5.clean1mJy.150mplus.huge.image.tt0.pbcor.fits', '/home/jotter/nrao/images/B7_convolved_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits']
+nonconv_imgs = ['/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits', '/home/jotter/nrao/images/Orion_SourceI_B6_continuum_r0.5.clean1mJy.150mplus.huge.image.tt0.pbcor.fits', '/home/jotter/nrao/images/Orion_SourceI_B7_continuum_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits']
 freqs = [98, 223.5 ,339.7672758867]
-nonconv_srcs = [[], [16,34,80,83], [16,18,33,34,50,76,80,81,83]]
+nonconv_srcs = [[], [30,36,45,56,63,68,70,71], [14,16,29,30,45,63,66,68,69,70]] #B3_Seq
 
 nonconv_src_inds = []
 for i in range(len(bands)):
     nonconv_ind = []
     for src in nonconv_srcs[i]:
-        nonconv_ind.append(np.where(data['D_ID'] == src)[0][0])
+        nonconv_ind.append(np.where(data['B3_Seq'] == src)[0][0])
     nonconv_src_inds.append(np.array(nonconv_ind))
 #calclated quantites for each band
 
@@ -47,28 +47,37 @@ mass_err_arrs = []
 inclination_arrs = []
 inclination_err_arrs = []
 
+sys_err = 0.20 #20% systematic error
+
+b3flux = data['ap_flux_B3'].data
+b3flux_err = np.sqrt(data['ap_flux_err_B3'].data**2 + (sys_err*b3flux)**2)
+b6flux = data['ap_flux_B6'].data
+b6flux_err = np.sqrt(data['ap_flux_err_B6'].data**2 + (sys_err*b6flux)**2)
+b7flux = data['ap_flux_B7'].data
+b7flux_err = np.sqrt(data['ap_flux_err_B7'].data**2 + (sys_err*b7flux)**2)
+
 #calculated quantities not requiring loops
 A = np.log10(freqs[1]) - np.log10(freqs[0])
-alpha_B3B6 = (np.log10(data['ap_flux_B6'])-np.log10(data['ap_flux_B3']))/A
-alpha_B3B6_err = np.sqrt((data['ap_flux_err_B6']/(A*np.log(10)*data['ap_flux_B6']))**2 + (data['ap_flux_err_B3']/(A*np.log(10)*data['ap_flux_B3']))**2)
-alpha_B3B6_err2 = (1/(A*np.log(10)))*np.sqrt((data['ap_flux_err_B6']/data['ap_flux_B6'])**2 + (data['ap_flux_err_B3']/data['ap_flux_B3'])**2)
+alpha_B3B6 = (np.log10(b6flux)-np.log10(b3flux))/A
+alpha_B3B6_err = np.sqrt((b6flux_err/(A*np.log(10)*b6flux))**2 + (b3flux_err/(A*np.log(10)*b3flux))**2)
+alpha_B3B6_err2 = (1/(A*np.log(10)))*np.sqrt((b6flux_err/b6flux)**2 + (b3flux_err/b3flux)**2)
 
 print(alpha_B3B6_err)
 print(alpha_B3B6_err2)
 
 B = np.log10(freqs[2]) - np.log10(freqs[1])
-alpha_B6B7 = (np.log10(data['ap_flux_B7'])-np.log10(data['ap_flux_B6']))/B
-alpha_B6B7_err = np.sqrt((data['ap_flux_err_B6']/(B*np.log(10)*data['ap_flux_B6']))**2 + (data['ap_flux_err_B7']/(B*np.log(10)*data['ap_flux_B7']))**2)
+alpha_B6B7 = (np.log10(b7flux)-np.log10(b6flux))/B
+alpha_B6B7_err = np.sqrt((b6flux_err/(B*np.log(10)*b6flux))**2 + (b7flux_err/(B*np.log(10)*b7flux))**2)
 #alpha_B3B6_err = (1/np.log(10))*np.sqrt((data['ap_flux_err_B6']/data['ap_flux_B6'])**2 + (data['ap_flux_err_B3']/data['ap_flux_B3'])**2)
     
 for b in range(len(bands)):
     band = bands[b]
-    inclination = np.arccos(data['fwhm_min_deconv_'+band]/data['fwhm_maj_deconv_'+band])
-    inclination_arrs.append(inclination*360/(2*np.pi))
+    inclination = np.arccos(data['fwhm_min_deconv_'+band]/data['fwhm_maj_deconv_'+band])*u.radian
+    inclination_arrs.append(inclination.to(u.degree))
     inclination_err = np.sqrt((data['fwhm_min_deconv_err_'+band]**2/(data['fwhm_maj_deconv_'+band]**2- data['fwhm_min_deconv_'+band]**2)) +
                               ((data['fwhm_maj_deconv_err_'+band]**2)*(data['fwhm_min_deconv_'+band]**2) /
-                               (data['fwhm_maj_deconv_'+band]**2 * (data['fwhm_maj_deconv_'+band]**2 - data['fwhm_min_deconv_'+band]**2))))
-    inclination_err_arrs.append(inclination_err*360/(2*np.pi))
+                               (data['fwhm_maj_deconv_'+band]**2 * (data['fwhm_maj_deconv_'+band]**2 - data['fwhm_min_deconv_'+band]**2))))*u.radian
+    inclination_err_arrs.append(inclination_err.to(u.degree))
 
     fl = fits.open(imgs[b])
     fl_nonconv = fits.open(nonconv_imgs[b])
@@ -111,19 +120,26 @@ for b in range(len(bands)):
     mass_arrs.append(Dmass.value)
     mass_err_arrs.append(Dmass_err.value)
 
-tab = Table([data['Seq'].data, int_flux_arrs[0], int_flux_err_arrs[0], int_flux_arrs[1],
+Bnu_B6 = blackbody.blackbody_nu(freqs[1]*u.GHz, 20*u.K)
+B6_dmass_ulim = ((data['B6_flux_ulim'].data*u.Jy*dist**2)/(kappa0*(freqs[1]*u.GHz/nu0)*Bnu)).to(u.earthMass*u.sr).value
+print(B6_dmass_ulim)
+Bnu_B7 = blackbody.blackbody_nu(freqs[2]*u.GHz, 20*u.K)
+B7_dmass_ulim = ((data['B7_flux_ulim'].data*u.Jy*dist**2)/(kappa0*(freqs[2]*u.GHz/nu0)*Bnu)).to(u.earthMass*u.sr).value
+print(B7_dmass_ulim)
+
+tab = Table([data['ID'].data, int_flux_arrs[0], int_flux_err_arrs[0], int_flux_arrs[1],
              int_flux_err_arrs[1], int_flux_arrs[2], int_flux_err_arrs[2], inclination_arrs[0],
              inclination_err_arrs[0], inclination_arrs[1], inclination_err_arrs[1], inclination_arrs[2],
              inclination_err_arrs[2], lower_lum_arrs[0], lower_lum_arrs[1], lower_lum_arrs[2],
              mass_arrs[0], mass_err_arrs[0], mass_arrs[1], mass_err_arrs[1], mass_arrs[2],
-             mass_err_arrs[2], alpha_B3B6, alpha_B3B6_err, alpha_B6B7, alpha_B6B7_err],
-             names=['Seq', 'int_flux_B3', 'int_flux_err_B3', 'int_flux_B6', 'int_flux_err_B6',
+             mass_err_arrs[2], alpha_B3B6, alpha_B3B6_err, alpha_B6B7, alpha_B6B7_err, B6_dmass_ulim, B7_dmass_ulim],
+             names=['ID', 'int_flux_B3', 'int_flux_err_B3', 'int_flux_B6', 'int_flux_err_B6',
                     'int_flux_B7', 'int_flux_err_B7', 'inclination_B3', 'inclination_err_B3',
                     'inclination_B6', 'inclination_err_B6', 'inclination_B7', 'inclination_err_B7',
                     'lower_lum_B3', 'lower_lum_B6', 'lower_lum_B7', 'dust_mass_B3', 'dust_mass_err_B3',
                     'dust_mass_B6', 'dust_mass_err_B6', 'dust_mass_B7', 'dust_mass_err_B7', 'alpha_B3B6',
-                    'alpha_B3B6_err', 'alpha_B6B7', 'alpha_B6B7_err'],
+                    'alpha_B3B6_err', 'alpha_B6B7', 'alpha_B6B7_err','dust_mass_ulim_B6', 'dust_mass_ulim_B7'],
              dtype=['i4','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8',
-                    'f8','f8','f8','f8','f8','f8','f8','f8','f8'])    
+                    'f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8'])    
 
-tab.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_feb21_calc_vals.fits', format='fits', overwrite=True)
+tab.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_may21_calc_vals_mask.fits', format='fits', overwrite=True)

@@ -1,6 +1,6 @@
 from astropy.table import Table
 from astropy.io import ascii
-from scipy.stats import kstest, ks_2samp, gaussian_kde
+from scipy.stats import ks_1samp, ks_2samp, gaussian_kde, uniform
 import astropy.units as u
 
 import math
@@ -11,12 +11,13 @@ def f(x): #for 2 sample ks test
     return (1 - np.cos(x))*(x>0)*(x<np.pi/2)+(x>np.pi/2)
 
 
-dataB3 = Table.read('../tables/r0.5_mar21_calc_vals.fits')
+dataB3 = Table.read('../tables/r0.5_may21_calc_vals_mask.fits')
 #dataB3 = Table.read('../tables/r0.5_jun20_calc_vals.fits')
 
-#ind = np.where(np.isnan(dataB3['inclination_B3']) == False)[0]
-ind = np.where(dataB3['inclination_B3'] < 1000)[0]
+ind = np.where(np.isnan(dataB3['inclination_B3']) == False)[0]
 
+data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
+#incl = data['fwhm_maj_deconv_B3'] / data['fwhm_min_deconv_B3']
 
 incl_bins = np.arange(0,91,10)
 
@@ -37,7 +38,7 @@ prob = prob/np.sum(prob)
 sin_hist = tot*prob
 
 
-incl = dataB3['inclination_B3'][ind]*u.degree
+incl = dataB3['inclination_B3'][ind]
 incl_rad = incl.to(u.radian).value
 incl_filtered = incl_rad % np.pi/2
 
@@ -45,14 +46,23 @@ x = np.random.rand(10000)
 y = np.arccos(1-x)
 
 #2 sample ks test
-Dval, pval = ks_2samp(incl_filtered, y) 
+Dval, pval = ks_2samp(incl_rad, y) 
 print('2 sample KS statistic: %f, p value: %f' % (Dval, pval))
 
 #1 sample test
-Dval, pval = kstest(incl_filtered, f) 
+Dval, pval = ks_1samp(np.cos(incl_rad), uniform.cdf) 
 print('1 sample KS statistic: %f, p value: %f' % (Dval, pval))
 
-print(dataB3['inclination_B3'][ind])
+#1 sample test
+Dval, pval = ks_1samp(incl_rad, lambda x: 1-np.cos(x)) 
+print('1 sample KS statistic: %f, p value: %f' % (Dval, pval))
+
+
+minor = data['fwhm_min_deconv_B3'][np.isnan(data['fwhm_min_deconv_B3'])==False]
+major = data['fwhm_maj_deconv_B3'][np.isnan(data['fwhm_min_deconv_B3'])==False]
+inclination = np.arccos(minor/major)
+print(ks_1samp(np.cos(inclination), uniform.cdf))
+
 
 #KDE
 #cos_grid = np.linspace(0,1,100)
@@ -63,9 +73,7 @@ degree_kde = gaussian_kde(dataB3['inclination_B3'][ind], bw_method='scott')
 #norm_cos_pdf = cos_pdf*len(ind)*(1/9)
 #to normalize, multiply by bin width and number of points
 degree_pdf = degree_kde.evaluate(degree_grid)
-print(widths[0])
 norm_degree_pdf = degree_pdf*widths[0]*np.sum(hist)
-print(norm_degree_pdf)
 
 plt.figure()
 plt.bar(plotpts, sin_hist, widths, edgecolor='k', alpha=.5, label=r'$\sin(i)$')

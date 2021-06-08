@@ -2,7 +2,10 @@ from fit_background import *
 from astropy.io import fits
 from astropy.table import Table
 
-catalog = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_nov20_ulim_b6b7.fits')
+#catalog = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_nov20_ulim_b6b7.fits')
+catalog = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_b7_catalog_may21.fits')
+catalog.rename_column('Seq_B3', 'Seq')
+
 #catalog['Seq'] = np.zeros(len(catalog))
 bands = ['B6', 'B7']
 B6_img = '/home/jotter/nrao/images/B6_convolved_r0.5.clean0.05mJy.150mplus.deepmask.image.tt0.pbcor.fits'
@@ -47,12 +50,17 @@ mask_size = 1.5
 src_dict_list = [B6_dict, B7_dict]
 nonconv_img_list = [B6_nonconv_img, B7_nonconv_img]
 
-for i in range(len(src_dict_list)): #loop thru bands
+ref = Table.read('/home/jotter/nrao/summer_research_2018/tables/ref_catalog_may21.fits')
+
+#for i in range(len(src_dict_list)): #loop thru bands
+for i in [1]: #only do B7
     src_dict = src_dict_list[i]
     nonconv_sources = nonconv_img_list[i]
     
     for src in src_dict.keys():
-        print(src) 
+        print(src) #this is D_ID
+        seq_ind = np.where(ref['D_ID'] == src)
+        seq = ref[seq_ind]['B3_Seq']
 
         fit_bg = True
         
@@ -67,18 +75,18 @@ for i in range(len(src_dict_list)): #loop thru bands
         if src in nonconv_sources:
             image = nonconv_imgs[i]
 
-        fit = fit_source(src, image, names[i], bands[i], fit_bg, xsigma, ysigma, xmean, ymean, zoom=zoom, nonconv_img = nonconv_imgs[i], mask_size = mask_size, max_offset_in_beams=10)
+        fit = fit_source(seq, image, names[i], bands[i], fit_bg, xsigma, ysigma, xmean, ymean, zoom=zoom, nonconv_img = nonconv_imgs[i], mask_size = mask_size, max_offset_in_beams=10)
         print(fit)
-        cat_ind = np.where(catalog['D_ID'] == fit['D_ID'][0])[0]
+        cat_ind = np.where(catalog['Seq'] == fit['Seq'][0])[0] 
         for nm in fit.colnames:
             catalog[nm][cat_ind] = fit[nm][0]
         mask_size = 1.5
         
 #catalog['pa_B3'] = catalog['pa_B3']%360-90
-catalog['pa_B6'] = catalog['pa_B6']%360-90
+#catalog['pa_B6'] = catalog['pa_B6']%360-90
 catalog['pa_B7'] = catalog['pa_B7']%360-90
 
-catalog.write('../tables/r0.5_catalog_bgfit_feb21_b6b7.fits',overwrite=True)
+catalog.write('../tables/r0.5_b7_catalog_bgfit_may21.fits',overwrite=True)
 
 #fit params: - default xmean 0, ymean 0, zoom 1
 #B7:

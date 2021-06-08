@@ -202,11 +202,11 @@ def disk_size_hist_3panel(arrs, xlabels, filename, nbins=10, ulim_arrs=None):
         allhist, b = np.histogram(arrs[a][allind], bins, density=False)
         ax[a].bar(plotpts, hist, widths, edgecolor = 'black', alpha=0.5, label=f'{xlabels[a]} Sources')
         ax[a].bar(plotpts, allhist, widths, edgecolor='black', alpha=0.5, label=f'{xlabels[a]} Sources Deconvolved in All Bands')
-        ax[a].set_xlim(0,0.27)
-        ax[a].set_ylim(0,30)
+        ax[a].set_xlim(0,0.25)
+        ax[a].set_ylim(0,35)
         ax[a].set_ylabel('Number of Disks', fontsize=18)
         ax[a].legend(fontsize=16)
-        ax[a].yaxis.set_major_locator(plt.MaxNLocator(5))
+        #ax[a].yaxis.set_major_locator(plt.MaxNLocator(5))
 
     if ulim_arrs is not None:
         for ul in range(len(arrs)):
@@ -218,7 +218,7 @@ def disk_size_hist_3panel(arrs, xlabels, filename, nbins=10, ulim_arrs=None):
             ax[ul].legend(fontsize=16)
             
     altax = ax1.twiny()
-    xlim = 0.27*u.arcsec.to(u.rad)
+    xlim = 0.25*u.arcsec.to(u.rad)
     xlim *= d
     altax.set_xlim(0, xlim.value)
     altax.set_xlabel('Deconvolved FWHM Major (AU)', fontsize=18)
@@ -328,7 +328,7 @@ def R_hist_eisner(size_arr, label, filename, nbins=10, size_arr2=None, label2=No
     
     full_arr = np.concatenate((size_arr, eisner_R))
     full_hist, bins = np.histogram(full_arr, density=norm, bins=nbins)
-
+    Dval, pval = ks_2samp(eisner_R, size_arr)
     hist, b = np.histogram(size_arr, density=norm, bins=bins)
     plotpts = []
     widths = []
@@ -424,10 +424,10 @@ def size_comp_simple(arrs, errs, labels, filename, src_ids = []):
     ind2 = np.where(arrs[0]+3*errs[0] < arrs[1]-3*errs[1])[0]
     ind = np.concatenate((ind1, ind2))
     labels=np.array(labels)
-    #print(f'{len(ind)} sources significantly different sizes')
-    #print(f'{len(ind1)} sources in array 1 larger than in array 2, {src_ids[ind1]}')
-    #print(f'{len(ind2)} sources in array 2 larger than in array 1, {src_ids[ind2]}')
-    #print(f'{len(arrs[0])} total sources')
+    print(f'{len(ind)} sources significantly different sizes')
+    print(f'{len(ind1)} sources in array 1 larger than in array 2, {src_ids[ind1]}')
+    print(f'{len(ind2)} sources in array 2 larger than in array 1, {src_ids[ind2]}')
+    print(f'{len(arrs[0])} total sources')
     plt.errorbar(arrs[0], arrs[1], xerr=3*errs[0], yerr=3*errs[1], linestyle='', marker='.')    
     plt.errorbar(arrs[0][ind], arrs[1][ind], xerr=3*errs[0][ind], yerr=3*errs[1][ind], linestyle='', marker='.', label=r'different to 3$-\sigma$')    
     plt.xlabel(labels[0])
@@ -439,10 +439,12 @@ def size_comp_simple(arrs, errs, labels, filename, src_ids = []):
     #plt.style.use(mpl_style.style1)
     plt.savefig('/home/jotter/nrao/plots/size_plots/'+filename, dpi=400)
 
+    print((arrs[0][ind] - arrs[1][ind])/arrs[1][ind], 'mean size difference')
+    
 def size_comp_eisner(filename):
     fig = plt.figure()
 
-    data = Table.read('/home/jotter/nrao/tables/eis_r0.5_mar21_match.fits')
+    data = Table.read('/home/jotter/nrao/tables/eis_r0.5_may21_match.fits')
     
     eisner_data = ascii.read('/home/jotter/nrao/tables/eisner_tbl.txt', format='tab')
     eis_UL_ind = np.where(eisner_data['R_disk'] == '<5')[0]
@@ -452,9 +454,10 @@ def size_comp_eisner(filename):
     eisner_R_err_data = np.array([float(x.split()[-1])*2 for x in eisner_R_str])
 
     match_eis_ind = []
-    for ID in data['ID']:
+    for ID in data['ID_2']:
         match_eis_ind.append(np.where(eisner_data['ID'] == ID.strip())[0][0])
-        
+
+    print(len(match_eis_ind))
     eisner_R_full = np.array(eisner_R_data)[match_eis_ind]
     eisner_R_err_full = np.array(eisner_R_err_data)[match_eis_ind]
     eis_ulim_ind = np.where(eisner_R_full == 0)[0]
@@ -505,7 +508,7 @@ def size_comp_eisner(filename):
     ind = np.concatenate((ind1, ind2))
 
     print('num_noulim', len(data_R))
-    print('agree', ind)
+    print('different sizes', ind)
     
     #plot both measured
     plt.errorbar(data_R, eisner_R, xerr=3*data_R_err, yerr=3*eisner_R_err, linestyle='', marker='.')
@@ -515,21 +518,21 @@ def size_comp_eisner(filename):
     both_ulim_b3_xerr = np.array((both_ulim_b3, np.repeat(0,len(both_ulim_b3))))
     both_ulim_eis_yerr = np.array((both_ulim_eis, np.repeat(0,len(both_ulim_eis))))
     #plt.errorbar(both_ulim_b3, both_ulim_eis, xerr=both_ulim_b3_xerr, yerr=both_ulim_eis_yerr, linestyle='', marker='D', color='tab:green')
-    plt.errorbar(both_ulim_b3, both_ulim_eis,  linestyle='', marker='D', color='tab:green', markersize=4, label = 'Upper Limits')
+    plt.errorbar(both_ulim_b3, both_ulim_eis,  linestyle='', marker='D', color='tab:purple', markersize=4, label = 'Upper Limits')
 
     #plot b3 ulim
     b3only_ulim_b3_xerr = np.array((b3only_ulim_b3, np.repeat(0,len(b3only_ulim_ind))))
     #plt.errorbar(b3only_ulim_b3, b3only_ulim_eis, xerr=b3only_ulim_b3_xerr, yerr=b3only_ulim_eis_err, linestyle='', marker=4, color='tab:green')
-    plt.errorbar(b3only_ulim_b3, b3only_ulim_eis, yerr=b3only_ulim_eis_err, linestyle='', marker=4, color='tab:green')
+    plt.errorbar(b3only_ulim_b3, b3only_ulim_eis, yerr=b3only_ulim_eis_err, linestyle='', marker=4, color='tab:purple')
 
     #plot eis ulim
     eisonly_ulim_eis_yerr = np.array((eisonly_ulim_eis, np.repeat(0,len(eisonly_ulim_ind))))
     #plt.errorbar(eisonly_ulim_b3, eisonly_ulim_eis, xerr=eisonly_ulim_b3_err, yerr=eisonly_ulim_eis_yerr, linestyle='', marker=7, color='tab:green')
-    plt.errorbar(eisonly_ulim_b3, eisonly_ulim_eis, xerr=eisonly_ulim_b3_err, linestyle='', marker=7, color='tab:green')
+    plt.errorbar(eisonly_ulim_b3, eisonly_ulim_eis, xerr=eisonly_ulim_b3_err, linestyle='', marker=7, color='tab:purple')
 
     
-    plt.xlabel('B3 FWHM (AU)')
-    plt.ylabel('E18 FWHM (AU)')
+    plt.xlabel('Band 3 (3 mm) FWHM (AU)')
+    plt.ylabel('E18 (0.85 mm) FWHM (AU)')
     plt.xlim(0,100)
     plt.ylim(0,100)
     plt.plot(np.arange(0,101,50), np.arange(0,101,50), color='k')

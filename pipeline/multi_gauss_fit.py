@@ -193,11 +193,17 @@ def bg_gaussfit(fitsfile, region, region_list,
     for ii, reg in enumerate(region_list):
         if reg.center.ra == region.center.ra and reg.center.dec == region.center.dec:
             srcind = ii
-            
+            print(srcind)
+
+    #print(region_list)
+    #print(region)
+    
     nearby_matches = phot_reg.contains(coords, datawcs)
     if any(nearby_matches):
         inds = np.where(nearby_matches)[0].tolist()
-        inds.remove(srcind)
+        print(inds)
+        if srcind in inds:
+            inds.remove(srcind)
         for ind in inds:
             maskoutreg = regions.EllipseSkyRegion(center=region_list[ind].center,
                                                       width=mask_size*beam.major,
@@ -442,7 +448,7 @@ def gaussfit_cutoutim(fitsfile, cutoutimg, region, region_list,
                      prefix="",
                      covariance='param_cov',
                      raise_for_failure=False,
-                    ):
+                     ):
     """
     Given a FITS filename and a region, fit a gaussian to the region
     with an input guess based on the beam size, and fit a gaussian to the background.
@@ -485,6 +491,8 @@ def gaussfit_cutoutim(fitsfile, cutoutimg, region, region_list,
         description, and criticism, of using the scaled covariance.
     raise_for_failure : bool
         If the fit was not successful, raise an exception
+    center_cutout : bool
+        If True, recenter cutout on brightest pixel
     """
 
     # need central coordinates of each object
