@@ -16,7 +16,7 @@ dataB3 = Table.read('../tables/r0.5_may21_calc_vals_mask.fits')
 
 ind = np.where(np.isnan(dataB3['inclination_B3']) == False)[0]
 
-data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
+data = Table.read('../tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
 #incl = data['fwhm_maj_deconv_B3'] / data['fwhm_min_deconv_B3']
 
 incl_bins = np.arange(0,91,10)
@@ -83,7 +83,25 @@ plt.xlabel('Band 3 inclination angle (degrees)')
 plt.ylabel('number')
 plt.legend()
 plt.xlim(0,90)
-plt.savefig('/home/jotter/nrao/plots/incl_hist.pdf',dpi=300)
+plt.savefig('../plots/incl_hist.pdf',dpi=300)
+
+# attempt to estimate scale height
+# as a function of scale height, what is the p-value?  What p-value would imply a 2-sigma consistency?  3-sigma?
+scaleheights = np.linspace(0,10,100)
+b3sh = []
+distance_pc = 400
+for scaleheight in scaleheights:
+    inclination = np.arccos((minor**2 - (scaleheight/distance_pc)**2)**0.5/major)
+    inclination = inclination[np.isfinite(inclination)]
+    D,P = (ks_1samp(inclination, lambda x: 1-np.cos(x)))
+    b3sh.append(P)
+plt.figure()
+plt.plot(scaleheights, b3sh)
+plt.hlines([0.05,0.003], 0, 10)
+plt.xlabel("Scaleheight")
+plt.ylabel("P-value")
+# the result is kind of marginal - between 2 and 3 sigma
+
 
 
 
