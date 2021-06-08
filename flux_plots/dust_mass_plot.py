@@ -49,8 +49,8 @@ B3_mdust_ulim = calc_dmass(B3_ulims, 98*u.GHz, 400*u.pc).value
 B3_mdust = np.concatenate((B3_mdust1, B3_mdust_ulim))
 B3_mdust_flag = np.concatenate((np.repeat(True, len(B3_mdust1)), np.repeat(False, len(B3_mdust_ulim))))
 
-omc1_B3mdust = omc1['dust_mass_B3'].data
-omc1_mdust_flag = np.repeat(True, len(omc1_B3mdust))
+omc1_B3mdust = omc1['dust_mass_B3'].data.byteswap().newbyteorder()
+omc1_B3mdust_flag = np.repeat(True, len(omc1_B3mdust))
 
 onc_B3mdust = onc['dust_mass_B3'].data
 onc_mdust_flag = np.repeat(True, len(onc_B3mdust))
@@ -72,7 +72,6 @@ eis_mdust1 = np.array([float(mdust.split(' ')[0]) for mdust in eis_mdust_str])
 eis_mdust_flag1 = np.repeat(True, len(eis_mdust1))
 #eis_mdust = eis_mdust[eis_mdust>0]
 eis_nondet = Table.read('/home/jotter/nrao/tables/eisner_nondetect.txt', format='ascii', delimiter='\t')#, data_start=2, header_start=1, 
-print(eis_nondet.info)
 eis_ulim = eis_nondet['F_lambda850mum']
 eis_ulim_flux = []
 for ul in eis_ulim:
@@ -118,6 +117,17 @@ taurus_mdust_flag[np.where(taurus_data['l_F450'] == '<')] = False
 onc_combined = np.concatenate((B3_mdust_onc, eis_mdust))
 onc_combined_flag = np.concatenate((B3_mdust_flag_onc, eis_mdust_flag))
 
+omc1_ulim_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/COUP_may21_nondet_OMC1_ulim.fits')
+omc1_ulim = omc1_ulim_tab['B3_flux_ulim']
+omc1_ulim_dmass = calc_dmass(omc1_ulim, 98*u.GHz, 400*u.pc).value
+omc1_ulim_flag = np.repeat(False, len(omc1_ulim_dmass))
 
-plot_KM([lupus_mdust, sco_mdust, ophi_mdust, B3_mdust_onc, taurus_mdust], ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC (B3)', 'Taurus'],
-        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, B3_mdust_flag_onc, taurus_mdust_flag], savepath='/home/jotter/nrao/plots/KM_dust_mass_may21_onc.pdf', left_censor=True, cdf=False, plot_quantity='Mdust')
+omc1_mdust = np.concatenate((omc1_B3mdust, omc1_ulim_dmass))
+omc1_mdust_flag = np.concatenate((omc1_B3mdust_flag, omc1_ulim_flag))
+
+
+plot_KM([lupus_mdust, sco_mdust, ophi_mdust, onc_combined, omc1_mdust, taurus_mdust], ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC+E18', 'OMC1', 'Taurus'],
+        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, omc1_mdust_flag, taurus_mdust_flag], savepath='/home/jotter/nrao/plots/KM_dust_mass_may21_onc_omc1.pdf', left_censor=True, cdf=False, plot_quantity='Mdust')
+
+#plot_KM([lupus_mdust, sco_mdust, ophi_mdust, onc_combined, taurus_mdust], ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC+E18', 'Taurus'],
+#        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, taurus_mdust_flag], savepath='/home/jotter/nrao/plots/KM_dust_mass_may21_onc_combined.pdf', left_censor=True, cdf=False, plot_quantity='Mdust')
