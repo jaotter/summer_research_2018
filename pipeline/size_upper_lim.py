@@ -242,11 +242,11 @@ def add_upper_lims(params, band, tab=None):
 
 
 params_B3 = [48, -0.5]
-tab_b3ulim = add_upper_lims(params_B3, 'B3', tab=Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits'))
+tab_b3ulim = add_upper_lims(params_B3, 'B3', tab=Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21.fits'))
 params_B6 = [26.09342253, -0.57997014]
 tab_b3b6ulim = add_upper_lims(params_B6, 'B6', tab=tab_b3ulim)
 params_B7 = [18.32718856, -0.73984847] 
 tab_ulim = add_upper_lims(params_B7, 'B7', tab=tab_b3b6ulim)
 
-tab_ulim.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits', overwrite=True)
+tab_ulim.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim.fits', overwrite=True)
 

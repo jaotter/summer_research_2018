@@ -115,7 +115,8 @@ for b6b7 in np.intersect1d(B6nonconv_ind, B7nonconv_ind):
     D_ID_b6b7[b6b7] = f'{D_ID[b6b7]}$^{{bc}}$' 
 
 D_ID_full = D_ID_b6b7
-new_srcs = [8,10,32,33,50,53,63,70,74,75,79,115]#updated to new sources [9,10,22,24,36,37,39,45,55,59,61,71,72,79,81,84]
+#new_srcs = [8,10,32,33,50,53,63,70,74,75,79,115]#updated to new sources [9,10,22,24,36,37,39,45,55,59,61,71,72,79,81,84]
+new_srcs = [8, 10, 32, 33, 50, 54, 64, 71, 75, 76, 80, 118, 119, 123, 124]
 for new in new_srcs:
     new_ind = np.where(D_ID == str(new))[0]
     D_ID_full[new_ind] = f'{D_ID_full[new_ind[0]]}$^a$'
