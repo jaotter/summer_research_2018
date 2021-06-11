@@ -22,7 +22,7 @@ B3deconv_ind = np.where(np.isnan(data['fwhm_maj_deconv_B3']) == False)[0]
 
 #size_comp_eisner('eisner_size_comp.pdf')
 
-disk_size_hist_3panel([data['fwhm_maj_deconv_B3'], data['fwhm_maj_deconv_B6'], data['fwhm_maj_deconv_B7']], ['B3', 'B6', 'B7'], 'size_hist_3panel_ulim.pdf', ulim_arrs=[data['upper_lim_B3'], data['upper_lim_B6'], data['upper_lim_B7']])
+#disk_size_hist_3panel([data['fwhm_maj_deconv_B3'], data['fwhm_maj_deconv_B6'], data['fwhm_maj_deconv_B7']], ['B3', 'B6', 'B7'], 'size_hist_3panel_ulim.pdf', ulim_arrs=[data['upper_lim_B3'], data['upper_lim_B6'], data['upper_lim_B7']])
 
 
 IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')

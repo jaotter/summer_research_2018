@@ -1,12 +1,13 @@
 from lifelines import KaplanMeierFitter
 from lifelines.utils import median_survival_times
 from scipy import stats
+from scipy.interpolate import interp1d
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.units as u
 
 
-def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True, cdf=False, plot_quantity='Mdust'):
+def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True, cdf=False, plot_quantity='Mdust', noerr_inds=[]):
     kmf = KaplanMeierFitter()
 
     fig = plt.figure(figsize=(10,10))
@@ -29,6 +30,9 @@ def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True, cdf=Fal
         if cdf == True:
             kmf.plot(ax=ax)
         else:
+            if ind > 0:
+                prev_prob = prob
+                prev_size = size
             size = np.array(kmf.survival_function_[labels[ind]].axes).flatten()[1:]
             prob = kmf.survival_function_[labels[ind]].values[1:]
 
@@ -36,8 +40,15 @@ def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True, cdf=Fal
             upper = np.array(kmf.confidence_interval_survival_function_[f'{labels[ind]}_upper_0.95'].values[1:])
 
             ax.plot(size, prob, label=labels[ind], color=col)
-            ax.fill_between(size, lower, upper, color=col, alpha=0.25)
+            if ind not in noerr_inds:
+                ax.fill_between(size, lower, upper, color=col, alpha=0.25)
 
+            if ind == noerr_inds[1]:
+                interp_new = interp1d(size, prob)
+                interp_prob = interp_new(prev_size)
+                ax.fill_between(prev_size, prev_prob, interp_prob, color=col, alpha=0.25)
+                #ax.fill(np.concatenate((prev_size,size)), np.concatenate((prev_prob,prob)), color=col, alpha=0.25)
+                
     plt.legend(fontsize=16)
     
     ax.set_xscale('log')

@@ -158,11 +158,11 @@ def inset_plot_2band(page_num):
 
     new_srcs = [8, 10, 32, 33, 50, 54, 64, 71, 75, 76, 80, 118, 119, 123, 124]
     
-    fig = plt.figure(figsize=(8,10))
-    outer_gs = GridSpec(7, 3, figure=fig, wspace=0.05, hspace=0.01)
+    fig = plt.figure(figsize=(7.5,10.5))
+    outer_gs = GridSpec(8, 3, figure=fig, wspace=0.05, hspace=0.01)
 
     ind = 0
-    for gs_row in range(7):
+    for gs_row in range(8):
         for gs_col in range(3):
 
             #now create inner gridspec for 3 bands

@@ -119,15 +119,20 @@ onc_combined_flag = np.concatenate((B3_mdust_flag_onc, eis_mdust_flag))
 
 omc1_ulim_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/COUP_may21_nondet_OMC1_ulim.fits')
 omc1_ulim = omc1_ulim_tab['B3_flux_ulim']
-omc1_ulim_dmass = calc_dmass(omc1_ulim, 98*u.GHz, 400*u.pc).value
+omc1_ulim_dmass = np.array(calc_dmass(omc1_ulim, 98*u.GHz, 400*u.pc).value)
 omc1_ulim_flag = np.repeat(False, len(omc1_ulim_dmass))
 
-omc1_mdust = np.concatenate((omc1_B3mdust, omc1_ulim_dmass))
-omc1_mdust_flag = np.concatenate((omc1_B3mdust_flag, omc1_ulim_flag))
+rand_flts = np.random.random(6) * len(omc1_ulim_dmass)
+rand_ind = np.array([int(flt) for flt in rand_flts])
+rand_ext = omc1_ulim_dmass[rand_ind]
+omc1_ulim_dmass_ext = np.concatenate((np.tile(omc1_ulim_dmass,3), rand_ext))
+
+omc1_mdust = np.concatenate((omc1_B3mdust, omc1_ulim_dmass_ext))
+omc1_mdust_flag = np.concatenate((omc1_B3mdust_flag, np.repeat(False,60)))
 
 
-plot_KM([lupus_mdust, sco_mdust, ophi_mdust, onc_combined, omc1_mdust, taurus_mdust], ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC+E18', 'OMC1', 'Taurus'],
-        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, omc1_mdust_flag, taurus_mdust_flag], savepath='/home/jotter/nrao/plots/KM_dust_mass_may21_onc_omc1.pdf', left_censor=True, cdf=False, plot_quantity='Mdust')
+plot_KM([lupus_mdust, sco_mdust, ophi_mdust, onc_combined, omc1_B3mdust, omc1_mdust, taurus_mdust], ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC+E18','OMC1 (no X-ray)', 'OMC1 (X-ray incl.)', 'Taurus'],
+        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, omc1_B3mdust_flag, omc1_mdust_flag, taurus_mdust_flag], savepath='/home/jotter/nrao/plots/KM_dust_mass_may21_onc_omc1.pdf', left_censor=True, cdf=False, plot_quantity='Mdust', noerr_inds=[4,5])
 
 #plot_KM([lupus_mdust, sco_mdust, ophi_mdust, onc_combined, taurus_mdust], ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC+E18', 'Taurus'],
 #        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, taurus_mdust_flag], savepath='/home/jotter/nrao/plots/KM_dust_mass_may21_onc_combined.pdf', left_censor=True, cdf=False, plot_quantity='Mdust')

@@ -7,7 +7,7 @@ from astropy.io import fits
 from astropy import wcs
 import astropy.visualization
 from astropy.convolution import convolve, Gaussian2DKernel
-from mpl_plot_templates import asinh_norm
+#from mpl_plot_templates import asinh_norm
 import matplotlib
 from collections import defaultdict
 import warnings
@@ -27,73 +27,53 @@ def calc_bbox(center, sidelength):
     return BL, TR
 
 def create_zoomregion(srcid, table, bbox, locs=[1,3], name=None, vmin=-0.0001):
-    srcind = np.where(table['D_ID'] == srcid)[0]
+    srcind = np.where(table['ID'] == srcid)[0]
     srctab = table[srcind]
     src_coord = coordinates.SkyCoord(ra=srctab['RA_B3'].data, dec=srctab['DEC_B3'].data, unit=u.degree)
     src_fwhm = srctab['fwhm_maj_B3']*u.arcsecond
     sidelength = src_fwhm.to(u.degree)*4
     bottomleft, topright = calc_bbox(src_coord, sidelength.value)
-
     zoom = 10
     vmax = 90
 
     #keys in reg_dict: 'bottomleft':SkyCoord, 'topright':SkyCoord, 'bbox':[float, float] (location of inset BL),
     #l1,l2: int - corner to draw line (UR is 1, then ccw), min:float - vmin, max:float - vmax, if greater than 1 than is percent of max flux in inset, zoom:float
     
-    key = f'{name if name is not None else ""}{" " if name is not None else ""}({srcid})'
+    key = f'{name if name != "     " else ""}{" " if name != "     " else ""}({srcid})'
     reg_dict = {'bottomleft':bottomleft, 'topright':topright, 'bbox':bbox, 'min':vmin, 'max':vmax, 'zoom':zoom, 'loc':2, 'l1':locs[0], 'l2':locs[1]}
 
     return key, reg_dict
 
 
-table = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_nov20_ulim.fits')
+table = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim.fits')
 
 
 #INSET B7
-sources = [14, 81, 17, 16, 12, 11, 18, 27, 83, 33, 80, 75, 29, 35, 42, 38, 39, 43, 45, 50, 49, 23, 32, 41, 36, 22, 30, 31, 79, 34, 76, 28]
-bboxes = [[0.34,0.22],[0.4,0.43],[0.5,0.27],[0.43,0.34],[0.7,0.22],[0.62,0.22],[0.77,0.31],[0.77,0.4],[0.78,0.54],[0.77, 0.48],[0.25,0.335],[0.25,0.6],[0.25,0.51],[0.25,0.7],[0.25,0.78],[0.76,0.64],[0.777,0.73],[0.68,0.9],[0.755,0.86],[0.6,0.9],[0.42,0.9],[0.7,0.48],[0.59,0.55],[0.35,0.9],[0.25,0.9],[0.25,0.23],[0.49,0.9],[0.42,0.23],[0.32,0.63],[0.49,0.45],[0.25,0.42],[0.48,0.69]]
+#sources = [14, 81, 17, 16, 12, 11, 18, 27, 83, 33, 80, 75, 29, 35, 42, 38, 39, 43, 45, 50, 49, 23, 32, 41, 36, 22, 30, 31, 79, 34, 76, 28] D_IDs, updated to IDs below
+#sources = [12, 69, 15, 14, 10, 9, 16, 23, 70, 29, 68, 65, 25, 31, 38, 34, 35, 39, 40, 45, 44, 21, 28, 37, 32, 20, 26, 27, 67, 30, 66, 24]
+#bboxes = [[0.34,0.22],[0.4,0.43],[0.5,0.27],[0.43,0.34],[0.7,0.22],[0.62,0.22],[0.77,0.31],[0.77,0.4],[0.78,0.54],[0.77, 0.48],[0.25,0.335],[0.25,0.6],[0.25,0.51],[0.25,0.7],[0.25,0.78],[0.76,0.64],[0.777,0.73],[0.68,0.9],[0.755,0.86],[0.6,0.9],[0.42,0.9],[0.7,0.48],[0.59,0.55],[0.35,0.9],[0.25,0.9],[0.25,0.23],[0.49,0.9],[0.42,0.23],[0.32,0.63],[0.49,0.45],[0.25,0.42],[0.48,0.69]]
+#names = np.repeat("     ", len(sources))
+#names[-6] = 'Src I'
+#names[-15] = 'BN'
+#names[-11] = 'Src n'
+#print(names)
+#locs_all = [[1,1],[4,4],[2,2],[1,1],[2,2],[2,2],[2,2],[2,2],[2,2],[2,2],[1,1],[4,4],[1,1],[4,4],[4,4],[2,2],[2,2],[3,3],[3,3],[3,3],[3,3],[2,2],[2,2],[3,3],[4,4],[1,1],[3,3],[1,1],[1,1],[2,2],[1,1],[4,4]]
+#filename = 'B3_insetB7.pdf'
+#vmin = -0.00001
+#fov_size = (44*u.arcsec).to(u.degree).value
+
+
+#INSET B6
+sources = [ 3,  4,  6,  7,  8, 11, 13, 19, 22, 36, 43, 46, 47, 48, 49, 50, 51, 53, 56, 58, 71]
+#bboxes = [[0.34,0.22],[0.4,0.43],[0.5,0.27],[0.43,0.34],[0.7,0.22],[0.62,0.22],[0.77,0.31],[0.77,0.4],[0.78,0.54],[0.77, 0.48],[0.25,0.335],[0.25,0.6],[0.25,0.51],[0.25,0.7],[0.25,0.78],[0.76,0.64],[0.777,0.73],[0.68,0.9],[0.755,0.86],[0.6,0.9],[0.42,0.9],[0.7,0.48],[0.59,0.55],[0.35,0.9],[0.25,0.9],[0.25,0.23],[0.49,0.9],[0.42,0.23],[0.32,0.63],[0.49,0.45],[0.25,0.42],[0.48,0.69]]
 names = np.repeat(None, len(sources))
-locs_all = [[1,1],[4,4],[2,2],[1,1],[2,2],[2,2],[2,2],[2,2],[2,2],[2,2],[1,1],[4,4],[1,1],[4,4],[4,4],[2,2],[2,2],[3,3],[3,3],[3,3],[3,3],[2,2],[2,2],[3,3],[4,4],[1,1],[3,3],[1,1],[1,1],[2,2],[1,1],[4,4]]
-filename = 'B3_insetB7.pdf'
-vmin = -0.00001
-fov_size = (40*u.arcsec).to(u.degree).value
-
-name_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_apr20_edit.txt', format='ascii')
-name_list = name_tab['AltID'].data
-
-for i,src in enumerate(sources):
-    ind = np.where(name_tab['D_ID'] == src)[0]
-    if len(ind) > 0 and name_tab['AltID'].mask[ind] == False:
-        names[i] = name_list[ind[0]]
-        
-print(names)
-
-#INSET 1 (original)
-#sources = [30, 43, 31, 23, 38, 32, 28, 45, 20, 71, 22, 36]
-#bboxes = [[0.25, 0.9],[0.725,0.85],[0.25,0.5],[0.75,0.25],[0.75,0.65],[0.75,0.50],[0.4,0.27],[0.55,0.85],[0.53,0.27],[0.65,0.25],[0.25,0.3],[0.25,0.7]]
-#names = ['Source I', 'BN', None,'Source N','IRC6E','IRC2C',None,None,None,None,None,None]
-#locs_all = [[1,3],[2,3],[2,4],[1,3],[2,3],[1,3],[1,2],[1,4],[1,2],[1,2],[2,4],[1,4]]
-#filename = 'B3_inset1.pdf'
-#vmin = -0.0001
-#fov_size = (30*u.arcsec).to(u.degree).value
-
-#INSET 2
-#sources = [34, 39, 41, 76, 79, 29, 80, 75, 35, 42, 49, 50]
-#bboxes = [[0.6,0.4],[0.75,0.7],[0.5,0.72],[0.5,0.4],[0.6,0.55],[0.25,0.5],[0.4,0.27],[0.3,0.3],[0.25,0.66],[0.25, 0.9],[0.45,0.9],[0.65,0.9]]
-#names = np.repeat(None, len(sources))
-#locs_all = [[1,3],[2,3],[2,3],[1,3],[2,3],[1,4],[1,2],[2,4],[1,3],[3,4],[2,4],[2,3]]
-#filename = 'B3_inset2.pdf'
+locs_all = [[1,1],[4,4],[2,2],[1,1],[2,2],[2,2],[2,2],[2,2],[2,2],[2,2],[1,1],[4,4],[1,1],[4,4],[4,4],[2,2],[2,2],[3,3],[3,3],[3,3],[3,3]]
+filename = 'B3_insetB6.pdf'
 #vmin = -0.00001
-#fov_size = (30*u.arcsec).to(u.degree).value
+fov_size = (60*u.arcsec).to(u.degree).value
 
-#INSET 3
-#sources = [14, 81, 17, 16, 12, 11, 18, 27, 83, 33]
-#bboxes = [[0.25,0.25],[0.25,0.48],[0.34,0.7],[0.51,0.45],[0.4,0.25],[0.7,0.25],[0.6,0.45],[0.53,0.7],[0.65,0.7],[0.75, 0.9]]
-#names = np.repeat(None, len(sources))
-#locs_all = [[2,4],[1,3],[1,3],[3,4],[2,4],[2,3],[1,4],[1,3],[1,3],[3,4]]
-#filename = 'B3_inset3.pdf'
-#vmin = -0.00001
-#fov_size = (30*u.arcsec).to(u.degree).value
+
+
 
 #INSET 4
 #sources = [10, 8, 13, 84, 54, 55, 53, 46]
@@ -114,8 +94,6 @@ print(names)
 #fov_size = (56*u.arcsec).to(u.degree).value
 
 
-print(len(sources), len(bboxes), len(locs_all))
-
 zoomregions_auto = {}
 
 for i in range(len(sources)):
@@ -126,7 +104,7 @@ srcI_ind = np.where(table['D_ID'] == 30)[0]
 srcI_coord = coordinates.SkyCoord(table['RA_B3'][srcI_ind], table['DEC_B3'][srcI_ind], unit=u.degree)
 BL, TR = calc_bbox(srcI_coord, sidelength=fov_size)
 
-zoomregions_auto['(72,37)'] = {'bottomleft': coordinates.SkyCoord(ra=["5:35:14.435"],
+zoomregions_auto['(64,33)'] = {'bottomleft': coordinates.SkyCoord(ra=["5:35:14.435"],
                                                    dec=["-5:22:28.55"],
                                                    unit=(u.h, u.deg),
                                                    frame='icrs'),
@@ -136,7 +114,7 @@ zoomregions_auto['(72,37)'] = {'bottomleft': coordinates.SkyCoord(ra=["5:35:14.4
                                                  frame='icrs'),
                 'bbox':[0.57,0.66],'loc': 2,'l1':3,'l2':3,'min': -0.0001,'max': 0.0005,'zoom': 10}
 
-zoomregions_auto['OMC1 hot core (20,71)'] = {'topright': coordinates.SkyCoord(ra=["5:35:14.406"],
+zoomregions_auto['(18,63)'] = {'topright': coordinates.SkyCoord(ra=["5:35:14.406"],
                                                    dec=["-5:22:33.162"],
                                                    unit=(u.h, u.deg),
                                                    frame='icrs'),
@@ -158,7 +136,7 @@ zoomregions = zoomregions_auto
 def inset_overlays(fn, zoomregions, fignum=1,
                    psffn=None,
                    vmin=-0.001, vmax=0.01,
-                   directory = '/lustre/aoc/students/jotter/directory/',
+                   directory = '/home/jotter/nrao/',
                    bottomleft=coordinates.SkyCoord('5:35:15.236', '-5:22:41.85', unit=(u.h, u.deg), frame='icrs'),
                    topright=coordinates.SkyCoord('5:35:13.586', '-5:22:17.12', unit=(u.h, u.deg), frame='icrs'),
                    tick_fontsize=pl.rcParams['axes.labelsize']):
@@ -187,7 +165,7 @@ def inset_overlays(fn, zoomregions, fignum=1,
                    transform=ax.get_transform(mywcs),
                    vmin=vmin*1e3, vmax=vmax*1e3, cmap=pl.cm.gray_r,
                    interpolation='nearest',
-                   origin='lower', norm=asinh_norm.AsinhNorm())
+                   origin='lower')#, norm=asinh_norm.AsinhNorm())
     
     (x1,y1),(x2,y2) = (mywcs.wcs_world2pix([[bottomleft.ra.deg[0],
                                              bottomleft.dec.deg[0]]],0)[0],
@@ -208,7 +186,7 @@ def inset_overlays(fn, zoomregions, fignum=1,
     ax.set_aspect(1)
     ax.axis([x1,x2,y1,y2])
 
-    tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_jun20.fits')
+    tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim.fits')
     srcI_ind = np.where(tab['D_ID'] == 30)[0]
     BN_ind = np.where(tab['D_ID'] == 43)[0]
     srcI_coord = mywcs.wcs_world2pix([[tab['RA_B3'][srcI_ind][0], tab['DEC_B3'][srcI_ind][0]]],0)
@@ -228,7 +206,6 @@ def inset_overlays(fn, zoomregions, fignum=1,
         parent_ax = zoomregions[ZR['inset_axes']]['axins'] if 'inset_axes' in ZR else ax
 
         bl, tr = ZR['bottomleft'],ZR['topright'],
-        
         (zx1,zy1),(zx2,zy2) = (mywcs.wcs_world2pix([[bl.ra.deg[0],
                                                      bl.dec.deg[0]]],0)[0],
                                mywcs.wcs_world2pix([[tr.ra.deg[0],
@@ -269,7 +246,7 @@ def inset_overlays(fn, zoomregions, fignum=1,
                            extent=[int(zx1), int(zx2), int(zy1), int(zy2)],
                            vmin=ZR['min'], vmax=vmax, cmap=pl.cm.gray_r,
                            interpolation='nearest',
-                           origin='lower', norm=asinh_norm.AsinhNorm())
+                           origin='lower')#, norm=asinh_norm.AsinhNorm())
 
 
         ax.axis([x1,x2,y1,y2])
@@ -302,15 +279,15 @@ def inset_overlays(fn, zoomregions, fignum=1,
                            ax.bbox._bbox.y1-ax.bbox._bbox.y0])
     cb = figure.colorbar(mappable=im, cax=cax)
     #print("1. cb labels: {0}".format([x.get_text() for x in cb.ax.get_yticklabels()]))
-    cb.set_label("$S_{3 mm}$ [mJy beam$^{-1}$]")
+    cb.set_label("log $S_{3 mm}$ [mJy beam$^{-1}$]")
     #print("2. cb labels: {0}".format([x.get_text() for x in cb.ax.get_yticklabels()]))
-    cb.formatter.format = "%3.1f"
+    #cb.formatter.format = "%3.1f"
     #print("3. cb labels: {0}".format([x.get_text() for x in cb.ax.get_yticklabels()]))
-    cb.set_ticks(cb.formatter.locs)
+    #cb.set_ticks(cb.formatter.locs)
     #print("4. cb labels: {0}".format([x.get_text() for x in cb.ax.get_yticklabels()]))
-    cb.set_ticklabels(["{0:3.1f}".format(float(x)) for x in cb.formatter.locs])
+    #cb.set_ticklabels(["{0:3.1f}".format(float(x)) for x in cb.formatter.locs])
     #print("5. cb labels: {0}".format([x.get_text() for x in cb.ax.get_yticklabels()]))
-    cb.ax.set_yticklabels(["{0:3.1f}".format(float(x.get_text())) for x in cb.ax.get_yticklabels()])
+    #cb.ax.set_yticklabels(["{0:3.1f}".format(float(x.get_text())) for x in cb.ax.get_yticklabels()])
     #print("6. cb labels: {0}".format([x.get_text() for x in cb.ax.get_yticklabels()]))
     
 

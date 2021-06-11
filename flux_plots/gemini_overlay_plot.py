@@ -58,18 +58,18 @@ IRseq = irtab['ID'].data
 
 for ind in range(len(B3_pix[0])):
     did = B3_table['ID'][ind]
-    #if did in b7_sources:
-    #    col = 'tab:red'
-    #if did in b6_sources:
-    #    col = 'tab:pink'
-    #if did in b3_sources:
-    #    col = 'tab:green'
+    if did in b7_sources:
+        col = 'tab:red'
+    if did in b6_sources:
+        col = 'tab:pink'
+    if did in b3_sources:
+        col = 'tab:green'
     #col='tab:red'
 
-    if did in IRseq:
-        col = 'tab:pink'
-    else:
-        col = 'tab:green'
+    #if did in IRseq:
+    #    col = 'tab:pink'
+    #else:
+    #    col = 'tab:green'
     
     circ = Circle((B3_pix[0][ind], B3_pix[1][ind]), radius=10, fill=False, color=col)
     ax.add_patch(circ)
@@ -133,9 +133,11 @@ ax.set_xlim(100,1556)
 #ax.set_ylim(BL_pix[1], TR_pix[1])
 #ax.set_xlim(BL_pix[0], TR_pix[0])
 
+ax.set_xlabel('RA', fontsize=18)
+ax.set_ylabel('Declination', fontsize=18)
 plt.tight_layout()
     
-plt.savefig(f'/home/jotter/nrao/plots/gemini_B3_overlay_onc.pdf',dpi=300,bbox_inches='tight')
+plt.savefig(f'/home/jotter/nrao/plots/gemini_B3_overlay.pdf',dpi=300,bbox_inches='tight')
 plt.close()
 
 
