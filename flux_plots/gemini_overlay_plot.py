@@ -2,8 +2,11 @@ from astropy.wcs import WCS
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
 from astropy.io import fits
-from matplotlib.patches import Circle, Rectangle
+from matplotlib.patches import Circle, RegularPolygon
 from mpl_plot_templates import asinh_norm
+import matplotlib.path as mpath
+import matplotlib.patches as mpatches
+import matplotlib.patheffects as PathEffects
 import astropy.units as u
 import matplotlib.pyplot as plt
 import matplotlib.image as img
@@ -44,52 +47,86 @@ b3_sources = np.setdiff1d(b3_sources,b7_sources)
 
 print(len(b7_sources), len(b6_sources), len(b3_sources))
 
-#inset1 = [30, 43, 31, 23, 38, 32, 28, 45, 20, 71, 22, 36]
-#inset2 = [34, 39, 41, 76, 79, 29, 80, 75, 35, 42, 49, 50] 
-#inset3 = [14, 81, 17, 16, 12, 11, 18, 27, 83, 33] 
-#insetb7 = np.concatenate((inset1, inset2, inset3))
-#inset4 = [10, 8, 13, 84, 54, 55, 53, 46]
-#inset5 = [5, 6, 9, 15, 40, 51, 21, 24, 48, 52, 63, 56, 61, 58, 7, 73, 4, 2, 3, 19, 44, 47, 78, 57, 60, 62, 59, 67, 66, 64, 70]
 
 text_col = 'whitesmoke'
 
 irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
-IRseq = irtab['ID'].data
+IRid = irtab['ID'].data
+
+couptab = Table.read('/home/jotter/nrao/summer_research_2018/tables/COUP_r0.5_may21.fits')
+coupid = couptab['ID']
+
+Fbtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/Forbrich2016_r0.5_may21.fits')
+Fbid = Fbtab['ID']
+
+new_srcs = [8, 10, 32, 33, 50, 54, 64, 71, 75, 76, 80, 118, 119, 123, 124]
 
 for ind in range(len(B3_pix[0])):
     did = B3_table['ID'][ind]
-    if did in b7_sources:
-        col = 'tab:red'
-    if did in b6_sources:
-        col = 'tab:pink'
-    if did in b3_sources:
-        col = 'tab:green'
+    #if did in b7_sources:
+    #    col = 'tab:red'
+    #if did in b6_sources:
+    #    col = 'tab:pink'
+    #if did in b3_sources:
+    #    col = 'tab:green'
     #col='tab:red'
 
-    #if did in IRseq:
-    #    col = 'tab:pink'
+    if did in IRid:
+        #col = 'tab:pink'
+        col = 'mistyrose'
+        pentagon = RegularPolygon((B3_pix[0][ind], B3_pix[1][ind]), numVertices=5, radius=13, fill=False, color=col)
+        pentagon.set_path_effects([PathEffects.Stroke(linewidth=2, foreground="black"), PathEffects.Normal()])
+        ax.add_patch(pentagon)
+        
+    if did in coupid:
+        #col = 'tab:green'
+        col = 'honeydew'
+        square = RegularPolygon((B3_pix[0][ind], B3_pix[1][ind]), numVertices=4, radius=8, fill=False, color=col)
+        square.set_path_effects([PathEffects.Stroke(linewidth=2, foreground="black"), PathEffects.Normal()])
+        ax.add_patch(square)
+    if did in Fbid:
+        #col = 'tab:orange'
+        col = 'oldlace'
+        triangle = RegularPolygon((B3_pix[0][ind], B3_pix[1][ind]), numVertices=3, radius=4, fill=False, color=col)
+        triangle.set_path_effects([PathEffects.Stroke(linewidth=2, foreground="black"), PathEffects.Normal()])
+        ax.add_patch(triangle)
+    if did in new_srcs:
+        #col = 'tab:red'
+        col = 'azure'
+        #circ = Circle((B3_pix[0][ind], B3_pix[1][ind]), radius=10, fill=False, color=col)    
+        #ax.add_patch(circ)
+        #ax.plot(B3_pix[0][ind], B3_pix[1][ind], marker = 'x', linestyle='')
+
+        cent_x = B3_pix[0][ind]
+        cent_y = B3_pix[1][ind]
+        Path = mpath.Path
+        path_data = [(Path.MOVETO, [cent_x-5, cent_y+5]),
+                     (Path.LINETO, [cent_x+5, cent_y-5]),
+                     (Path.MOVETO, [cent_x-5, cent_y-5]),
+                     (Path.LINETO, [cent_x+5, cent_y+5])]
+        codes, verts = zip(*path_data)
+        path = mpath.Path(verts, codes)
+        patch = mpatches.PathPatch(path, fill=False, color=col)
+        patch.set_path_effects([PathEffects.Stroke(linewidth=2, foreground="black"), PathEffects.Normal()])
+        ax.add_patch(patch)
+
+        
+    if did not in IRid and did not in coupid and did not in Fbid and did not in new_srcs:
+        #col = 'tab:blue'
+        col = 'lavenderblush'
+        circ = Circle((B3_pix[0][ind], B3_pix[1][ind]), radius=8, fill=False, color=col)
+        circ.set_path_effects([PathEffects.Stroke(linewidth=2, foreground="black"), PathEffects.Normal()])
+        ax.add_patch(circ)
+        
+        
+    #circ = Circle((B3_pix[0][ind], B3_pix[1][ind]), radius=10, fill=False, color=col)    
+    #ax.add_patch(circ)
+
+        
     #else:
     #    col = 'tab:green'
     
-    circ = Circle((B3_pix[0][ind], B3_pix[1][ind]), radius=10, fill=False, color=col)
-    ax.add_patch(circ)
-    #if did == 60 or did == 58 or did == 9 or did == 71 or did == 23 or did == 37 or did == 22 or did == 29 or did == 80 or did == 55:
-    #    ax.text(B3_pix[0][ind]-5, B3_pix[1][ind]-18, str(did), color=text_col)
-    #elif did == 45 or did == 27 or did == 64 or did == 70:
-    #    ax.text(B3_pix[0][ind]-4, B3_pix[1][ind]+12, str(did), color='gray')
-    #elif did == 43:
-    #    ax.text(B3_pix[0][ind]-5, B3_pix[1][ind]-18, str(did), color='gray')
-    #elif did == 20:
-    #    ax.text(B3_pix[0][ind]-22, B3_pix[1][ind]-2, str(did), color='lightgray')
-    #elif did == 50:
-    #    ax.text(B3_pix[0][ind]-22, B3_pix[1][ind]-2, str(did), color=text_col)
-    #elif did == 32 or did == 38:
-    #    ax.text(B3_pix[0][ind]+10, B3_pix[1][ind], str(did), color=text_col)
-    #else:
-    #    ax.text(B3_pix[0][ind]-4, B3_pix[1][ind]+12, str(did), color=text_col)
     
-    #ax.text(B3_pix[0][ind]-1, B3_pix[1][ind]+3, B3_table['D_ID'][ind], color='red')
-
 B3_coord = SkyCoord(ra=83.8104625, dec=-5.37515556, unit=u.degree)
 B3_coord_pix = mywcs.all_world2pix(B3_coord.ra, B3_coord.dec, 0)
 B3_radius = 137.6*u.arcsecond/2
@@ -137,7 +174,7 @@ ax.set_xlabel('RA', fontsize=18)
 ax.set_ylabel('Declination', fontsize=18)
 plt.tight_layout()
     
-plt.savefig(f'/home/jotter/nrao/plots/gemini_B3_overlay.pdf',dpi=300,bbox_inches='tight')
+plt.savefig(f'/home/jotter/nrao/plots/gemini_B3_overlay_wavedet.pdf',dpi=300,bbox_inches='tight')
 plt.close()
 
 
