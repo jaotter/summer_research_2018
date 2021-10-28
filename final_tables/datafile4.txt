@@ -13,15 +13,15 @@ Byte-by-byte Description of file: datafile4.txt
    9- 12 A4     ---      MLLA       Identifier from Muench et al. (2002ApJ...573..366M)
   14- 19 A3     ---      F2016      ?="" Identifier from Forbrich et al. (2016ApJ...822...93F)
   21- 26 A3     ---      COUP       ?="" COUP Identifier, Getman et al. (2005ApJS..160..319G)
-  28- 29 I2     h        RAh        Hour of Right Ascension (J2000) (2)
-  31- 32 I2     min      RAm        Minute of Right Ascension (J2000) (2)
-  34- 39 F6.3   s        RAs        Second of Right Ascension (J2000) (2)
-  41- 41 A1     ---      DE-        Sign of the Declination (J2000) (2)
-  42- 43 I2     deg      DEd        Degree of Declination (J2000) (2)
-  45- 46 I2     arcmin   DEm        Arcminute of Declination (J2000) (2)
-  48- 54 F7.4   arcsec   DEs        Arcsecond of Declination (J2000) (2)
-  56- 62 F7.5   deg      eRA        Positional Uncertainty, Right Ascension, degrees
-  64- 70 F7.5   deg      eDE        Positional Uncertainty, Declination, degrees
+  28- 29 I2     h        RAh        Hour of Right Ascension (J2000)
+  31- 32 I2     min      RAm        Minute of Right Ascension (J2000)
+  34- 39 F6.3   s        RAs        Second of Right Ascension (J2000)
+  41- 41 A1     ---      DE-        Sign of the Declination (J2000)
+  42- 43 I2     deg      DEd        Degree of Declination (J2000) 
+  45- 46 I2     arcmin   DEm        Arcminute of Declination (J2000) 
+  48- 54 F7.4   arcsec   DEs        Arcsecond of Declination (J2000) 
+  56- 62 F7.5   arcsec   eRA        Positional Uncertainty, Right Ascension, arcseconds (2)
+  64- 70 F7.5   arcsec   eDE        Positional Uncertainty, Declination, arcseconds (2)
   72- 72 A1     ---    l_alphaB3B6  Limit flag for alphaB3B6
   74- 78 F5.2   ---      alphaB3B6  ?="" Spectral index, B3 => B6
   80- 82 F3.1   ---    e_alphaB3B6  ?="" Uncertainty in alphaB3B6 (3)
