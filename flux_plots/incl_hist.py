@@ -16,6 +16,17 @@ dataB3 = Table.read('../tables/r0.5_may21_calc_vals_mask.fits')
 
 ind = np.where(np.isnan(dataB3['inclination_B3']) == False)[0]
 
+
+OMC1_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/OMC1_r0.5_may21.fits')
+omc1ind = []
+for i in ind:
+    if i in OMC1_tab['ID']:
+        omc1ind.append(i)
+print(omc1ind)
+
+ind = omc1ind
+
+
 data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
 #incl = data['fwhm_maj_deconv_B3'] / data['fwhm_min_deconv_B3']
 
@@ -83,7 +94,7 @@ plt.xlabel('Band 3 inclination angle (degrees)')
 plt.ylabel('number')
 plt.legend()
 plt.xlim(0,90)
-plt.savefig('/home/jotter/nrao/plots/incl_hist.pdf',dpi=300)
+plt.savefig('/home/jotter/nrao/plots/incl_hist_omc1.pdf',dpi=300)
 
 
 

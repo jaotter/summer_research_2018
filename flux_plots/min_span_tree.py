@@ -58,6 +58,7 @@ def plot_MST_hist(coord_list, labels, filename, colors=['tab:blue', 'tab:orange'
         
         sep_grid = np.linspace(0,20,100)
         sep_kde = gaussian_kde(sep_arr, bw_method='scott')
+        print(sep_kde.factor)
         sep_pdf = sep_kde.evaluate(sep_grid)                                                                                                                                                         #to normalize, multiply by bin width and number of points
         sep_est = sep_pdf*len(sep_arr)*(bins[1]-bins[0])
 

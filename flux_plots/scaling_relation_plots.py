@@ -102,6 +102,8 @@ Rau = (Rarcsec.to(u.rad)*d).value
 Rau_err = (((data['fwhm_maj_err_'+band][deconv_ind])*u.arcsec).to(u.rad)*d).value
 
 ulim_ind = np.where(np.isnan(data['upper_lim_'+band]) == False)[0]
+if band == 'B3':
+    ulim_ind = np.where(np.isnan(data['fwhm_maj_deconv_B3']) == True)[0]
 Rau_ulim = data['upper_lim_'+band][ulim_ind]
 
 scaled_B3flux_all = data['ap_flux_B3']*(400/140)**2
@@ -206,9 +208,9 @@ plt.savefig('/home/jotter/nrao/plots/scaling_rels_scaledflux_onlyB3fit.pdf', dpi
 print('Lupus')
 tot_andrw = np.concatenate((FWHM_andrw, FWHM_andrw_ulim))
 andrw_flag = np.concatenate((np.repeat(True, len(FWHM_andrw)), np.repeat(False, len(FWHM_andrw_ulim))))
-median = KM_median(tot_andrw, andrw_flag, return_type='median')
-ci = bootstrap_ci(10000, tot_andrw, andrw_flag)
-print(f'{median} +/- {ci}')  
+#median = KM_median(tot_andrw, andrw_flag, return_type='median')
+#ci = bootstrap_ci(10000, tot_andrw, andrw_flag)
+#print(f'{median} +/- {ci}')  
 
 
 fig = plt.figure()

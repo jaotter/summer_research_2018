@@ -120,7 +120,7 @@ def b3_nondet(srcs_ID, band):
     if band == 'B7':
         img_path = '/home/jotter/nrao/images/Orion_SourceI_B7_continuum_r0.5.clean0.05mJy.250klplus.deepmask.image.tt0.pbcor.fits'
         
-    tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
+    tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim.fits')
 
     fl = fits.open(img_path)
     header = fl[0].header
@@ -140,7 +140,7 @@ def b3_nondet(srcs_ID, band):
     band_ulim_flux = np.repeat(np.nan, len(tab))
     band_ulim_flux[srcs_ID] = ulim_fluxes
     tab[f'{band}_flux_ulim'] = band_ulim_flux
-    tab.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits', overwrite=True)
+    tab.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim.fits', overwrite=True)
 
 
 def paper_table():
@@ -168,12 +168,58 @@ def paper_table():
     print(paper_tab)
     paper_tab.write('/home/jotter/nrao/tables/latex_tables/final_tables/table2_full.fits', overwrite=True)
     paper_tab.write('/home/jotter/nrao/tables/latex_tables/table2_full.txt', format='latex', overwrite=True)
-                      
+
+
+def coup_nondet():
+    COUP_nondet = Table.read('/home/jotter/nrao/summer_research_2018/tables/COUP_may21_nondet_OMC1.fits')
+
+    b3_fl = fits.open('/home/jotter/nrao/images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits')
+    header = b3_fl[0].header
+    img_wcs = WCS(header)
+    data = b3_fl[0].data
+    beam = radio_beam.Beam.from_fits_header(header)
+    pixel_scale = np.abs(img_wcs.pixel_scale_matrix.diagonal().prod())**0.5 * u.deg
+    #ppbeam = (beam.sr/(pixel_scale**2)).decompose().value
+    
+    COUP_coord = SkyCoord(ra=COUP_nondet['RAJ2000'], dec=COUP_nondet['DEJ2000'], unit=u.degree)
+    annulus_radius = 0.1*u.arcsecond
+    annulus_radius_pix = (annulus_radius.to(u.degree)/pixel_scale).decompose()
+
+    annulus_width = 15 #pix
+    
+    ulim_fluxes = []
+    
+    for ind in range(len(COUP_coord)):
+        center_coord = COUP_coord[ind]
+        center_coord_pix = center_coord.to_pixel(img_wcs)
+        cutout = Cutout2D(data, center_coord_pix, annulus_radius*2.5, img_wcs, mode='partial')
+        cutout_center = regions.PixCoord(cutout.center_cutout[0], cutout.center_cutout[1])
+        
+        innerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix.value)
+        outerann_reg = regions.CirclePixelRegion(cutout_center, annulus_radius_pix.value+annulus_width)
+
+        innerann_mask = innerann_reg.to_mask()
+        
+        annulus_mask = mask(outerann_reg, cutout) - mask(innerann_reg, cutout)
+        
+        # Calculate the SNR and aperture flux sums                                                                                                                                    
+        pixels_in_annulus = cutout.data[annulus_mask.astype('bool')]
+        bg_rms = median_abs_deviation(pixels_in_annulus)
+
+        ulim_fluxes.append(3*bg_rms)
+
+    ulim_fluxes = np.array(ulim_fluxes)*1000*u.mJy #in mJy
+    COUP_nondet['B3_flux_ulim'] = ulim_fluxes
+    COUP_nondet.write('/home/jotter/nrao/summer_research_2018/tables/COUP_may21_nondet_OMC1_ulim.fits', overwrite=True)
+
+
+    
 #nondet_table()
 #mlla_nondet()
 #paper_table()
-b6_nondet_srcs = [3, 14, 19, 37, 38, 43, 53, 56, 58]
-b7_nondet_srcs = [37, 38]
+#b6_nondet_srcs = [3, 14, 19, 37, 38, 43, 53, 56, 58]
+#b7_nondet_srcs = [37, 38]
 
-b3_nondet(b6_nondet_srcs, 'B6')
-b3_nondet(b7_nondet_srcs, 'B7')
+#b3_nondet(b6_nondet_srcs, 'B6')
+#b3_nondet(b7_nondet_srcs, 'B7')
+coup_nondet()
