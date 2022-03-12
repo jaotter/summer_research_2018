@@ -10,28 +10,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, sources='all', vbounds=(0,100), plot_pb=False):
-    
+def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111,
+                     sources='all', vbounds=(0,100), plot_pb=False):
     if sources == 'all':
-<<<<<<< HEAD
         tab = Table.read('tables/r0.5_catalog_bgfit_mar21_ulim.fits')
     if sources == 'IR':
         tab = Table.read('tables/IR_matches_MLLA_nov20_full.fits')
     if sources == 'nonIR' or sources == 'all_contour':
         full_tab = Table.read('tables/r0.5_catalog_bgfit_mar21_ulim.fits')
-<<<<<<< Updated upstream
-        IR_tab = Table.read('tables/IR_matches_MLLA_mar21_full.fits')
-=======
         tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
     if sources == 'IR':
         tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
     if sources == 'nonIR' or sources == 'all_contour':
         full_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
         IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
->>>>>>> 5d35a2dd0696300afeb52b914bd12e9936965856
-=======
         IR_tab = Table.read('tables/IR_matches_MLLA_nov20_full.fits')
->>>>>>> Stashed changes
+        IR_tab = Table.read('tables/IR_matches_MLLA_mar21_full.fits')
 
         nonIR_src = np.setdiff1d(full_tab['ID'], IR_tab['ID'])
         nonIR_ind = [np.where(full_tab['ID']==d_id)[0][0] for d_id in nonIR_src]
@@ -39,28 +33,20 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
 
     if sources == 'all_contour':
         tab_omc1 = tab
-<<<<<<< Updated upstream
-<<<<<<< HEAD
+        #tab = Table.read('tables/IR_matches_MLLA_nov20_full.fits')
         tab = Table.read('tables/IR_matches_MLLA_mar21_full.fits')
-=======
-        tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
->>>>>>> 5d35a2dd0696300afeb52b914bd12e9936965856
-=======
-        tab = Table.read('tables/IR_matches_MLLA_nov20_full.fits')
->>>>>>> Stashed changes
-    
     b3_fl = fits.open('images/Orion_SourceI_B3_continuum_r0.5.clean0.05mJy.allbaselines.huge.deepmask.image.tt0.pbcor.fits')
     b3_wcs = WCS(b3_fl[0].header).celestial
     b3_data = b3_fl[0].data.squeeze()
-    
+
     b3_xmax = len(b3_data)
     b3_ymax = len(b3_data[0])
 
     orig_npix = b3_fl[0].header['NAXIS1']
-    
+
     #creating new wcs for density map
     zero_coord = b3_wcs.all_pix2world(0,0,0)
-    
+
     new_header = b3_fl[0].header
     new_header['CDELT1'] = b3_wcs.wcs.cdelt[0]*(b3_xmax/npix)
     new_header['CDELT2'] = b3_wcs.wcs.cdelt[1]*(b3_ymax/npix)
@@ -72,24 +58,24 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
     new_header['NAXIS2'] = npix
 
     new_wcs = WCS(new_header).celestial
-    
+
     #density_map = np.zeros((npix,npix))
     xx, yy = np.mgrid[0:npix, 0:npix] #grid with density map pixel coords
 
     pix_points = np.array(list(zip(xx.ravel()+0.5,yy.ravel()+0.5)))
-    
+
     src_coords = SkyCoord(tab['RA_B3'], tab['DEC_B3'], unit=u.degree)
     src_pix_coords = np.array(new_wcs.all_world2pix(src_coords.ra, src_coords.dec, 0))
     src_pix_coords = np.array([src_pix_coords[1], src_pix_coords[0]])
     src_map_coords = src_pix_coords
-    src_pix_coords = np.transpose(src_pix_coords)    
+    src_pix_coords = np.transpose(src_pix_coords)
 
     tree = KDTree(src_pix_coords) #KDTree has source positions in map pix coords
 
     full_dists, full_inds = tree.query(pix_points, k=n_neighbor) #each entry of full_dists has nearest neighbors up to the nth nearest
 
     nth_dists_pix = [dist[n_neighbor-1] for dist in full_dists]
-    
+
     #convert to arcseconds
     pixel_scales = wcs_utils.proj_plane_pixel_scales(b3_wcs)
     if pixel_scales[0] != pixel_scales[1]:
@@ -98,7 +84,7 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
     pixel_scale = (pixel_scales[0]*u.degree).to(u.arcsecond)
     pixel_scale = (orig_npix / npix) * pixel_scale
     nth_dists = (nth_dists_pix * pixel_scale).value
-    
+
     density_map = np.reshape(nth_dists, (npix,npix))
 
 
@@ -107,7 +93,7 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
         src_pix_coords = np.array(new_wcs.all_world2pix(src_coords.ra, src_coords.dec, 0))
         src_pix_coords = np.array([src_pix_coords[1], src_pix_coords[0]])
         src_map_coords = src_pix_coords
-        src_pix_coords = np.transpose(src_pix_coords)    
+        src_pix_coords = np.transpose(src_pix_coords)
 
         tree = KDTree(src_pix_coords) #KDTree has source positions in map pix coords
 
@@ -119,7 +105,7 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
         nth_dists = (nth_dists_pix * pixel_scale).value
 
         density_map_omc1 = np.reshape(nth_dists, (npix,npix))
-    
+
     #make plot
     if ax_input is None:
         fig = plt.figure(figsize=(10,10))
@@ -141,14 +127,14 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
         B3_radius_pix = B3_coord_pix[1] - B3_R_pix[1]
         B3_circ = Circle((B3_coord_pix[0], B3_coord_pix[1]), radius=B3_radius_pix, transform=ax.transData, color='blue', linewidth=1, fill=False, linestyle='--')
         ax.add_patch(B3_circ)
-        
+
         B3_fov = 137.6*u.arcsecond/2
         B3_coord_R = SkyCoord(ra=B3_coord.ra, dec=B3_coord.dec+B3_fov)
         B3_R_pix = new_wcs.all_world2pix(B3_coord_R.ra, B3_coord_R.dec,0)
         B3_radius_pix = B3_coord_pix[1] - B3_R_pix[1]
         B3_circ = Circle((B3_coord_pix[0], B3_coord_pix[1]), radius=B3_radius_pix, transform=ax.transData, color='blue', linewidth=1, fill=False, linestyle='-')
         ax.add_patch(B3_circ)
-        
+
     if sources != 'all_contour':
         ax.scatter(src_map_coords[1], src_map_coords[0], marker='*')
     elif sources == 'all_contour':
@@ -160,7 +146,7 @@ def make_density_map(npix, n_neighbor, savepath=None, ax_input=None, pos=111, so
 
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
-    
+
     if savepath is not None:
         plt.savefig(savepath, bbox_inches='tight')
 
@@ -188,7 +174,7 @@ new_header['NAXIS1'] = npix
 new_header['NAXIS2'] = npix
 
 new_wcs = WCS(new_header).celestial
- 
+
 
 #fig, [IR_ax, nonIR_ax, all_ax] = plt.subplots(1,3, subplot_kw={'projection':b3_wcs}, figsize=(15,4), constrained_layout=True)
 fig = plt.figure(figsize=(15.75,5), constrained_layout=False)
