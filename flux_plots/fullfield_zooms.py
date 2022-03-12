@@ -38,7 +38,7 @@ def create_zoomregion(srcid, table, bbox, locs=[1,3], name=None, vmin=-0.0001):
 
     #keys in reg_dict: 'bottomleft':SkyCoord, 'topright':SkyCoord, 'bbox':[float, float] (location of inset BL),
     #l1,l2: int - corner to draw line (UR is 1, then ccw), min:float - vmin, max:float - vmax, if greater than 1 than is percent of max flux in inset, zoom:float
-    
+
     key = f'{name if name != "     " else ""}{" " if name != "     " else ""}({srcid})'
     reg_dict = {'bottomleft':bottomleft, 'topright':topright, 'bbox':bbox, 'min':vmin, 'max':vmax, 'zoom':zoom, 'loc':2, 'l1':locs[0], 'l2':locs[1]}
 
@@ -140,7 +140,7 @@ def inset_overlays(fn, zoomregions, fignum=1,
                    bottomleft=coordinates.SkyCoord('5:35:15.236', '-5:22:41.85', unit=(u.h, u.deg), frame='icrs'),
                    topright=coordinates.SkyCoord('5:35:13.586', '-5:22:17.12', unit=(u.h, u.deg), frame='icrs'),
                    tick_fontsize=pl.rcParams['axes.labelsize']):
-                  
+
     fn = directory+fn
     hdu = fits.open(fn)[0]
 
@@ -166,7 +166,7 @@ def inset_overlays(fn, zoomregions, fignum=1,
                    vmin=vmin*1e3, vmax=vmax*1e3, cmap=pl.cm.gray_r,
                    interpolation='nearest',
                    origin='lower')#, norm=asinh_norm.AsinhNorm())
-    
+
     (x1,y1),(x2,y2) = (mywcs.wcs_world2pix([[bottomleft.ra.deg[0],
                                              bottomleft.dec.deg[0]]],0)[0],
                        mywcs.wcs_world2pix([[topright.ra.deg[0],
@@ -197,8 +197,8 @@ def inset_overlays(fn, zoomregions, fignum=1,
 
     ax.add_patch(srcI_reg)
     ax.add_patch(BN_reg)
-    
-    
+
+
     for zoomregion in zoomregions:
 
         ZR = zoomregions[zoomregion]
@@ -222,8 +222,8 @@ def inset_overlays(fn, zoomregions, fignum=1,
             zy2 = ymax
         if zx2 > xmax:
             zx2 = xmax
-            
-            
+
+
         print(zoomregion,zx1,zy1,zx2,zy2)
 
         inset_data = hdu.data.squeeze()[int(zy1):int(zy2), int(zx1):int(zx2)]
@@ -240,7 +240,7 @@ def inset_overlays(fn, zoomregions, fignum=1,
         vmax = ZR['max']
         if vmax > 1:
             vmax = (vmax/100)*np.nanmax(inset_data)
-            
+
         imz = axins.imshow(inset_data,
                            #transform=parent_ax.get_transform(inset_wcs),
                            extent=[int(zx1), int(zx2), int(zy1), int(zy2)],
@@ -289,7 +289,7 @@ def inset_overlays(fn, zoomregions, fignum=1,
     #print("5. cb labels: {0}".format([x.get_text() for x in cb.ax.get_yticklabels()]))
     #cb.ax.set_yticklabels(["{0:3.1f}".format(float(x.get_text())) for x in cb.ax.get_yticklabels()])
     #print("6. cb labels: {0}".format([x.get_text() for x in cb.ax.get_yticklabels()]))
-    
+
 
 
     if psffn is not None:

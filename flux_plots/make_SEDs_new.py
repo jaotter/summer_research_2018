@@ -25,11 +25,7 @@ def get_ind(names): #returns indices where sources are detected in all bands
 def plot_SEDs(names):
     freqs = {'B3':98*u.GHz, 'B6':223.5*u.GHz, 'B7':339.7672758867*u.GHz}
     #freqs = {'B3':98*u.GHz, 'B6':223.5*u.GHz, 'B7_hr':339.7672758867*u.GHz}
-<<<<<<< HEAD
     data = fits.getdata('tables/r0.5_catalog_bgfit_apr20.fits')
-=======
-    data = fits.getdata('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
->>>>>>> 5d35a2dd0696300afeb52b914bd12e9936965856
     ind = get_ind(names)
 
     alpha = [1.5,2,2.5]
@@ -47,10 +43,10 @@ def plot_SEDs(names):
         nu2 = freq_x[1]
         if data['D_ID'][i] == 13:
             print(fluxes)
-        
+
         plt.figure()
         plt.errorbar(freq_x, fluxes, yerr=flux_err, linestyle='', marker='o')
-               
+
         for j in range(len(alpha)):
             F1 = F2*(freq_x/nu2)**alpha[j]
             plt.plot(freq_x, F1, linestyle='-', label=r'$\alpha = $'+str(alpha[j]))
@@ -64,7 +60,7 @@ def plot_SEDs(names):
 
         locs_x = [0.3, 0.5, 0.7]
         locs_y = [0.15, 0.15, 0.15]
-        
+
         for j in range(len(imgs)):
             img_file = imgs[j]
             img_fl = fits.open(img_file)
