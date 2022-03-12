@@ -204,7 +204,7 @@ def disk_size_hist_3panel(arrs, xlabels, filename, nbins=10, ulim_arrs=None):
         ax[a].bar(plotpts, allhist, widths, edgecolor='black', alpha=0.5, label=f'{xlabels[a]} Sources Deconvolved in All Bands')
         ax[a].set_xlim(0,0.25)
         ax[a].set_ylim(0,35)
-        ax[a].set_ylabel('Number of Disks', fontsize=18)
+        #ax[a].set_ylabel('Number of Disks', fontsize=18)
         ax[a].legend(fontsize=16)
         #ax[a].yaxis.set_major_locator(plt.MaxNLocator(5))
 
@@ -222,7 +222,7 @@ def disk_size_hist_3panel(arrs, xlabels, filename, nbins=10, ulim_arrs=None):
     xlim *= d
     altax.set_xlim(0, xlim.value)
     altax.set_xlabel('Deconvolved FWHM Major (AU)', fontsize=18)
-    ax3.set_xlabel('Deconvolved FWHM Major (as)', fontsize=18)
+    ax3.set_xlabel('Deconvolved FWHM Major (arcseconds)', fontsize=18)
 
     ax1.set_yticks(ax1.get_yticks()[1:])
     ax2.set_yticks(ax2.get_yticks()[1:])
@@ -231,11 +231,14 @@ def disk_size_hist_3panel(arrs, xlabels, filename, nbins=10, ulim_arrs=None):
     ax1.tick_params(axis='y', which='both', labelsize='large')
     ax2.tick_params(axis='y', which='both', labelsize='large')
     ax3.tick_params(axis='both', which='both', labelsize='large')
+
+    f.text(-0.02, 0.5, 'Number of Disks', va='center', rotation='vertical', fontsize=18)
+    
     
     plt.tight_layout()
     f.subplots_adjust(hspace=0)
 
-    plt.savefig('/home/jotter/nrao/plots/size_plots/'+filename, dpi=500)
+    plt.savefig('/home/jotter/nrao/plots/size_plots/'+filename, dpi=500, bbox_inches='tight')
 
 
 
@@ -281,7 +284,7 @@ def disk_size_hist_3panel_IR(arrs_IR, arrs_nonIR, xlabels, filename, nbins=10):
         
         ax[a].set_xlim(0,0.25)
         ax[a].set_ylim(0,13)
-        ax[a].set_ylabel('number of disks', fontsize=18)
+        #ax[a].set_ylabel('number of disks', fontsize=18)
         ax[a].legend(fontsize=16)
         #ax[a].yaxis.set_major_locator(plt.MaxNLocator(5))
         
@@ -289,8 +292,8 @@ def disk_size_hist_3panel_IR(arrs_IR, arrs_nonIR, xlabels, filename, nbins=10):
     xlim = 0.25*u.arcsec.to(u.rad)
     xlim *= d
     altax.set_xlim(0, xlim.value)
-    altax.set_xlabel('deconvolved FWHM major (AU)', fontsize=18)
-    ax3.set_xlabel('deconvolved FWHM major (as)', fontsize=18)
+    altax.set_xlabel('Deconvolved FWHM Major (AU)', fontsize=18)
+    ax3.set_xlabel('Deconvolved FWHM Major (as)', fontsize=18)
 
     #ax1.set_yticks(ax1.get_yticks()[1:])
     #ax2.set_yticks(ax2.get_yticks()[1:])
@@ -299,7 +302,7 @@ def disk_size_hist_3panel_IR(arrs_IR, arrs_nonIR, xlabels, filename, nbins=10):
     ax1.tick_params(axis='y', which='both', labelsize='large')
     ax2.tick_params(axis='y', which='both', labelsize='large')
     ax3.tick_params(axis='both', which='both', labelsize='large')
-    
+
     plt.tight_layout()
     f.subplots_adjust(hspace=0)
 

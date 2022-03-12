@@ -115,7 +115,8 @@ for b6b7 in np.intersect1d(B6nonconv_ind, B7nonconv_ind):
     D_ID_b6b7[b6b7] = f'{D_ID[b6b7]}$^{{bc}}$' 
 
 D_ID_full = D_ID_b6b7
-new_srcs = [8,10,32,33,50,53,63,70,74,75,79,115]#updated to new sources [9,10,22,24,36,37,39,45,55,59,61,71,72,79,81,84]
+#new_srcs = [8,10,32,33,50,53,63,70,74,75,79,115]#updated to new sources [9,10,22,24,36,37,39,45,55,59,61,71,72,79,81,84]
+new_srcs = [8, 10, 32, 33, 50, 54, 64, 71, 75, 76, 80, 118, 119, 123, 124]
 for new in new_srcs:
     new_ind = np.where(D_ID == str(new))[0]
     D_ID_full[new_ind] = f'{D_ID_full[new_ind[0]]}$^a$'
@@ -181,7 +182,7 @@ for crd_str in coords_str:
 #make this table cover all sources
 tablemisc_latex = Table((D_ID_full, meas_misc['MLLA'], meas_misc['Seq'], meas_misc['COUP_1'],
                          coords_str_rnd, radec_err,  alphaB3B6, alphaB6B7, alphafit),
-                      names=('Source ID', 'MLLA', 'Forbrich2016', 'COUP', 'Coordinates', '$\\alpha, \\delta$ error',
+                      names=('ID', 'MLLA', 'Forbrich2016', 'COUP', 'Coordinates', '$\\alpha, \\delta$ error',
                              '$\\alpha_{B3\\to B6}$', '$\\alpha_{B6\\to B7}$', '$\\alpha^{(1)}$'))
 
 
@@ -198,8 +199,13 @@ tablemisc_latex_B3only.remove_column('$\\alpha_{B6\\to B7}$')
 #tablemisc_latex_B3only.write('/home/jotter/nrao/tables/latex_tables/tablemisc_latex_B3only.txt', format='latex', overwrite=True)
 #tablemisc_latex_nonB3only.write('/home/jotter/nrao/tables/latex_tables/tablemisc_latex_all.txt', format='latex', overwrite=True)
 
+print(tablemisc_latex['ID'][0])
+tablemisc_latex['ID'][0] = '127$^d$'
+tablemisc_latex.add_row(tablemisc_latex[0])
+tablemisc_latex.remove_row(0)
+
 tablemisc_latex.write('/home/jotter/nrao/tables/latex_tables/tablemisc_latex.txt', format='latex', overwrite=True)
-tablemisc_latex.write('/home/jotter/nrao/tables/latex_tables/final_tables/table3_full.fits', format='fits', overwrite=True)
+tablemisc_latex.write('/home/jotter/nrao/tables/latex_tables/final_tables/table4_full.fits', format='fits', overwrite=True)
 
 trunc_length = 6
 tablemisc_latex_trunc = tablemisc_latex[:trunc_length]
@@ -254,9 +260,11 @@ for row in range(len(meas_B3)):
 
 
 poorfit_B3 = [113,114,124,125]
-B3_ID = np.array([f'{b3id}' for b3id in meas_B3['ID']])
+B3_ID = [f'{b3id}' for b3id in meas_B3['ID']]
 for pf in poorfit_B3:
    B3_ID[pf] = B3_ID[pf]+'$^*$'
+
+B3_ID = np.array(B3_ID)
 
 
 tableB3_latex = Table((B3_ID, apfluxB3, gaussampB3, fwhmmajB3, fwhmminB3, paB3,
@@ -268,14 +276,19 @@ tableB3_latex = Table((B3_ID, apfluxB3, gaussampB3, fwhmmajB3, fwhmminB3, paB3,
                              '$i$', '$M_{dust, B3}$'))
 
 
-tableB3_latex_allband = tableB3_latex[B7ind]
-tableB3_latex_B3B6 = tableB3_latex[only_B6ind]
-tableB3_latex_B3only = tableB3_latex[only_B3ind]
+print(tableB3_latex['ID'][0])
+tableB3_latex['ID'][0] = 127
+tableB3_latex.add_row(tableB3_latex[0])
+tableB3_latex.remove_row(0)
+
+#tableB3_latex_allband = tableB3_latex[B7ind]
+#tableB3_latex_B3B6 = tableB3_latex[only_B6ind]
+#tableB3_latex_B3only = tableB3_latex[only_B3ind]
 #tableB3_latex_allband.write('/home/jotter/nrao/tables/latex_tables/tableB3_latex_allband.txt', format='latex', overwrite=True)
 #tableB3_latex_B3B6.write('/home/jotter/nrao/tables/latex_tables/tableB3_latex_B3B6.txt', format='latex', overwrite=True)
 #tableB3_latex_B3only.write('/home/jotter/nrao/tables/latex_tables/tableB3_latex_B3only.txt', format='latex', overwrite=True)
 tableB3_latex.write('/home/jotter/nrao/tables/latex_tables/tableB3_latex_all.txt', format='latex', overwrite=True)
-tableB3_latex.write('/home/jotter/nrao/tables/latex_tables/final_tables/table4_full.fits', format='fits', overwrite=True)
+tableB3_latex.write('/home/jotter/nrao/tables/latex_tables/final_tables/table5_full.fits', format='fits', overwrite=True)
 
 
 trunc_length = 6
@@ -367,7 +380,7 @@ tableB6_latex = Table((D_ID_b6, apfluxB6, gaussampB6, fwhmmajB6, fwhmminB6, paB6
 ind_b6 = np.where(tableB6_latex['$F_{\\text{ap}}$'] != '-')
 tableB6_latex_all = tableB6_latex[ind_b6]
 tableB6_latex_all.write('/home/jotter/nrao/tables/latex_tables/tableB6_latex_all.txt', format='latex', overwrite=True)
-tableB6_latex_all.write('/home/jotter/nrao/tables/latex_tables/final_tables/table5_full.fits', format='fits', overwrite=True)
+tableB6_latex_all.write('/home/jotter/nrao/tables/latex_tables/final_tables/table6_full.fits', format='fits', overwrite=True)
 
 
 trunc_length = 6
@@ -452,7 +465,7 @@ tableB7_latex = Table((D_ID_b7, apfluxB7, gaussampB7, fwhmmajB7, fwhmminB7, paB7
 ind_b7 = np.where(tableB7_latex['$F_{\\text{ap}}$'] != '-')
 tableB7_latex_allband = tableB7_latex[ind_b7]
 tableB7_latex_allband.write('/home/jotter/nrao/tables/latex_tables/tableB7_latex_allband.txt', format='latex', overwrite=True)
-tableB7_latex_allband.write('/home/jotter/nrao/tables/latex_tables/final_tables/table6_full.fits', format='fits', overwrite=True)
+tableB7_latex_allband.write('/home/jotter/nrao/tables/latex_tables/final_tables/table7_full.fits', format='fits', overwrite=True)
 
 
 trunc_length = 6

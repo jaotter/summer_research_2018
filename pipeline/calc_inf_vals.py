@@ -10,7 +10,7 @@ import astropy.units as u
 
 FWHM_TO_SIGMA = 1/np.sqrt(8*np.log(2))
 
-data =  Table.read('../tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
+data =  Table.read('../tables/r0.5_catalog_bgfit_may21_ulim.fits')
 
 
 #calculate quantities for each band
@@ -31,7 +31,7 @@ for i in range(len(bands)):
 #constants for mass calc
 Tdust = 20*u.K
 kappa0 = 2*u.cm**2/u.g
-dist = 414*u.pc
+dist = 400*u.pc
 nu0 = constants.c/(1.3*u.mm)
 
 #ind3 = np.where(nonconv_data['D_ID'] == 3)[0]
@@ -61,9 +61,6 @@ A = np.log10(freqs[1]) - np.log10(freqs[0])
 alpha_B3B6 = (np.log10(b6flux)-np.log10(b3flux))/A
 alpha_B3B6_err = np.sqrt((b6flux_err/(A*np.log(10)*b6flux))**2 + (b3flux_err/(A*np.log(10)*b3flux))**2)
 alpha_B3B6_err2 = (1/(A*np.log(10)))*np.sqrt((b6flux_err/b6flux)**2 + (b3flux_err/b3flux)**2)
-
-print(alpha_B3B6_err)
-print(alpha_B3B6_err2)
 
 B = np.log10(freqs[2]) - np.log10(freqs[1])
 alpha_B6B7 = (np.log10(b7flux)-np.log10(b6flux))/B
@@ -122,10 +119,8 @@ for b in range(len(bands)):
 
 Bnu_B6 = blackbody.blackbody_nu(freqs[1]*u.GHz, 20*u.K)
 B6_dmass_ulim = ((data['B6_flux_ulim'].data*u.Jy*dist**2)/(kappa0*(freqs[1]*u.GHz/nu0)*Bnu)).to(u.earthMass*u.sr).value
-print(B6_dmass_ulim)
 Bnu_B7 = blackbody.blackbody_nu(freqs[2]*u.GHz, 20*u.K)
 B7_dmass_ulim = ((data['B7_flux_ulim'].data*u.Jy*dist**2)/(kappa0*(freqs[2]*u.GHz/nu0)*Bnu)).to(u.earthMass*u.sr).value
-print(B7_dmass_ulim)
 
 tab = Table([data['ID'].data, int_flux_arrs[0], int_flux_err_arrs[0], int_flux_arrs[1],
              int_flux_err_arrs[1], int_flux_arrs[2], int_flux_err_arrs[2], inclination_arrs[0],
@@ -142,4 +137,4 @@ tab = Table([data['ID'].data, int_flux_arrs[0], int_flux_err_arrs[0], int_flux_a
              dtype=['i4','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8',
                     'f8','f8','f8','f8','f8','f8','f8','f8','f8','f8','f8'])    
 
-tab.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_may21_calc_vals_mask.fits', format='fits', overwrite=True)
+tab.write('/home/jotter/nrao/summer_research_2018/tables/r0.5_may21_calc_vals.fits', format='fits', overwrite=True)

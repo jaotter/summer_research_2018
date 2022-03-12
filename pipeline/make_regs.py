@@ -23,8 +23,8 @@ def write_reg_file(ra, dec, filename, name='', IDs=None):
 #data = Table.read('/home/jotter/nrao/tables/HC2000.fit')
 #reg_file = '/home/jotter/nrao/images/regions/HC2000_IR.reg'
 #print(data.info)
-data = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full.fits')
-reg_file = '/home/jotter/nrao/images/regions/IR_matches_may21.reg'
+#data = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full.fits')
+#reg_file = '/home/jotter/nrao/images/regions/IR_matches_may21.reg'
 
 #data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_new_det_mar21.fits')
 #reg_file = '/home/jotter/nrao/images/regions/r0.5_new_det_mar21.reg'
@@ -32,6 +32,10 @@ reg_file = '/home/jotter/nrao/images/regions/IR_matches_may21.reg'
 #data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim.fits')
 #reg_file = '/home/jotter/nrao/images/regions/r0.5_poorfit_may21.reg'
 #ind = np.array([113,114,124,125])
+
+data = Table.read('/home/jotter/nrao/summer_research_2018/tables/OMC1_r0.5_may21.fits')
+reg_file = '/home/jotter/nrao/images/regions/OMC1_may21.reg'
+
 
 #data = Table.read('/home/jotter/nrao/tables/MLLA_02_IR.fit')
 #reg_file = '/home/jotter/nrao/images/regions/MLLA_full.reg'
@@ -46,8 +50,8 @@ reg_file = '/home/jotter/nrao/images/regions/IR_matches_may21.reg'
 
 #write_reg_file(coord.ra.deg, coord.dec.deg, reg_file, name='R10', IDs=data['ID'])
 
-#data = Table.read('/home/jotter/nrao/tables/eis_coord_table.fits')
-#reg_file = '/home/jotter/nrao/images/regions/E18.reg'
+#data = Table.read('/home/jotter/nrao/tables/eis_nondet_full.fits')
+#reg_file = '/home/jotter/nrao/images/regions/E18_nondet.reg'
 
 
 #data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_mar21_ulim.fits')
@@ -61,4 +65,11 @@ reg_file = '/home/jotter/nrao/images/regions/IR_matches_may21.reg'
 #data = Table.read('/home/jotter/nrao/tables/r0.5_b3_catalog_full_may21.fits')
 #reg_file = '/home/jotter/nrao/images/regions/b3_full_b3seq_may21.reg'
 
-write_reg_file(data['RA_B3'], data['DEC_B3'], reg_file, name='', IDs=data['ID'])
+#data = Table.read('/home/jotter/nrao/summer_research_2018/tables/COUP_may21_nondet_nonIR.fits')
+#reg_file = '/home/jotter/nrao/images/regions/coup_nondet_nonIR.reg'
+
+data = Table.read('/home/jotter/nrao/summer_research_2018/tables/Forbrich16_may21_nondet_nonIR.fits')
+reg_file = '/home/jotter/nrao/images/regions/fb16_nondet_nonIR.reg'
+
+
+write_reg_file(data['RAJ2000'], data['DEJ2000'], reg_file, name='', IDs=data['Seq'])
