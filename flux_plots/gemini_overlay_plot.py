@@ -51,23 +51,6 @@ b3_sources = np.setdiff1d(b3_sources,b7_sources)
 print("lengths: ", len(b7_sources), len(b6_sources), len(b3_sources))
 
 
-# text_col = 'whitesmoke'
-# 
-# irtab = Table.read(f'{basepath}/tables/IR_matches_MLLA_may21_full_edit.fits')
-# IRid = irtab['ID'].data
-# 
-# #couptab = Table.read(f'{basepath}/tables/COUP_r0.5_may21.fits')
-# couptab = Table.read(f'{basepath}/tables/COUP_r0.5_mar21.fits')
-# #coupid = couptab['ID']
-# coupid = couptab['Seq']
-# 
-# #Fbtab = Table.read(f'{basepath}/tables/Forbrich2016_r0.5_may21.fits')
-# Fbtab = Table.read(f'{basepath}/tables/Forbrich2016_r0.5_mar21.fits')
-# #Fbid = Fbtab['ID']
-# Fbid = Fbtab['Seq_1']
-# 
-# new_srcs = [8, 10, 32, 33, 50, 54, 64, 71, 75, 76, 80, 118, 119, 123, 124]
-
 B3_table = Table.read(f'{basepath}/final_tables/datafile4.txt', format='ascii.cds')
 Fbid = B3_table['ID'][~B3_table['F2016'].mask]
 coupid = B3_table['ID'][~B3_table['COUP'].mask]
