@@ -12,13 +12,14 @@ import matplotlib.pyplot as plt
 import matplotlib.image as img
 import numpy as np
 
+basepath = '/home/jotter/nrao/summer_research_2018/'
 
-img_path = '/home/jotter/nrao/images/Trapezium_GEMS_mosaic_redblueorange_normed_small_contrast_bright_photoshop.png'
+img_path = f'{basepath}/Trapezium_GEMS_mosaic_redblueorange_normed_small_contrast_bright_photoshop.png'
 im = img.imread(img_path)
 
-B3_table = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim.fits')
+B3_table = Table.read(f'{basepath}/tables/r0.5_catalog_bgfit_may21_ulim.fits')
 
-header = fits.Header.fromtextfile('/home/jotter/nrao/images/trapezium_small_photoshop.wcs')
+header = fits.Header.fromtextfile(f'{basepath}/trapezium_small_photoshop.wcs')
 #header = fits.Header.fromtextfile('/home/jotter/nrao/images/fullimage.wcs')
 mywcs = WCS(header).celestial
 
@@ -50,13 +51,13 @@ print(len(b7_sources), len(b6_sources), len(b3_sources))
 
 text_col = 'whitesmoke'
 
-irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
+irtab = Table.read(f'{basepath}/tables/IR_matches_MLLA_may21_full_edit.fits')
 IRid = irtab['ID'].data
 
-couptab = Table.read('/home/jotter/nrao/summer_research_2018/tables/COUP_r0.5_may21.fits')
+couptab = Table.read(f'{basepath}/tables/COUP_r0.5_may21.fits')
 coupid = couptab['ID']
 
-Fbtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/Forbrich2016_r0.5_may21.fits')
+Fbtab = Table.read(f'{basepath}/tables/Forbrich2016_r0.5_may21.fits')
 Fbid = Fbtab['ID']
 
 new_srcs = [8, 10, 32, 33, 50, 54, 64, 71, 75, 76, 80, 118, 119, 123, 124]
@@ -174,7 +175,7 @@ ax.set_xlabel('RA', fontsize=18)
 ax.set_ylabel('Declination', fontsize=18)
 plt.tight_layout()
     
-plt.savefig(f'/home/jotter/nrao/plots/gemini_B3_overlay_wavedet.pdf',dpi=300,bbox_inches='tight')
+plt.savefig(f'{basepath}/plots/gemini_B3_overlay_wavedet.pdf',dpi=300,bbox_inches='tight')
 plt.close()
 
 
