@@ -18,21 +18,22 @@ ophi_data = Table.read(f'{tab_path}/Ophiucus_FluxSize_Cieza2018.txt', format='as
 #all in units of AU
 
 
-B3_fwhm = data['fwhm_maj_deconv_B3']*u.arcsec
-B3_fwhm_flag = np.repeat(True, len(B3_fwhm))
+B3_fwhm_orig = data['fwhm_maj_deconv_B3']*u.arcsec
+B3_fwhm_flag = np.repeat(True, len(B3_fwhm_orig))
 B3_ulim_ind = np.where(np.isnan(data['upper_lim_B3'])==False)
 B3_fwhm_flag[B3_ulim_ind] = False
-B3_fwhm = ((B3_fwhm.to(u.radian))*(400*u.pc).to(u.AU)).value
+B3_fwhm = ((B3_fwhm_orig.to(u.radian))*(400*u.pc).to(u.AU)).value
 B3_fwhm[B3_ulim_ind] = data['upper_lim_B3'][B3_ulim_ind].data
 
-B3_fwhm_flag = B3_fwhm_flag[np.isnan(B3_fwhm) == False]
-B3_fwhm = B3_fwhm[np.isnan(B3_fwhm) == False] #removing 4 masked sources without upper limits or sizes
+#B3_fwhm_flag = B3_fwhm_flag[np.isnan(B3_fwhm) == False]
+#B3_fwhm = B3_fwhm[np.isnan(B3_fwhm) == False] #removing 4 masked sources without upper limits or sizes
 
 B3_hwhm_au = B3_fwhm/2
 
 B3_deconv_ind = np.where(np.isnan(data['fwhm_maj_deconv_B3']) == False)[0]
 B3_fwhm_resolved = B3_fwhm[B3_deconv_ind]
 B3_fwhm_flag_resolved = np.repeat(True, len(B3_fwhm_resolved))
+
 
 
 #print('B3 resolved')
@@ -103,7 +104,7 @@ omc1 = B3_hwhm_au[nonIR_ind]
 omc1_flag = B3_fwhm_flag[nonIR_ind]
 
 onc_resolved = np.where(np.isnan(onc) == False)
-print(onc, onc_resolved)
+#print(onc, onc_resolved)
 onc = onc[onc_resolved]
 onc_flag = onc_flag[onc_resolved]
 
@@ -200,6 +201,6 @@ ophi_hwhm_au = ophi_fwhm_au/2
 #ophi_fwhm_au = np.delete(ophi_fwhm_au, ulim_ophi_ind)
 #ophi_fwhm_flag = np.repeat(True, len(ophi_fwhm_au))
 
-#plot_KM([lupus_hwhm_au, sco_r, ophi_hwhm_au, onc_combined, omc1], ['Lupus', 'Upper Sco', 'Ophiuchus', 'ONC+E18', 'OMC1'],
-#        [lupus_fwhm_flag, sco_fwhm_flag, ophi_fwhm_flag, onc_combined_flag, omc1_flag], savepath='/home/jotter/nrao/plots/KM_size_plot_may21_hwhm_omc1_onc_combined.pdf', left_censor=True,
-#        plot_quantity='Rdisk')
+plot_KM([lupus_hwhm_au, sco_r, ophi_hwhm_au, onc_combined, omc1], ['Lupus', 'Upper Sco', 'Ophiuchus', 'ONC+E18', 'OMC1'],
+        [lupus_fwhm_flag, sco_fwhm_flag, ophi_fwhm_flag, onc_combined_flag, omc1_flag], savepath='/home/jotter/nrao/plots/KM_size_plot_may21_hwhm_omc1_onc_combined.pdf', left_censor=True,
+        plot_quantity='Rdisk')

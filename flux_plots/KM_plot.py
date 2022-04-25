@@ -43,7 +43,7 @@ def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True, cdf=Fal
             if ind not in noerr_inds:
                 ax.fill_between(size, lower, upper, color=col, alpha=0.25)
 
-            if ind == noerr_inds[1]:
+            elif ind == noerr_inds[1]:
                 interp_new = interp1d(size, prob)
                 interp_prob = interp_new(prev_size)
                 ax.fill_between(prev_size, prev_prob, interp_prob, color=col, alpha=0.25)
