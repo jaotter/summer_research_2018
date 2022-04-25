@@ -7,7 +7,9 @@ import matplotlib.pyplot as plt
 import astropy.units as u
 tab_path = '/home/jotter/nrao/tables'
 
-data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
+basepath = '/Users/adam/work/students/JustinOtter/summer_research_2018/'
+
+data = Table.read(f'{basepath}/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
 
 eis_data = Table.read(f'{tab_path}/eisner_tbl.txt', format='ascii')
 lupus_data = Table.read(f'{tab_path}/LupusDisks_Ansdell2016_dist_combined.txt', format='ascii')

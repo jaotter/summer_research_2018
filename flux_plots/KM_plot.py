@@ -21,12 +21,12 @@ def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True, cdf=Fal
             if left_censor == True:
                 kmf.fit_left_censoring(arrays[ind], upper_lim_flags[ind], label=labels[ind])
             else:
-                kmf.fit(arrays[ind], event_observed=upper_lim_flags[ind], label=labels[ind]) #right censoring                                                                                     
+                kmf.fit(arrays[ind], event_observed=upper_lim_flags[ind], label=labels[ind]) #right censoring
         else:
             kmf.fit(arrays[ind], upper_lim_flags[ind], label=labels[ind])
 
-        #kmf.confidence_interval_survival_function_.plot(ax=ax)                                                                                                                               
-        #kmf.survival_function_.plot(ax=ax)                                                                                                                                                   
+        #kmf.confidence_interval_survival_function_.plot(ax=ax)
+        #kmf.survival_function_.plot(ax=ax)
         if cdf == True:
             kmf.plot(ax=ax)
         else:
@@ -48,15 +48,15 @@ def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True, cdf=Fal
                 interp_prob = interp_new(prev_size)
                 ax.fill_between(prev_size, prev_prob, interp_prob, color=col, alpha=0.25)
                 #ax.fill(np.concatenate((prev_size,size)), np.concatenate((prev_prob,prob)), color=col, alpha=0.25)
-                
+
     plt.legend(fontsize=16)
-    
+
     ax.set_xscale('log')
     ax.tick_params(axis='both', which='major', labelsize=14)
-    
-    
+
+
     if plot_quantity == 'Mdust':
-        ax.set_xlim(0.03, 2000)   
+        ax.set_xlim(0.03, 2000)
         ax.set_xlabel(r'$M_{dust}$ ($M_{\oplus}$)', fontsize=18)
         ax.set_ylabel(r'$P \geq M_{dust}$', fontsize=18)
 
@@ -64,7 +64,7 @@ def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True, cdf=Fal
         ax.set_xlim(3, 200)
         ax.set_xlabel(r'$R_{disk}$ (AU)', fontsize=18)
         ax.set_ylabel(r'$P \geq R_{disk}$', fontsize=18)
-    
+
     plt.savefig(savepath)
     print(f'saved figure at {savepath}')
 
@@ -76,7 +76,7 @@ def KM_median(array, upper_lim_flags, left_censor=True, return_type='percentile'
         if left_censor == True:
             kmf.fit_left_censoring(array, upper_lim_flags)
         else:
-            kmf.fit(array, event_observed=upper_lim_flags) #right censoring                                                                                    
+            kmf.fit(array, event_observed=upper_lim_flags) #right censoring
     else:
         kmf.fit(array, upper_lim_flags)
 
@@ -86,12 +86,12 @@ def KM_median(array, upper_lim_flags, left_censor=True, return_type='percentile'
     if return_type == 'percentile':
         upper_perc = kmf.percentile(0.25)
         lower_perc = kmf.percentile(0.75)
-    
+
         print(f'median and 1st/3rd quartiles: {median}, {lower_perc}, {upper_perc}')
         return median, upper_perc, lower_perc
 
     elif return_type == 'ci':
-        median_ci = median_survival_times(kmf.confidence_interval_).values 
+        median_ci = median_survival_times(kmf.confidence_interval_).values
         print(f'median and CI: {median}, {median_ci}')
         return median, median_ci[0][0], median_ci[0][1]
 
@@ -118,5 +118,5 @@ def bootstrap_ci(num_samples, data, ulim_flag, alpha=0.99):
 
     CI_range = se*Zval
     print(f'CI range: {CI_range}')
-    
+
     return CI_range
