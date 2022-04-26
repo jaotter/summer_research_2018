@@ -29,8 +29,8 @@ lupus_data = Table.read(f'{tab_path}/LupusDisks_Ansdell2016_dist_combined.txt', 
 ophi_data = Table.read(f'{tab_path}/Ophiuchus_Williams2019.txt', format='ascii')
 perseus_data = Table.read(f'{tab_path}/Perseus_Anderson2019.txt', format='ascii', header_start=2, data_start=4, data_end=63, delimiter='\t')
 taurus_data = Table.read(f'{tab_path}/TaurusDisks_Andrews2005.txt', format='ascii')
-#sco_data = Table.read(f'{tab_path}/UpperSco_Barenfield2016.txt', format='ascii')
-sco_data = Table.read(f'{tab_path}/UpperSco_Barenfeld2016_size.txt', format='ascii')
+sco_data = Table.read(f'{tab_path}/UpperSco_Barenfield2016.txt', format='ascii')
+#sco_data = Table.read(f'{tab_path}/UpperSco_Barenfeld2016_size.txt', format='ascii')
 
 IR_tab = Table.read(f'{basepath}/tables/IR_matches_MLLA_may21_full_edit.fits')
 
@@ -73,7 +73,7 @@ eis_mdust_str = eis_data['M_dust^a'].data
 eis_mdust1 = np.array([float(mdust.split(' ')[0]) for mdust in eis_mdust_str])
 eis_mdust_flag1 = np.repeat(True, len(eis_mdust1))
 #eis_mdust = eis_mdust[eis_mdust>0]
-eis_nondet = Table.read(f'{basepath}/eisner_nondetect.txt', format='ascii', delimiter='\t')#, data_start=2, header_start=1, 
+eis_nondet = Table.read(f'{basepath}/tables/eisner_nondetect.txt', format='ascii', delimiter='\t')#, data_start=2, header_start=1, 
 eis_ulim = eis_nondet['F_lambda850mum']
 eis_ulim_flux = []
 for ul in eis_ulim:

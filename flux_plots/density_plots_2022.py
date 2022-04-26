@@ -132,8 +132,8 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
     ra.ticklabels.set_fontsize(18)
     dec.ticklabels.set_fontsize(18)
 
-    im = ax.imshow(jointIRsurfdensity_map,
-                   norm=visualization.simple_norm(jointIRsurfdensity_map, stretch='linear'),
+    im = ax.imshow(jointIRsurfdensity_map/1e3,
+                   norm=visualization.simple_norm(jointIRsurfdensity_map/1e3, stretch='linear'),
                    cmap='gray')
 
     if zoom:
@@ -162,11 +162,22 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
                          0.03,
                          ax.get_position().height])
     cb = pl.colorbar(mappable=im, cax=cax1)
-    cb.set_label("M$_\odot$ / pc$^{2}$", fontsize=18)
+    cb.set_label("kM$_\odot$ / pc$^{2}$", fontsize=18)
     cb.ax.tick_params(labelsize=18)
     ax.set_xlabel('Right Ascension', fontsize=18)
     ax.set_ylabel('Declination', fontsize=18)
-    fig.savefig(f'{basepath}/figures/surface_density_map_joint_0.5msun.png')
+    fig.savefig(f'{basepath}/figures/surface_density_map_joint_0.5msun{zoom}.png')
+
+    artemis = fits.open('/Users/adam/work/orion/oriona_isf_artemis_coldens.fit')
+    nh2tosurf = (2.8*u.Da/u.cm**2).to(u.M_sun/u.pc**2).value
+    cn = ax.contour(artemis[0].data * nh2tosurf / 1e3,
+               cmap='jet', transform=ax.get_transform(WCS(artemis[0].header)))
+    cax = cb.ax
+    axhls = []
+    for level, coll in zip(cn.levels, cn.collections):
+        axhls.append(cax.axhline(level, color=coll.get_color()[0]))
+    fig.savefig(f'{basepath}/figures/surface_density_map_joint_artemis_0.5msun{zoom}.png')
+
 
 
 
