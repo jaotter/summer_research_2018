@@ -80,11 +80,14 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
 
     #density_map = np.reshape(1./nth_dists, (npix,npix))
 
-    def rescale_densitymap(density_map, cat):
+    def rescale_densitymap(density_map, cat, surf=False):
         peak = np.unravel_index(np.argmax(density_map), xx.shape)
         maxpos = new_wcs.pixel_to_world(xx[peak], yy[peak])
         idx, sep, _ = maxpos.match_to_catalog_sky(cat, nthneighbor=nthneighbor)
-        density_map = (nthneighbor / (4/3*np.pi * (sep*distance).to(u.pc, u.dimensionless_angles())**3)).value * density_map / density_map.max()
+        if surf:
+            density_map = (nthneighbor / (np.pi * (sep*distance).to(u.pc, u.dimensionless_angles())**2)) * 0.5 * u.M_sun * density_map/density_map.max()
+        else:
+            density_map = (nthneighbor / (4/3*np.pi * (sep*distance).to(u.pc, u.dimensionless_angles())**3)).value * density_map / density_map.max()
         return density_map
 
     nthneighbor = 5
@@ -104,7 +107,6 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
     jointkde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(full_xradmm_sourcelist),
                                         bw_method=0.05*bwfactor)
     jointdensity_map = np.reshape(jointkde(positions), xx.shape)
-    peak = np.unravel_index(np.argmax(jointdensity_map), xx.shape)
     jointdensity_map = rescale_densitymap(jointdensity_map, full_xradmm_sourcelist)
 
     IRkde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(IR_coords), bw_method=0.05*bwfactor)
@@ -115,8 +117,56 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
     jointIRkde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(full_irxradmm_sourcelist),
                                         bw_method=0.05*bwfactor)
     jointIRdensity_map = np.reshape(jointIRkde(positions), xx.shape)
-    peak = np.unravel_index(np.argmax(jointIRdensity_map), xx.shape)
+    jointIRsurfdensity_map = rescale_densitymap(jointIRdensity_map, full_irxradmm_sourcelist, surf=True)
     jointIRdensity_map = rescale_densitymap(jointIRdensity_map, full_irxradmm_sourcelist)
+
+
+    fig = pl.figure(num=0, figsize=figsize)
+    fig.clf()
+    ax = fig.add_subplot(projection=new_wcs)
+
+    ra = ax.coords['ra']
+    ra.set_major_formatter('hh:mm:ss.s')
+    dec = ax.coords['dec']
+    dec.set_major_formatter('dd:mm:ss.s')
+    ra.ticklabels.set_fontsize(18)
+    dec.ticklabels.set_fontsize(18)
+
+    im = ax.imshow(jointIRsurfdensity_map,
+                   norm=visualization.simple_norm(jointIRsurfdensity_map, stretch='linear'),
+                   cmap='gray')
+
+    if zoom:
+        B7_coord = SkyCoord(83.8104626, -5.37515542, unit=u.degree)
+        Mb7 = regions.CircleSkyRegion(B7_coord, radius=10*u.arcsec)
+        Mb7p = Mb7.to_pixel(ax.wcs)
+        ax.axis([Mb7p.center.x - Mb7p.radius*1.1, Mb7p.center.x + Mb7p.radius*1.1,
+                 Mb7p.center.y - Mb7p.radius*1.1, Mb7p.center.y + Mb7p.radius*1.1,])
+    else:
+        BL_pix = mywcs.all_world2pix(BL_frame.ra.degree, BL_frame.dec.degree, 0)
+        TR_pix = mywcs.all_world2pix(TR_frame.ra.degree, TR_frame.dec.degree, 0)
+
+        #ax.set_ylim(0,1250)
+        #ax.set_xlim(100,1556)
+        ax.set_ylim(BL_pix[1], TR_pix[1])
+        ax.set_xlim(BL_pix[0], TR_pix[0])
+
+        ax.set_xlabel('Right Ascension', fontsize=18)
+        ax.set_ylabel('Declination', fontsize=18)
+
+
+
+    divider = make_axes_locatable(ax)
+    cax1 = fig.add_axes([ax.get_position().x1-0.05,
+                         ax.get_position().y0,
+                         0.03,
+                         ax.get_position().height])
+    cb = pl.colorbar(mappable=im, cax=cax1)
+    cb.set_label("M$_\odot$ / pc$^{2}$", fontsize=18)
+    cb.ax.tick_params(labelsize=18)
+    ax.set_xlabel('Right Ascension', fontsize=18)
+    ax.set_ylabel('Declination', fontsize=18)
+    fig.savefig(f'{basepath}/figures/surface_density_map_joint_0.5msun.png')
 
 
 

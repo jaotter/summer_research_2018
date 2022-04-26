@@ -29,7 +29,8 @@ lupus_data = Table.read(f'{tab_path}/LupusDisks_Ansdell2016_dist_combined.txt', 
 ophi_data = Table.read(f'{tab_path}/Ophiuchus_Williams2019.txt', format='ascii')
 perseus_data = Table.read(f'{tab_path}/Perseus_Anderson2019.txt', format='ascii', header_start=2, data_start=4, data_end=63, delimiter='\t')
 taurus_data = Table.read(f'{tab_path}/TaurusDisks_Andrews2005.txt', format='ascii')
-sco_data = Table.read(f'{tab_path}/UpperSco_Barenfield2016.txt', format='ascii')
+#sco_data = Table.read(f'{tab_path}/UpperSco_Barenfield2016.txt', format='ascii')
+sco_data = Table.read(f'{tab_path}/UpperSco_Barenfeld2016_size.txt', format='ascii')
 
 IR_tab = Table.read(f'{basepath}/tables/IR_matches_MLLA_may21_full_edit.fits')
 
