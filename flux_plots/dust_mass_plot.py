@@ -19,9 +19,10 @@ def calc_dmass(fluxes, freq, dist):
 
     return Dmass
 
-tab_path = '/home/jotter/nrao/tables'
+basepath = '/Users/adam/work/students/JustinOtter/summer_research_2018/'
+tab_path = f'{basepath}/tables'
 
-dmass_data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_may21_calc_vals_mask.fits')
+dmass_data = Table.read(f'{basepath}/tables/r0.5_may21_calc_vals_mask.fits')
 
 eis_data = Table.read(f'{tab_path}/eisner_tbl.txt', format='ascii')
 lupus_data = Table.read(f'{tab_path}/LupusDisks_Ansdell2016_dist_combined.txt', format='ascii', data_start=1)
@@ -30,7 +31,7 @@ perseus_data = Table.read(f'{tab_path}/Perseus_Anderson2019.txt', format='ascii'
 taurus_data = Table.read(f'{tab_path}/TaurusDisks_Andrews2005.txt', format='ascii')
 sco_data = Table.read(f'{tab_path}/UpperSco_Barenfield2016.txt', format='ascii')
 
-IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
+IR_tab = Table.read(f'{basepath}/tables/IR_matches_MLLA_may21_full_edit.fits')
 
 nonIR_src = np.setdiff1d(dmass_data['ID'], IR_tab['ID'])
 nonIR_ind = [np.where(dmass_data['ID']==d_id)[0][0] for d_id in nonIR_src]
@@ -38,7 +39,7 @@ IR_ind = [np.where(dmass_data['ID']==d_id)[0][0] for d_id in IR_tab['ID']]
 omc1 = dmass_data[nonIR_ind]
 onc = dmass_data[IR_ind]
 
-IR_nondet = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_nondet_may21_full_ulim.fits')
+IR_nondet = Table.read(f'{basepath}/tables/IR_nondet_may21_full_ulim.fits')
 B3_ulims = IR_nondet['B3_flux_ulim'].data * u.mJy
 
 #all in units of earthMass
@@ -71,7 +72,7 @@ eis_mdust_str = eis_data['M_dust^a'].data
 eis_mdust1 = np.array([float(mdust.split(' ')[0]) for mdust in eis_mdust_str])
 eis_mdust_flag1 = np.repeat(True, len(eis_mdust1))
 #eis_mdust = eis_mdust[eis_mdust>0]
-eis_nondet = Table.read('/home/jotter/nrao/tables/eisner_nondetect.txt', format='ascii', delimiter='\t')#, data_start=2, header_start=1, 
+eis_nondet = Table.read(f'{basepath}/eisner_nondetect.txt', format='ascii', delimiter='\t')#, data_start=2, header_start=1, 
 eis_ulim = eis_nondet['F_lambda850mum']
 eis_ulim_flux = []
 for ul in eis_ulim:
@@ -109,15 +110,15 @@ taurus_mdust_flag[np.where(taurus_data['l_F450'] == '<')] = False
 
 #plot_KM([eis_mdust, lupus_mdust, sco_mdust, B3_mdust, B6_mdust, B7_mdust, ophi_mdust, taurus_mdust], ['E18', 'Lupus', 'Upper Sco', 'B3', 'B6', 'B7', 'Ophiucus', 'Taurus'],
 #        [eis_mdust_flag, lupus_mdust_flag, sco_mdust_flag, B3_mdust_flag, B6_mdust_flag, B7_mdust_flag, ophi_mdust_flag, taurus_mdust_flag],
-#        savepath='/home/jotter/nrao/plots/KM_dust_mass.pdf')
+#        savepath=f'{basepath}KM_dust_mass.pdf')
 
 #plot_KM([eis_mdust, lupus_mdust, sco_mdust, ophi_mdust, B3_mdust_onc, taurus_mdust], ['E18', 'Lupus', 'Upper Sco', 'Ophiucus', 'ONC B3', 'Taurus'],
-#        [eis_mdust_flag, lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, B3_mdust_flag_onc, taurus_mdust_flag], savepath='/home/jotter/nrao/plots/KM_dust_mass_aug20_onc_noulim.pdf', left_censor=True, cdf=False)
+#        [eis_mdust_flag, lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, B3_mdust_flag_onc, taurus_mdust_flag], savepath=f'{basepath}ug20_onc_noulim.pdf', left_censor=True, cdf=False)
 
 onc_combined = np.concatenate((B3_mdust_onc, eis_mdust))
 onc_combined_flag = np.concatenate((B3_mdust_flag_onc, eis_mdust_flag))
 
-omc1_ulim_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/COUP_may21_nondet_OMC1_ulim.fits')
+omc1_ulim_tab = Table.read(f'{basepath}/tables/COUP_may21_nondet_OMC1_ulim.fits')
 omc1_ulim = omc1_ulim_tab['B3_flux_ulim']
 omc1_ulim_dmass = np.array(calc_dmass(omc1_ulim, 98*u.GHz, 400*u.pc).value)
 omc1_ulim_flag = np.repeat(False, len(omc1_ulim_dmass))
@@ -131,8 +132,16 @@ omc1_mdust = np.concatenate((omc1_B3mdust, omc1_ulim_dmass_ext))
 omc1_mdust_flag = np.concatenate((omc1_B3mdust_flag, np.repeat(False,60)))
 
 
-plot_KM([lupus_mdust, sco_mdust, ophi_mdust, onc_combined, omc1_B3mdust, omc1_mdust, taurus_mdust], ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC+E18','OMC1 (no X-ray)', 'OMC1 (X-ray incl.)', 'Taurus'],
-        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, omc1_B3mdust_flag, omc1_mdust_flag, taurus_mdust_flag], savepath='/home/jotter/nrao/plots/KM_dust_mass_may21_onc_omc1.pdf', left_censor=True, cdf=False, plot_quantity='Mdust', noerr_inds=[4,5])
+plot_KM([lupus_mdust, sco_mdust, ophi_mdust, onc_combined, omc1_B3mdust, omc1_mdust, taurus_mdust],
+        ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC+E18','OMC1 (no X-ray)', 'OMC1 (X-ray incl.)', 'Taurus'],
+        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, omc1_B3mdust_flag, omc1_mdust_flag, taurus_mdust_flag],
+        savepath=f'{basepath}/KM_dust_mass_may21_onc_omc1.png', left_censor=True, cdf=False, plot_quantity='Mdust', noerr_inds=[4,5])
+
+plot_KM([onc_combined, omc1_B3mdust, omc1_mdust],
+        ['ONC+E18','OMC1 (no X-ray)', 'OMC1 (X-ray incl.)', ],
+        [onc_combined_flag, omc1_B3mdust_flag, omc1_mdust_flag],
+        colors =['tab:orange', 'tab:purple', 'gray', 'brown'],
+        savepath=f'{basepath}/KM_dust_mass_may21_onc_omc1_only.png', left_censor=True, cdf=False, plot_quantity='Mdust', noerr_inds=[4,5])
 
 #plot_KM([lupus_mdust, sco_mdust, ophi_mdust, onc_combined, taurus_mdust], ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC+E18', 'Taurus'],
-#        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, taurus_mdust_flag], savepath='/home/jotter/nrao/plots/KM_dust_mass_may21_onc_combined.pdf', left_censor=True, cdf=False, plot_quantity='Mdust')
+#        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, taurus_mdust_flag], savepath=f'{basepath}/plots/KM_dust_mass_may21_onc_combined.pdf', left_censor=True, cdf=False, plot_quantity='Mdust')

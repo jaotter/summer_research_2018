@@ -7,13 +7,15 @@ import matplotlib.pyplot as plt
 import astropy.units as u
 
 
-def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True, cdf=False, plot_quantity='Mdust', noerr_inds=[]):
+def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True,
+            cdf=False, plot_quantity='Mdust', noerr_inds=[],
+            colors = ['tab:red','tab:blue','tab:green', 'tab:orange', 'tab:purple', 'gray', 'brown']
+           ):
     kmf = KaplanMeierFitter()
 
     fig = plt.figure(figsize=(10,10))
     ax = plt.axes()
 
-    colors = ['tab:red','tab:blue','tab:green', 'tab:orange', 'tab:purple', 'gray', 'brown']
     for ind in range(len(arrays)):
         col = colors[ind]
         print(labels[ind])
@@ -43,7 +45,7 @@ def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True, cdf=Fal
             if ind not in noerr_inds:
                 ax.fill_between(size, lower, upper, color=col, alpha=0.25)
 
-            if ind == noerr_inds[1]:
+            if len(noerr_inds) > 0 and ind == noerr_inds[1]:
                 interp_new = interp1d(size, prob)
                 interp_prob = interp_new(prev_size)
                 ax.fill_between(prev_size, prev_prob, interp_prob, color=col, alpha=0.25)
@@ -64,6 +66,8 @@ def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True, cdf=Fal
         ax.set_xlim(3, 200)
         ax.set_xlabel(r'$R_{disk}$ (AU)', fontsize=18)
         ax.set_ylabel(r'$P \geq R_{disk}$', fontsize=18)
+
+    plt.ylim(-0.01, 1.01)
 
     plt.savefig(savepath)
     print(f'saved figure at {savepath}')
