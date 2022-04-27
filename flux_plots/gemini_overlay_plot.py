@@ -105,10 +105,10 @@ coords = SkyCoord((B3_table['RAs'].quantity + (5*u.hour).to(u.s) + (35*u.min).to
 idx, sep, _ = IR_coords.match_to_catalog_sky(coords)
 IR_only = IR_coords[sep > 1*u.arcsec]
 #idx, sep, _ = coupcoords.match_to_catalog_sky(coords)
-idx, sep, _ = coupcoords.match_to_catalog_sky(coords[~XRsel])
+idx, sep, _ = coupcoords.match_to_catalog_sky(coords) #[~XRsel])
 XR_only = coupcoords[sep > 1*u.arcsec]
 #idx, sep, _ = forbcoords.match_to_catalog_sky(coords)
-idx, sep, _ = forbcoords.match_to_catalog_sky(coords[~radsel])
+idx, sep, _ = forbcoords.match_to_catalog_sky(coords) #[~radsel])
 rad_only = forbcoords[sep > 1*u.arcsec]
 
 #IRscat = ax.scatter(coords.ra[IRsel], coords.dec[IRsel], transform=ax.get_transform('icrs'), facecolors='none', edgecolor='lime', marker='p')

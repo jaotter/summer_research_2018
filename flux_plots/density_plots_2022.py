@@ -85,7 +85,7 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
         maxpos = new_wcs.pixel_to_world(xx[peak], yy[peak])
         idx, sep, _ = maxpos.match_to_catalog_sky(cat, nthneighbor=nthneighbor)
         if surf:
-            density_map = (nthneighbor / (np.pi * (sep*distance).to(u.pc, u.dimensionless_angles())**2)) * 0.5 * u.M_sun * density_map/density_map.max()
+            density_map = (nthneighbor / (np.pi * (sep*distance).to(u.pc, u.dimensionless_angles())**2)) * 0.3 * u.M_sun * density_map/density_map.max()
         else:
             density_map = (nthneighbor / (4/3*np.pi * (sep*distance).to(u.pc, u.dimensionless_angles())**3)).value * density_map / density_map.max()
         return density_map
@@ -134,7 +134,7 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
 
     im = ax.imshow(jointIRsurfdensity_map/1e3,
                    norm=visualization.simple_norm(jointIRsurfdensity_map/1e3, stretch='linear'),
-                   cmap='gray')
+                   cmap='gray_r')
 
     if zoom:
         B7_coord = SkyCoord(83.8104626, -5.37515542, unit=u.degree)
@@ -178,6 +178,9 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
         axhls.append(cax.axhline(level, color=coll.get_color()[0]))
     fig.savefig(f'{basepath}/figures/surface_density_map_joint_artemis_0.5msun{zoom}.png')
 
+    ax.scatter(full_irxradmm_sourcelist.ra, full_irxradmm_sourcelist.dec, s=2, transform=ax.get_transform('fk5'))
+    fig.savefig(f'{basepath}/figures/surface_density_map_joint_artemis_0.5msun{zoom}_withstars.png')
+
 
 
 
@@ -194,7 +197,7 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
 
     im = ax.imshow(density_map,
                    norm=visualization.simple_norm(density_map, stretch='linear'),
-                   cmap='gray')
+                   cmap='gray_r')
 
     if zoom:
         B7_coord = SkyCoord(83.8104626, -5.37515542, unit=u.degree)
@@ -278,7 +281,7 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
 
     im = ax.imshow(jointdensity_map,
                    norm=visualization.simple_norm(jointdensity_map, stretch='linear'),
-                   cmap='gray')
+                   cmap='gray_r')
 
     if zoom:
         B7_coord = SkyCoord(83.8104626, -5.37515542, unit=u.degree)
@@ -366,7 +369,7 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
 
     im = ax.imshow(jointIRdensity_map,
                    norm=visualization.simple_norm(jointIRdensity_map, stretch='linear'),
-                   cmap='gray')
+                   cmap='gray_r')
 
     if zoom:
         B7_coord = SkyCoord(83.8104626, -5.37515542, unit=u.degree)

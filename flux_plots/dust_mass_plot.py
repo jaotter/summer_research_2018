@@ -136,13 +136,13 @@ omc1_mdust_flag = np.concatenate((omc1_B3mdust_flag, np.repeat(False,60)))
 plot_KM([lupus_mdust, sco_mdust, ophi_mdust, onc_combined, omc1_B3mdust, omc1_mdust, taurus_mdust],
         ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC+E18','OMC1 (no X-ray)', 'OMC1 (X-ray incl.)', 'Taurus'],
         [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, omc1_B3mdust_flag, omc1_mdust_flag, taurus_mdust_flag],
-        savepath=f'{basepath}/KM_dust_mass_may21_onc_omc1.png', left_censor=True, cdf=False, plot_quantity='Mdust', noerr_inds=[4,5])
+        savepath=f'{basepath}/plots/KM_dust_mass_may21_onc_omc1.png', left_censor=True, cdf=False, plot_quantity='Mdust', noerr_inds=[4,5])
 
 plot_KM([onc_combined, omc1_B3mdust, omc1_mdust],
         ['ONC+E18','OMC1 (no X-ray)', 'OMC1 (X-ray incl.)', ],
         [onc_combined_flag, omc1_B3mdust_flag, omc1_mdust_flag],
         colors =['tab:orange', 'tab:purple', 'gray', 'brown'],
-        savepath=f'{basepath}/KM_dust_mass_may21_onc_omc1_only.png', left_censor=True, cdf=False, plot_quantity='Mdust', noerr_inds=[4,5])
+        savepath=f'{basepath}/plots/KM_dust_mass_may21_onc_omc1_only.png', left_censor=True, cdf=False, plot_quantity='Mdust', noerr_inds=[4,5])
 
 #plot_KM([lupus_mdust, sco_mdust, ophi_mdust, onc_combined, taurus_mdust], ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC+E18', 'Taurus'],
 #        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, taurus_mdust_flag], savepath=f'{basepath}/plots/KM_dust_mass_may21_onc_combined.pdf', left_censor=True, cdf=False, plot_quantity='Mdust')
