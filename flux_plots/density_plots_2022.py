@@ -29,13 +29,19 @@ figsize=(9,10)
 
 basepath = '/Users/adam/work/students/JustinOtter/summer_research_2018/'
 
-npix = 400
+dokde=True
+if dokde:
+    npix = 200
+else:
+    npix = 64
 
 BL_frame = SkyCoord(ra='5:35:18', dec='-5:23:30', unit=(u.hourangle,u.degree))
 TR_frame = SkyCoord(ra='5:35:12', dec='-5:21:50', unit=(u.hourangle,u.degree))
 
-for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
+for zoom, cdelt, bwfactor in (("", 1.2, 1), ("_zoom", 0.12, 0.5)):
 
+    if not dokde:
+        cdelt = 200/npix * cdelt
 
     #creating new wcs for density map
     new_header = {}
@@ -63,14 +69,6 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
     mm_map_coords = mm_pix_coords
     mm_pix_coords = np.transpose(mm_pix_coords)
 
-    """
-    tree = KDTree(src_pix_coords) #KDTree has source positions in map pix coords
-
-    n_neighbor = 10
-    full_dists, full_inds = tree.query(pix_points, k=n_neighbor) #each entry of full_dists has nearest neighbors up to the nth nearest
-
-    nth_dists_pix = [dist[n_neighbor-1] for dist in full_dists]
-    """
 
     #convert to arcseconds
     pixel_scales = wcs_utils.proj_plane_pixel_scales(new_wcs)
@@ -80,7 +78,7 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
 
     #density_map = np.reshape(1./nth_dists, (npix,npix))
 
-    def rescale_densitymap(density_map, cat, surf=False):
+    def rescale_densitymap(density_map, cat, surf=False, nthneighbor=5):
         peak = np.unravel_index(np.argmax(density_map), xx.shape)
         maxpos = new_wcs.pixel_to_world(xx[peak], yy[peak])
         idx, sep, _ = maxpos.match_to_catalog_sky(cat, nthneighbor=nthneighbor)
@@ -88,37 +86,65 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
             density_map = (nthneighbor / (np.pi * (sep*distance).to(u.pc, u.dimensionless_angles())**2)) * 0.3 * u.M_sun * density_map/density_map.max()
         else:
             density_map = (nthneighbor / (4/3*np.pi * (sep*distance).to(u.pc, u.dimensionless_angles())**3)).value * density_map / density_map.max()
-        return density_map
+        return density_map.T
 
-    nthneighbor = 5
+    def make_density_map(src_pix_coords, n_neighbor=5, surf=False):
 
-    kde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(full_mm_sourcelist), bw_method=0.2*bwfactor)
-    density_map = np.reshape(kde(positions), xx.shape)
-    density_map = rescale_densitymap(density_map, full_mm_sourcelist)
+        src_pix_coords = np.array(src_pix_coords).T
+        tree = KDTree(src_pix_coords) #KDTree has source positions in map pix coords
 
-    coupkde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(coupcoords), bw_method=0.05*bwfactor)
-    coup_density_map = np.reshape(coupkde(positions), xx.shape)
-    coup_density_map = rescale_densitymap(coup_density_map, coupcoords)
+        full_dists, full_inds = tree.query(pix_points, k=n_neighbor) #each entry of full_dists has nearest neighbors up to the nth nearest
 
-    forbkde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(forbcoords), bw_method=0.1*bwfactor)
-    forb_density_map = np.reshape(forbkde(positions), xx.shape)
-    forb_density_map = rescale_densitymap(forb_density_map, forbcoords)
+        nth_dists_pix = [dist[n_neighbor-1] for dist in full_dists]
+        nth_dists = (nth_dists_pix * pixel_scale)
 
-    jointkde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(full_xradmm_sourcelist),
-                                        bw_method=0.05*bwfactor)
-    jointdensity_map = np.reshape(jointkde(positions), xx.shape)
-    jointdensity_map = rescale_densitymap(jointdensity_map, full_xradmm_sourcelist)
+        dist_map = np.reshape(nth_dists, (npix,npix))
 
-    IRkde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(IR_coords), bw_method=0.05*bwfactor)
-    IR_density_map = np.reshape(IRkde(positions), xx.shape)
-    IR_density_map = rescale_densitymap(IR_density_map, IR_coords)
+        if surf:
+            density_map_ = (n_neighbor / (np.pi * (dist_map*distance).to(u.pc, u.dimensionless_angles())**2 * 3*u.M_sun))
+        else:
+            density_map_ = (n_neighbor / (4/3*np.pi * (dist_map*distance).to(u.pc, u.dimensionless_angles())**3))
+
+        # transpose b/c xx,yy swapped in images
+        return density_map_.T
+
+    if dokde:
+        kde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(full_mm_sourcelist), bw_method=0.2*bwfactor)
+        density_map = np.reshape(kde(positions), xx.shape)
+        density_map = rescale_densitymap(density_map, full_mm_sourcelist)
+
+        coupkde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(coupcoords), bw_method=0.05*bwfactor)
+        coup_density_map = np.reshape(coupkde(positions), xx.shape)
+        coup_density_map = rescale_densitymap(coup_density_map, coupcoords)
+
+        forbkde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(forbcoords), bw_method=0.1*bwfactor)
+        forb_density_map = np.reshape(forbkde(positions), xx.shape)
+        forb_density_map = rescale_densitymap(forb_density_map, forbcoords)
+
+        jointkde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(full_xradmm_sourcelist),
+                                            bw_method=0.05*bwfactor)
+        jointdensity_map = np.reshape(jointkde(positions), xx.shape)
+        jointdensity_map = rescale_densitymap(jointdensity_map, full_xradmm_sourcelist)
+
+        IRkde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(IR_coords), bw_method=0.05*bwfactor)
+        IR_density_map = np.reshape(IRkde(positions), xx.shape)
+        IR_density_map = rescale_densitymap(IR_density_map, IR_coords)
 
 
-    jointIRkde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(full_irxradmm_sourcelist),
-                                        bw_method=0.05*bwfactor)
-    jointIRdensity_map = np.reshape(jointIRkde(positions), xx.shape)
-    jointIRsurfdensity_map = rescale_densitymap(jointIRdensity_map, full_irxradmm_sourcelist, surf=True)
-    jointIRdensity_map = rescale_densitymap(jointIRdensity_map, full_irxradmm_sourcelist)
+        jointIRkde = scipy.stats.gaussian_kde(new_wcs.world_to_pixel(full_irxradmm_sourcelist),
+                                            bw_method=0.05*bwfactor)
+        jointIRdensity_map = np.reshape(jointIRkde(positions), xx.shape)
+        jointIRsurfdensity_map = rescale_densitymap(jointIRdensity_map, full_irxradmm_sourcelist, surf=True)
+        jointIRdensity_map = rescale_densitymap(jointIRdensity_map, full_irxradmm_sourcelist)
+
+    else: # nth neighbor map
+        density_map = make_density_map(new_wcs.world_to_pixel(full_mm_sourcelist))
+        coup_density_map = make_density_map(new_wcs.world_to_pixel(coupcoords))
+        forb_density_map = make_density_map(new_wcs.world_to_pixel(forbcoords))
+        jointdensity_map = make_density_map(new_wcs.world_to_pixel(full_xradmm_sourcelist))
+        IR_density_map = make_density_map(new_wcs.world_to_pixel(IR_coords))
+        jointIRsurfdensity_map = make_density_map(new_wcs.world_to_pixel(full_irxradmm_sourcelist), surf=True)
+        jointIRdensity_map = make_density_map(new_wcs.world_to_pixel(full_irxradmm_sourcelist))
 
 
     fig = pl.figure(num=0, figsize=figsize)
@@ -162,7 +188,7 @@ for zoom, cdelt, bwfactor in (("", 0.6, 1), ("_zoom", 0.06, 0.5)):
                          0.03,
                          ax.get_position().height])
     cb = pl.colorbar(mappable=im, cax=cax1)
-    cb.set_label("kM$_\odot$ / pc$^{2}$", fontsize=18)
+    cb.set_label("kM$_\odot$ / pc$^{2}$ ~ 5e22 cm$^{-2}$ ~ 0.07 g cm$^{-2}$", fontsize=18)
     cb.ax.tick_params(labelsize=18)
     ax.set_xlabel('Right Ascension', fontsize=18)
     ax.set_ylabel('Declination', fontsize=18)

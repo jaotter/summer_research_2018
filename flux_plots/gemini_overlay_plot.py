@@ -93,6 +93,7 @@ XRsel = np.isin(B3_table['ID'], coupid)
 radsel = np.isin(B3_table['ID'], Fbid) & ~IRsel
 newsel = np.isin(B3_table['ID'], new_srcs)
 mmsel = (~IRsel) & (~XRsel) & (~radsel) & (~newsel)
+notIR = ~IRsel
 
 
 coords = SkyCoord((B3_table['RAs'].quantity + (5*u.hour).to(u.s) + (35*u.min).to(u.s))*(15*u.arcsec/u.s),
@@ -192,12 +193,38 @@ for scat in (IRscat, radscat, XRscat, mmscat):
 
 plt.savefig(f'{basepath}/plots/gemini_B3_overlay_newOnly.png',dpi=200,)
 
+
+
+im.set_visible(False)
+
+radscat.set_visible(False)
+XRscat.set_visible(False)
+IRscat_all = ax.scatter(IR_coords.ra, IR_coords.dec, transform=ax.get_transform('icrs'), facecolors='none', edgecolor='lime', marker='p')
+
+plt.savefig(f'{basepath}/plots/catalog_contours_IRsample.png',dpi=200,)
+
+mmscat.set_visible(True)
+newmmscat.set_visible(True)
+plt.savefig(f'{basepath}/plots/catalog_contours_mmdet.png',dpi=200,)
+
+IRscat_all.set_visible(False)
+plt.savefig(f'{basepath}/plots/catalog_contours_mmdet_noIR.png',dpi=200,)
+
+radscat.set_visible(True)
+XRscat.set_visible(True)
+
+
+im.set_visible(True)
+
+
 plt.ion()
 
 lores_cont = fits.open('/Users/adam/Dropbox/Orion_ALMA/FITS/Orion_NW_12m_continuum.fits')
 ax.contour(lores_cont[0].data, transform=ax.get_transform(WCS(lores_cont[0].header)), levels=[0.1, 0.2, 0.5, 0.75, 1], colors=['lime']*6, linewidth=0.75)
 
 plt.savefig(f'{basepath}/plots/gemini_B3_overlay_newOnly_contours.png',dpi=200,)
+
+
 
 #ax.axis((750.3124848440887, 928.9302949291337, 508.5377590382199, 694.7765956868934))
 Mb7 = regions.CircleSkyRegion(B7_coord, radius=10*u.arcsec)
@@ -221,6 +248,22 @@ mmscat.set_visible(False)
 newmmscat.set_visible(False)
 
 plt.savefig(f'{basepath}/plots/catalog_contours_zoom_nomm.png',dpi=200,)
+
+radscat.set_visible(False)
+XRscat.set_visible(False)
+IRscat_all = ax.scatter(IR_coords.ra, IR_coords.dec, transform=ax.get_transform('icrs'), facecolors='none', edgecolor='lime', marker='p')
+
+plt.savefig(f'{basepath}/plots/catalog_contours_zoom_IRsample.png',dpi=200,)
+
+mmscat.set_visible(True)
+newmmscat.set_visible(True)
+plt.savefig(f'{basepath}/plots/catalog_contours_zoom_mmdet.png',dpi=200,)
+
+IRscat_all.set_visible(False)
+plt.savefig(f'{basepath}/plots/catalog_contours_zoom_mmdet_noIR.png',dpi=200,)
+
+mmscat.set_visible(False)
+newmmscat.set_visible(False)
 
 im.set_visible(True)
 plt.savefig(f'{basepath}/plots/gemini_B3_overlay_contours_zoom_nomm.png',dpi=200,)

@@ -1,5 +1,7 @@
 from astropy.table import Table
 from lifelines import KaplanMeierFitter
+from astroquery.vizier import Vizier
+import os
 
 from KM_plot import plot_KM, KM_median, bootstrap_ci
 import numpy as np
@@ -204,9 +206,34 @@ ophi_hwhm_au = ophi_fwhm_au/2
 #ophi_fwhm_au = np.delete(ophi_fwhm_au, ulim_ophi_ind)
 #ophi_fwhm_flag = np.repeat(True, len(ophi_fwhm_au))
 
+tobintabpath = (f'{tab_path}/Tobin2020.txt')
+if not os.path.exists(tobintabpath):
+    tobintab = Vizier(row_limit=1000).get_catalogs('J/ApJ/890/130/table8')[0]
+    tobintab.write(tobintabpath, format='ascii')
+else:
+    tobintab = Table.read(tobintabpath, format='ascii')
+
+tobintab.rename_column('RdiskA', 'Rdisk')
+tobinclassI = tobintab[tobintab['Class'] == 'I']
+tobinclass0 = tobintab[tobintab['Class'] == '0']
+tobinclassIradius = tobinclassI['Rdisk']
+tobinclassIradiusflag = ~tobinclassI['Rdisk'].mask
+tobinclass0radius = tobinclass0['Rdisk']
+tobinclass0radiusflag = ~tobinclass0['Rdisk'].mask
+
 plot_KM([lupus_hwhm_au, sco_r, ophi_hwhm_au, onc_combined, omc1], ['Lupus', 'Upper Sco', 'Ophiuchus', 'ONC+E18', 'OMC1'],
         [lupus_fwhm_flag, sco_fwhm_flag, ophi_fwhm_flag, onc_combined_flag, omc1_flag],
         savepath=f'{basepath}/plots/KM_size_plot_may21_hwhm_omc1_onc_combined.png',
+        left_censor=True,
+        plot_quantity='Rdisk',
+        #noerr_inds=np.where(np.isnan(B3_fwhm))[0],
+       )
+
+plot_KM([lupus_hwhm_au, sco_r, ophi_hwhm_au, onc_combined, omc1, tobinclass0radius, tobinclassIradius],
+        ['Lupus', 'Upper Sco', 'Ophiuchus', 'ONC+E18', 'OMC1', 'Orion Class 0', 'Orion Class I'],
+        [lupus_fwhm_flag, sco_fwhm_flag, ophi_fwhm_flag, onc_combined_flag, omc1_flag, tobinclass0radiusflag, tobinclassIradiusflag],
+        colors = ['tab:red','tab:blue','tab:green', 'tab:orange', 'tab:purple', 'darkgreen', 'darkblue'],
+        savepath=f'{basepath}/plots/KM_size_plot_may21_hwhm_omc1_onc_combined_tobin.png',
         left_censor=True,
         plot_quantity='Rdisk',
         #noerr_inds=np.where(np.isnan(B3_fwhm))[0],

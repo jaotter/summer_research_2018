@@ -9,7 +9,7 @@ import astropy.units as u
 
 def plot_KM(arrays, labels, upper_lim_flags, savepath, left_censor=True,
             cdf=False, plot_quantity='Mdust', noerr_inds=[],
-            colors = ['tab:red','tab:blue','tab:green', 'tab:orange', 'tab:purple', 'gray', 'brown']
+            colors = ['tab:red','tab:blue','tab:green', 'tab:orange', 'tab:purple', 'gray', 'brown', 'darkgreen', 'darkblue', 'black']
            ):
     kmf = KaplanMeierFitter()
 

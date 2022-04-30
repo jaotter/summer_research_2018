@@ -1,3 +1,4 @@
+import os
 from astropy.table import Table
 from lifelines import KaplanMeierFitter
 import astropy.constants as constants
@@ -6,6 +7,9 @@ from KM_plot import plot_KM
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.units as u
+
+from astroquery.vizier import Vizier
+
 
 
 def calc_dmass(fluxes, freq, dist):
@@ -33,6 +37,22 @@ sco_data = Table.read(f'{tab_path}/UpperSco_Barenfield2016.txt', format='ascii')
 #sco_data = Table.read(f'{tab_path}/UpperSco_Barenfeld2016_size.txt', format='ascii')
 
 IR_tab = Table.read(f'{basepath}/tables/IR_matches_MLLA_may21_full_edit.fits')
+
+tobintabpath = (f'{tab_path}/Tobin2020.txt')
+if not os.path.exists(tobintabpath):
+    tobintab = Vizier(row_limit=1000).get_catalogs('J/ApJ/890/130/table8')[0]
+    tobintab.write(tobintabpath, format='ascii')
+else:
+    tobintab = Table.read(tobintabpath, format='ascii')
+
+tobintab.rename_column('MdiskA', 'Mdust')
+tobintab.rename_column('RdiskA', 'Rdisk')
+tobinclassI = tobintab[tobintab['Class'] == 'I']
+tobinclass0 = tobintab[tobintab['Class'] == '0']
+tobinclassIdust = tobinclassI['Mdust']
+tobinclassIdustflag = ~tobinclassI['Mdust'].mask
+tobinclass0dust = tobinclass0['Mdust']
+tobinclass0dustflag = ~tobinclass0['Mdust'].mask
 
 nonIR_src = np.setdiff1d(dmass_data['ID'], IR_tab['ID'])
 nonIR_ind = [np.where(dmass_data['ID']==d_id)[0][0] for d_id in nonIR_src]
@@ -132,11 +152,33 @@ omc1_ulim_dmass_ext = np.concatenate((np.tile(omc1_ulim_dmass,3), rand_ext))
 omc1_mdust = np.concatenate((omc1_B3mdust, omc1_ulim_dmass_ext))
 omc1_mdust_flag = np.concatenate((omc1_B3mdust_flag, np.repeat(False,60)))
 
+soda = Table.read(f'{basepath}/tables/soda.dat', format='ascii')
+soda_mdust = soda['M_dust']
+soda_mdust_flag = np.ones(len(soda_mdust), dtype='bool') 
+soda_mdust_flag = soda['l_M_dust'] != '<'
+
 
 plot_KM([lupus_mdust, sco_mdust, ophi_mdust, onc_combined, omc1_B3mdust, omc1_mdust, taurus_mdust],
         ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC+E18','OMC1 (no X-ray)', 'OMC1 (X-ray incl.)', 'Taurus'],
         [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, omc1_B3mdust_flag, omc1_mdust_flag, taurus_mdust_flag],
         savepath=f'{basepath}/plots/KM_dust_mass_may21_onc_omc1.png', left_censor=True, cdf=False, plot_quantity='Mdust', noerr_inds=[4,5])
+
+plot_KM([lupus_mdust, sco_mdust, ophi_mdust, onc_combined, omc1_B3mdust, omc1_mdust, taurus_mdust, tobinclass0dust, tobinclassIdust],
+        ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC+E18','OMC1 (no X-ray)', 'OMC1 (X-ray incl.)', 'Taurus', 'Orion Class 0', 'Orion Class I'],
+        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, omc1_B3mdust_flag, omc1_mdust_flag, taurus_mdust_flag, tobinclass0dustflag, tobinclassIdustflag],
+        savepath=f'{basepath}/plots/KM_dust_mass_may21_onc_omc1_withTobin.png', left_censor=True, cdf=False, plot_quantity='Mdust', noerr_inds=[4,5])
+
+plot_KM([lupus_mdust, sco_mdust, ophi_mdust, onc_combined, omc1_B3mdust, omc1_mdust, taurus_mdust, tobinclass0dust, tobinclassIdust, soda_mdust],
+        ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC+E18','OMC1 (no X-ray)', 'OMC1 (X-ray incl.)', 'Taurus', 'Orion Class 0', 'Orion Class I', 'SODA'],
+        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, omc1_B3mdust_flag, omc1_mdust_flag, taurus_mdust_flag, tobinclass0dustflag, tobinclassIdustflag, soda_mdust_flag],
+        savepath=f'{basepath}/plots/KM_dust_mass_may21_onc_omc1_withTobin_soda.png', left_censor=True, cdf=False, plot_quantity='Mdust', noerr_inds=[4,5])
+
+plot_KM([lupus_mdust, sco_mdust, ophi_mdust, onc_combined, omc1_B3mdust, omc1_mdust, taurus_mdust, soda_mdust],
+        ['Lupus', 'Upper Sco', 'Ophiucus', 'ONC+E18','OMC1 (no X-ray)', 'OMC1 (X-ray incl.)', 'Taurus',  'SODA'],
+        [lupus_mdust_flag, sco_mdust_flag, ophi_mdust_flag, onc_combined_flag, omc1_B3mdust_flag, omc1_mdust_flag, taurus_mdust_flag, soda_mdust_flag],
+        colors = ['tab:red','tab:blue','tab:green', 'tab:orange', 'tab:purple', 'gray', 'brown',  'black'],
+        savepath=f'{basepath}/plots/KM_dust_mass_may21_onc_omc1_soda.png', left_censor=True, cdf=False, plot_quantity='Mdust', noerr_inds=[4,5])
+
 
 plot_KM([onc_combined, omc1_B3mdust, omc1_mdust],
         ['ONC+E18','OMC1 (no X-ray)', 'OMC1 (X-ray incl.)', ],
