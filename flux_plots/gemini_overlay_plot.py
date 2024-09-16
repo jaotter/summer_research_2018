@@ -10,19 +10,28 @@ import matplotlib.patheffects as PathEffects
 import astropy.units as u
 import matplotlib.pyplot as plt
 import matplotlib.image as img
+import regions
 import numpy as np
 
+from catalogs import coupviz, forbviz, eisner2016_mm, eisner2016_gems, MLLA, meingastsci
+from catalogs import forbcoords, coupcoords, mm_coords, MLLAcoords, full_mm_sourcelist, full_irxradmm_sourcelist, full_xradmm_sourcelist, IR_coords
 
-img_path = '/home/jotter/nrao/images/Trapezium_GEMS_mosaic_redblueorange_normed_small_contrast_bright_photoshop.png'
+plt.ion()
+
+basepath = '/Users/adam/work/students/JustinOtter/summer_research_2018/'
+
+img_path = f'{basepath}/Trapezium_GEMS_mosaic_redblueorange_normed_small_contrast_bright_photoshop.png'
 im = img.imread(img_path)
 
-B3_table = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim.fits')
+B3_table = Table.read(f'{basepath}/tables/r0.5_catalog_bgfit_may21_ulim.fits')
 
-header = fits.Header.fromtextfile('/home/jotter/nrao/images/trapezium_small_photoshop.wcs')
+header = fits.Header.fromtextfile(f'{basepath}/trapezium_small_photoshop.wcs')
 #header = fits.Header.fromtextfile('/home/jotter/nrao/images/fullimage.wcs')
 mywcs = WCS(header).celestial
 
-fig = plt.figure(figsize=(10,10))
+figsize=(9,10)
+fig = plt.figure(num=1, figsize=figsize)
+fig.clf()
 ax = fig.add_subplot(projection=mywcs)
 ra = ax.coords['ra']
 ra.set_major_formatter('hh:mm:ss.s')
@@ -33,7 +42,31 @@ dec.set_major_formatter('dd:mm:ss.s')
 ra.ticklabels.set_fontsize(18)
 dec.ticklabels.set_fontsize(18)
 
-ax.imshow(np.flip(np.rot90(im,2,axes=(0,1)),axis=1), origin='lower', transform=ax.get_transform(mywcs)) #norm=asinh_norm.AsinhNorm()
+im = ax.imshow(np.flip(np.rot90(im,2,axes=(0,1)),axis=1), origin='lower', transform=ax.get_transform(mywcs)) #norm=asinh_norm.AsinhNorm()
+
+
+
+
+ax.set_ylim(0,1250)
+ax.set_xlim(100,1556)
+
+
+BL_frame = SkyCoord(ra='5:35:18', dec='-5:23:30', unit=(u.hourangle,u.degree))
+BL_pix = mywcs.all_world2pix(BL_frame.ra.degree, BL_frame.dec.degree, 0)
+TR_frame = SkyCoord(ra='5:35:12', dec='-5:21:50', unit=(u.hourangle,u.degree))
+TR_pix = mywcs.all_world2pix(TR_frame.ra.degree, TR_frame.dec.degree, 0)
+
+#ax.set_ylim(0,1250)
+#ax.set_xlim(100,1556)
+ax.set_ylim(BL_pix[1], TR_pix[1])
+ax.set_xlim(BL_pix[0], TR_pix[0])
+
+ax.set_xlabel('Right Ascension', fontsize=18)
+ax.set_ylabel('Declination', fontsize=18)
+
+
+plt.savefig(f'{basepath}/plots/gemini_B3_nooverlay.png',dpi=200,)
+
 
 B3_pix = mywcs.all_world2pix(B3_table['RA_B3']*u.degree, B3_table['DEC_B3']*u.degree, 0)
 
@@ -45,88 +78,70 @@ b6_sources = np.setdiff1d(b6_sources, b7_sources)
 b3_sources = np.setdiff1d(np.arange(len(B3_table)),b6_sources)
 b3_sources = np.setdiff1d(b3_sources,b7_sources)
 
-print(len(b7_sources), len(b6_sources), len(b3_sources))
+print("lengths: ", len(b7_sources), len(b6_sources), len(b3_sources))
 
 
-text_col = 'whitesmoke'
+B3_table = Table.read(f'{basepath}/final_tables/datafile4.txt', format='ascii.cds')
+Fbid = B3_table['ID'][~B3_table['F2016'].mask]
+coupid = B3_table['ID'][~B3_table['COUP'].mask]
+IRid = B3_table['ID'][~B3_table['MLLA'].mask]
+new_srcs = B3_table['ID'][B3_table['f_ID'] == 'a']
+print(f"new sources: {len(new_srcs)}, coup: {len(coupid)}, forbrich: {len(Fbid)}, IR: {len(IRid)}")
 
-irtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
-IRid = irtab['ID'].data
+IRsel = np.isin(B3_table['ID'], IRid)
+XRsel = np.isin(B3_table['ID'], coupid)
+radsel = np.isin(B3_table['ID'], Fbid) & ~IRsel
+newsel = np.isin(B3_table['ID'], new_srcs)
+mmsel = (~IRsel) & (~XRsel) & (~radsel) & (~newsel)
+notIR = ~IRsel
 
-couptab = Table.read('/home/jotter/nrao/summer_research_2018/tables/COUP_r0.5_may21.fits')
-coupid = couptab['ID']
 
-Fbtab = Table.read('/home/jotter/nrao/summer_research_2018/tables/Forbrich2016_r0.5_may21.fits')
-Fbid = Fbtab['ID']
+coords = SkyCoord((B3_table['RAs'].quantity + (5*u.hour).to(u.s) + (35*u.min).to(u.s))*(15*u.arcsec/u.s),
+                  -5*u.deg - B3_table['DEm'].quantity - B3_table['DEs'].quantity, frame='icrs', )
 
-new_srcs = [8, 10, 32, 33, 50, 54, 64, 71, 75, 76, 80, 118, 119, 123, 124]
+# two options:
+# 1. plot all infrared/xray/radio that are not associated with mm
+# 2. plot only those that... didn't already have a crossmatch?  I think these are the same
+#idx, sep, _ = IR_coords.match_to_catalog_sky(coords[~IRsel])
+idx, sep, _ = IR_coords.match_to_catalog_sky(coords)
+IR_only = IR_coords[sep > 1*u.arcsec]
+#idx, sep, _ = coupcoords.match_to_catalog_sky(coords)
+idx, sep, _ = coupcoords.match_to_catalog_sky(coords) #[~XRsel])
+XR_only = coupcoords[sep > 1*u.arcsec]
+#idx, sep, _ = forbcoords.match_to_catalog_sky(coords)
+idx, sep, _ = forbcoords.match_to_catalog_sky(coords) #[~radsel])
+rad_only = forbcoords[sep > 1*u.arcsec]
 
-for ind in range(len(B3_pix[0])):
-    did = B3_table['ID'][ind]
-    #if did in b7_sources:
-    #    col = 'tab:red'
-    #if did in b6_sources:
-    #    col = 'tab:pink'
-    #if did in b3_sources:
-    #    col = 'tab:green'
-    #col='tab:red'
+#IRscat = ax.scatter(coords.ra[IRsel], coords.dec[IRsel], transform=ax.get_transform('icrs'), facecolors='none', edgecolor='lime', marker='p')
+IRscat = ax.scatter(IR_only.ra, IR_only.dec, transform=ax.get_transform('icrs'), facecolors='none', edgecolor='lime', marker='p')
 
-    if did in IRid:
-        #col = 'tab:pink'
-        col = 'mistyrose'
-        pentagon = RegularPolygon((B3_pix[0][ind], B3_pix[1][ind]), numVertices=5, radius=13, fill=False, color=col)
-        pentagon.set_path_effects([PathEffects.Stroke(linewidth=2, foreground="black"), PathEffects.Normal()])
-        ax.add_patch(pentagon)
-        
-    if did in coupid:
-        #col = 'tab:green'
-        col = 'honeydew'
-        square = RegularPolygon((B3_pix[0][ind], B3_pix[1][ind]), numVertices=4, radius=8, fill=False, color=col)
-        square.set_path_effects([PathEffects.Stroke(linewidth=2, foreground="black"), PathEffects.Normal()])
-        ax.add_patch(square)
-    if did in Fbid:
-        #col = 'tab:orange'
-        col = 'oldlace'
-        triangle = RegularPolygon((B3_pix[0][ind], B3_pix[1][ind]), numVertices=3, radius=4, fill=False, color=col)
-        triangle.set_path_effects([PathEffects.Stroke(linewidth=2, foreground="black"), PathEffects.Normal()])
-        ax.add_patch(triangle)
-    if did in new_srcs:
-        #col = 'tab:red'
-        col = 'azure'
-        #circ = Circle((B3_pix[0][ind], B3_pix[1][ind]), radius=10, fill=False, color=col)    
-        #ax.add_patch(circ)
-        #ax.plot(B3_pix[0][ind], B3_pix[1][ind], marker = 'x', linestyle='')
+plt.savefig(f'{basepath}/plots/gemini_B3_overlay_ir.png',dpi=200,)
 
-        cent_x = B3_pix[0][ind]
-        cent_y = B3_pix[1][ind]
-        Path = mpath.Path
-        path_data = [(Path.MOVETO, [cent_x-5, cent_y+5]),
-                     (Path.LINETO, [cent_x+5, cent_y-5]),
-                     (Path.MOVETO, [cent_x-5, cent_y-5]),
-                     (Path.LINETO, [cent_x+5, cent_y+5])]
-        codes, verts = zip(*path_data)
-        path = mpath.Path(verts, codes)
-        patch = mpatches.PathPatch(path, fill=False, color=col)
-        patch.set_path_effects([PathEffects.Stroke(linewidth=2, foreground="black"), PathEffects.Normal()])
-        ax.add_patch(patch)
+#XRscat = ax.scatter(coords.ra[XRsel], coords.dec[XRsel], transform=ax.get_transform('icrs'), facecolors='none', edgecolor='cyan', marker='d')
+XRscat = ax.scatter(XR_only.ra, XR_only.dec, transform=ax.get_transform('icrs'), facecolors='none', edgecolor='cyan', marker='d')
 
-        
-    if did not in IRid and did not in coupid and did not in Fbid and did not in new_srcs:
-        #col = 'tab:blue'
-        col = 'lavenderblush'
-        circ = Circle((B3_pix[0][ind], B3_pix[1][ind]), radius=8, fill=False, color=col)
-        circ.set_path_effects([PathEffects.Stroke(linewidth=2, foreground="black"), PathEffects.Normal()])
-        ax.add_patch(circ)
-        
-        
-    #circ = Circle((B3_pix[0][ind], B3_pix[1][ind]), radius=10, fill=False, color=col)    
-    #ax.add_patch(circ)
+plt.savefig(f'{basepath}/plots/gemini_B3_overlay_ir_xray.png',dpi=200,)
 
-        
-    #else:
-    #    col = 'tab:green'
-    
-    
+#radscat = ax.scatter(coords.ra[radsel], coords.dec[radsel], transform=ax.get_transform('icrs'), facecolors='none', edgecolor='orange', marker='^')
+radscat = ax.scatter(rad_only.ra, rad_only.dec, transform=ax.get_transform('icrs'), facecolors='none', edgecolor='orange', marker='^')
+
+plt.savefig(f'{basepath}/plots/gemini_B3_overlay_ir_xray_radio.png',dpi=200,)
+
+#mmscat = ax.scatter(coords.ra[mmsel], coords.dec[mmsel], transform=ax.get_transform('icrs'), facecolors='none', edgecolor='blue', marker='o')
+mmscat = ax.scatter(coords.ra, coords.dec, transform=ax.get_transform('icrs'),
+                    facecolors='none', edgecolor='blue', marker='o')
+
+plt.savefig(f'{basepath}/plots/gemini_B3_overlay_ir_xray_radio_pastmm.png',dpi=200,)
+
+
+newmmscat = ax.scatter(coords.ra[newsel], coords.dec[newsel], transform=ax.get_transform('icrs'), facecolors='none', c='red', marker='*')
+
+plt.savefig(f'{basepath}/plots/gemini_B3_overlay_ir_xray_radio_pastmm_withNew.png',dpi=200,)
+im.set_visible(False)
+plt.savefig(f'{basepath}/plots/catalog_ir_xray_radio_pastmm_withNew.png',dpi=200,)
+im.set_visible(True)
+
+
 B3_coord = SkyCoord(ra=83.8104625, dec=-5.37515556, unit=u.degree)
 B3_coord_pix = mywcs.all_world2pix(B3_coord.ra, B3_coord.dec, 0)
 B3_radius = 137.6*u.arcsecond/2
@@ -160,26 +175,95 @@ ax.add_patch(B7_circ)
 #ax.set_ylim(200,1000)
 #ax.set_xlim(300,1200)
 
-#BL_frame = SkyCoord(ra='5:35:17', dec='-5:23:10', unit=(u.hourangle,u.degree))
-#BL_pix = mywcs.all_world2pix(BL_frame.ra.degree, BL_frame.dec.degree, 0)
-#TR_frame = SkyCoord(ra='5:35:12', dec='-5:21:50', unit=(u.hourangle,u.degree))
-#TR_pix = mywcs.all_world2pix(TR_frame.ra.degree, TR_frame.dec.degree, 0)
+BL_pix = mywcs.all_world2pix(BL_frame.ra.degree, BL_frame.dec.degree, 0)
+TR_pix = mywcs.all_world2pix(TR_frame.ra.degree, TR_frame.dec.degree, 0)
 
-ax.set_ylim(0,1250)
-ax.set_xlim(100,1556)
-#ax.set_ylim(BL_pix[1], TR_pix[1])
-#ax.set_xlim(BL_pix[0], TR_pix[0])
+#ax.set_ylim(0,1250)
+#ax.set_xlim(100,1556)
+ax.set_ylim(BL_pix[1], TR_pix[1])
+ax.set_xlim(BL_pix[0], TR_pix[0])
 
-ax.set_xlabel('RA', fontsize=18)
-ax.set_ylabel('Declination', fontsize=18)
-plt.tight_layout()
-    
-plt.savefig(f'/home/jotter/nrao/plots/gemini_B3_overlay_wavedet.pdf',dpi=300,bbox_inches='tight')
-plt.close()
+#plt.tight_layout()
+
+plt.savefig(f'{basepath}/plots/gemini_B3_overlay_wavedet.png',dpi=200,)
 
 
+for scat in (IRscat, radscat, XRscat, mmscat):
+    scat.set_visible(False)
 
+plt.savefig(f'{basepath}/plots/gemini_B3_overlay_newOnly.png',dpi=200,)
 
 
 
+im.set_visible(False)
 
+radscat.set_visible(False)
+XRscat.set_visible(False)
+IRscat_all = ax.scatter(IR_coords.ra, IR_coords.dec, transform=ax.get_transform('icrs'), facecolors='none', edgecolor='lime', marker='p')
+
+plt.savefig(f'{basepath}/plots/catalog_contours_IRsample.png',dpi=200,)
+
+mmscat.set_visible(True)
+newmmscat.set_visible(True)
+plt.savefig(f'{basepath}/plots/catalog_contours_mmdet.png',dpi=200,)
+
+IRscat_all.set_visible(False)
+plt.savefig(f'{basepath}/plots/catalog_contours_mmdet_noIR.png',dpi=200,)
+
+radscat.set_visible(True)
+XRscat.set_visible(True)
+
+
+im.set_visible(True)
+
+
+plt.ion()
+
+lores_cont = fits.open('/Users/adam/Dropbox/Orion_ALMA/FITS/Orion_NW_12m_continuum.fits')
+ax.contour(lores_cont[0].data, transform=ax.get_transform(WCS(lores_cont[0].header)), levels=[0.1, 0.2, 0.5, 0.75, 1], colors=['lime']*6, linewidth=0.75)
+
+plt.savefig(f'{basepath}/plots/gemini_B3_overlay_newOnly_contours.png',dpi=200,)
+
+
+
+#ax.axis((750.3124848440887, 928.9302949291337, 508.5377590382199, 694.7765956868934))
+Mb7 = regions.CircleSkyRegion(B7_coord, radius=10*u.arcsec)
+Mb7p = Mb7.to_pixel(ax.wcs)
+ax.axis([Mb7p.center.x - Mb7p.radius*1.1, Mb7p.center.x + Mb7p.radius*1.1,
+         Mb7p.center.y - Mb7p.radius*1.1, Mb7p.center.y + Mb7p.radius*1.1,])
+
+
+plt.savefig(f'{basepath}/plots/gemini_B3_overlay_newOnly_contours_zoom.png',dpi=200,)
+
+for scat in (IRscat, radscat, XRscat, mmscat):
+    scat.set_visible(True)
+
+plt.savefig(f'{basepath}/plots/gemini_B3_overlay_contours_zoom.png',dpi=200,)
+
+im.set_visible(False)
+
+plt.savefig(f'{basepath}/plots/catalog_contours_zoom.png',dpi=200,)
+
+mmscat.set_visible(False)
+newmmscat.set_visible(False)
+
+plt.savefig(f'{basepath}/plots/catalog_contours_zoom_nomm.png',dpi=200,)
+
+radscat.set_visible(False)
+XRscat.set_visible(False)
+IRscat_all = ax.scatter(IR_coords.ra, IR_coords.dec, transform=ax.get_transform('icrs'), facecolors='none', edgecolor='lime', marker='p')
+
+plt.savefig(f'{basepath}/plots/catalog_contours_zoom_IRsample.png',dpi=200,)
+
+mmscat.set_visible(True)
+newmmscat.set_visible(True)
+plt.savefig(f'{basepath}/plots/catalog_contours_zoom_mmdet.png',dpi=200,)
+
+IRscat_all.set_visible(False)
+plt.savefig(f'{basepath}/plots/catalog_contours_zoom_mmdet_noIR.png',dpi=200,)
+
+mmscat.set_visible(False)
+newmmscat.set_visible(False)
+
+im.set_visible(True)
+plt.savefig(f'{basepath}/plots/gemini_B3_overlay_contours_zoom_nomm.png',dpi=200,)

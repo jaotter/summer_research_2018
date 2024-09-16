@@ -1,13 +1,17 @@
 from astropy.table import Table
 from lifelines import KaplanMeierFitter
+from astroquery.vizier import Vizier
+import os
 
 from KM_plot import plot_KM, KM_median, bootstrap_ci
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.units as u
-tab_path = '/home/jotter/nrao/tables'
 
-data = Table.read('/home/jotter/nrao/summer_research_2018/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
+basepath = '/Users/adam/work/students/JustinOtter/summer_research_2018/'
+tab_path = f'{basepath}/tables'
+
+data = Table.read(f'{basepath}/tables/r0.5_catalog_bgfit_may21_ulim_mask.fits')
 
 eis_data = Table.read(f'{tab_path}/eisner_tbl.txt', format='ascii')
 lupus_data = Table.read(f'{tab_path}/LupusDisks_Ansdell2016_dist_combined.txt', format='ascii')
@@ -25,6 +29,7 @@ B3_fwhm_flag[B3_ulim_ind] = False
 B3_fwhm = ((B3_fwhm_orig.to(u.radian))*(400*u.pc).to(u.AU)).value
 B3_fwhm[B3_ulim_ind] = data['upper_lim_B3'][B3_ulim_ind].data
 
+# un-remove these entries b/c it breaks code below?
 #B3_fwhm_flag = B3_fwhm_flag[np.isnan(B3_fwhm) == False]
 #B3_fwhm = B3_fwhm[np.isnan(B3_fwhm) == False] #removing 4 masked sources without upper limits or sizes
 
@@ -93,7 +98,7 @@ B7_fwhm_flag_resolved = np.repeat(True, len(B7_fwhm_resolved))
 #print(f'{median} - {lower} + {upper}')
 
 
-IR_tab = Table.read('/home/jotter/nrao/summer_research_2018/tables/IR_matches_MLLA_may21_full_edit.fits')
+IR_tab = Table.read(f'{basepath}/tables/IR_matches_MLLA_may21_full_edit.fits')
 nonIR_src = np.setdiff1d(data['ID'], IR_tab['ID'])
 nonIR_ind = [np.where(data['ID']==d_id)[0][0] for d_id in nonIR_src]
 IR_ind = [np.where(data['ID']==d_id)[0][0] for d_id in IR_tab['ID']]
@@ -153,7 +158,7 @@ print('Lupus')
 
 
 sco_r = []
-with open('/home/jotter/nrao/tables/UpperSco_Barenfeld2017_edit.txt', 'r') as fl:
+with open(f'{tab_path}/UpperSco_Barenfeld2017_edit.txt', 'r') as fl:
     for line in fl:
         sco_r.append(float(line.split('\t')[2].split(' ')[0]))
 #sco_fwhm = sco_data['FWHM'][np.where(np.isnan(sco_data['FWHM'])==False)]
@@ -201,6 +206,44 @@ ophi_hwhm_au = ophi_fwhm_au/2
 #ophi_fwhm_au = np.delete(ophi_fwhm_au, ulim_ophi_ind)
 #ophi_fwhm_flag = np.repeat(True, len(ophi_fwhm_au))
 
+tobintabpath = (f'{tab_path}/Tobin2020.txt')
+if not os.path.exists(tobintabpath):
+    tobintab = Vizier(row_limit=1000).get_catalogs('J/ApJ/890/130/table8')[0]
+    tobintab.write(tobintabpath, format='ascii')
+else:
+    tobintab = Table.read(tobintabpath, format='ascii')
+
+tobintab.rename_column('RdiskA', 'Rdisk')
+tobinclassI = tobintab[tobintab['Class'] == 'I']
+tobinclass0 = tobintab[tobintab['Class'] == '0']
+tobinclassIradius = tobinclassI['Rdisk']
+tobinclassIradiusflag = ~tobinclassI['Rdisk'].mask
+tobinclass0radius = tobinclass0['Rdisk']
+tobinclass0radiusflag = ~tobinclass0['Rdisk'].mask
+
 plot_KM([lupus_hwhm_au, sco_r, ophi_hwhm_au, onc_combined, omc1], ['Lupus', 'Upper Sco', 'Ophiuchus', 'ONC+E18', 'OMC1'],
-        [lupus_fwhm_flag, sco_fwhm_flag, ophi_fwhm_flag, onc_combined_flag, omc1_flag], savepath='/home/jotter/nrao/plots/KM_size_plot_may21_hwhm_omc1_onc_combined.pdf', left_censor=True,
-        plot_quantity='Rdisk')
+        [lupus_fwhm_flag, sco_fwhm_flag, ophi_fwhm_flag, onc_combined_flag, omc1_flag],
+        savepath=f'{basepath}/plots/KM_size_plot_may21_hwhm_omc1_onc_combined.png',
+        left_censor=True,
+        plot_quantity='Rdisk',
+        #noerr_inds=np.where(np.isnan(B3_fwhm))[0],
+       )
+
+plot_KM([lupus_hwhm_au, sco_r, ophi_hwhm_au, onc_combined, omc1, tobinclass0radius, tobinclassIradius],
+        ['Lupus', 'Upper Sco', 'Ophiuchus', 'ONC+E18', 'OMC1', 'Orion Class 0', 'Orion Class I'],
+        [lupus_fwhm_flag, sco_fwhm_flag, ophi_fwhm_flag, onc_combined_flag, omc1_flag, tobinclass0radiusflag, tobinclassIradiusflag],
+        colors = ['tab:red','tab:blue','tab:green', 'tab:orange', 'tab:purple', 'darkgreen', 'darkblue'],
+        savepath=f'{basepath}/plots/KM_size_plot_may21_hwhm_omc1_onc_combined_tobin.png',
+        left_censor=True,
+        plot_quantity='Rdisk',
+        #noerr_inds=np.where(np.isnan(B3_fwhm))[0],
+       )
+
+plot_KM([onc_combined, omc1], ['ONC+E18', 'OMC1'],
+        [ onc_combined_flag, omc1_flag],
+        savepath=f'{basepath}/plots/KM_size_plot_may21_hwhm_omc1_onc_only.png',
+        left_censor=True,
+        plot_quantity='Rdisk',
+        colors =['tab:orange', 'tab:purple', 'gray', 'brown'],
+        #noerr_inds=np.where(np.isnan(B3_fwhm))[0],
+       )
